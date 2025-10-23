@@ -1,5 +1,5 @@
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils;
 
 namespace WebApplication1.Services.IService
 {
@@ -10,6 +10,6 @@ namespace WebApplication1.Services.IService
         Task<Brand> AddBrandAsync(Brand brand);
         Task<Brand> UpdateBrandAsync(int id, Brand brand);
         Task DeleteBrandAsync(int id);
-        Task<PaginationResult<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
     }
 }

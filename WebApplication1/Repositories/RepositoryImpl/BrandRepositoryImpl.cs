@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
-using WebApplication1.Utils;
 
 namespace WebApplication1.Repositories.RepositoryImpl
 {
@@ -75,7 +75,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             }
         }
 
-        public async Task<PaginationResult<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.Brands.CountAsync();
 
@@ -84,7 +84,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Take(pageSize)
                 .ToListAsync();
 
-            return new PaginationResult<Brand>
+            return new PaginationResultDto<Brand>
             {
                 Items = items,
                 TotalCount = totalCount,

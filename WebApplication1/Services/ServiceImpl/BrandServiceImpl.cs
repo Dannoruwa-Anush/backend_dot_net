@@ -1,7 +1,7 @@
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
-using WebApplication1.Utils;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -64,7 +64,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Brand deleted successfully: Id={Id}", id);
         }
 
-        public async Task<PaginationResult<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);
         }

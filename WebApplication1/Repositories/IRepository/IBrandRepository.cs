@@ -1,5 +1,5 @@
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils;
 
 namespace WebApplication1.Repositories.IRepository
 {
@@ -12,7 +12,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> DeleteAsync(int id);
         Task SaveAsync();
         Task<Brand> UpdateBrandWithTransactionAsync(int id, Brand brand);
-        Task<PaginationResult<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
     }
 }
 

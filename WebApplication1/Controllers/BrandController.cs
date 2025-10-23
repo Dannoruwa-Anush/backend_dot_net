@@ -101,22 +101,22 @@ namespace WebApplication1.Controllers
             if (pageNumber.HasValue && pageSize.HasValue && pageNumber > 0 && pageSize > 0)
             {
                 // Call service to get paginated data
-                var pagedResult = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
 
-                var brandDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(pagedResult.Items);
+                var brandDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(pageResultDto.Items);
 
-                var pagedResultDto = new PaginationResultDto<BrandResponseDto>
+                var paginationResult = new PaginationResultDto<BrandResponseDto>
                 {
-                    Items = brandDtos,
-                    TotalCount = pagedResult.TotalCount,
-                    PageNumber = pagedResult.PageNumber,
-                    PageSize = pagedResult.PageSize
+                    Items      = brandDtos,
+                    TotalCount = pageResultDto.TotalCount,
+                    PageNumber = pageResultDto.PageNumber,
+                    PageSize   = pageResultDto.PageSize
                 };
 
                 var response = new ApiResponseDto<PaginationResultDto<BrandResponseDto>>(
                     200,
                     "Brands retrieved successfully with pagination",
-                    pagedResultDto
+                    paginationResult
                 );
 
                 return Ok(response);
