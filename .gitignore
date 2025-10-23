@@ -1,0 +1,66 @@
+# Ignore build output directories
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+
+# JetBrains Rider / IntelliJ
+.idea/
+
+# Logs
+*.log
+
+# ASP.NET temporary and cache folders
+wwwroot/
+logs/
+publish/
+dist/
+
+# Environment and config files
+appsettings.Development.json
+appsettings.Local.json
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Test results and coverage
+TestResults/
+*.coverage
+*.coveragexml
+
+# Temporary or backup files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Entity Framework Migrations snapshot backups
+*Migrations/*.Designer.cs
+*Migrations/*.resx
+
+# Docker files (optional)
+*.pid
+*.seed
+docker-compose.override.yml
+
+# Other generated folders
+Generated/
