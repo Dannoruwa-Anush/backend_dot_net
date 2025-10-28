@@ -12,8 +12,10 @@ namespace WebApplication1.Services.ServiceImpl
         // logger: for auditing
         private readonly ILogger<BrandServiceImpl> _logger;
 
+        // Constructor
         public BrandServiceImpl(IBrandRepository repository, ILogger<BrandServiceImpl> logger)
         {
+            // Dependency injection
             _repository = repository;
             _logger = logger;
         }
@@ -26,14 +28,13 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Brand> AddBrandAsync(Brand brand)
         {
-            var existing = await _repository.GetAllAsync();
-            if (existing.Any(b => b.BrandName.ToLower() == brand.BrandName.ToLower()))
+            var duplicate = await _repository.ExistsByBrandNameAsync(brand.BrandName);
+            if (duplicate)
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             await _repository.AddAsync(brand);
-            await _repository.SaveAsync();
 
-            _logger.LogInformation("Brand created: Id={Id}, Name={Name}", brand.BrandId, brand.BrandName);
+            _logger.LogInformation("Brand created: Id={Id}, BrandName={Name}", brand.BrandId, brand.BrandName);
             return brand;
         }
 
@@ -41,11 +42,12 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Brand> UpdateBrandAsync(int id, Brand brand)
         {
             var existingBrand = await _repository.GetByIdAsync(id);
-            if (existingBrand == null) throw new Exception("Brand not found");
+            if (existingBrand == null) 
+                throw new Exception("Brand not found");
 
-            var duplicate = (await _repository.GetAllAsync())
-                            .Any(b => b.BrandName.ToLower() == brand.BrandName.ToLower() && b.BrandId != id);
-            if (duplicate) throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
+            var duplicate = await _repository.ExistsByBrandNameAsync(brand.BrandName, id);
+            if (duplicate) 
+                throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             var updatedBrand = await _repository.UpdateBrandWithTransactionAsync(id, brand);
             _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandId, updatedBrand.BrandName);

@@ -10,8 +10,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
     {
         private readonly AppDbContext _context;
 
+        // Constructor
         public BrandRepositoryImpl(AppDbContext context)
         {
+            // Dependency injection
             _context = context;
         }
 
@@ -21,13 +23,17 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Brand?> GetByIdAsync(int id) =>
             await _context.Brands.FindAsync(id);
 
-        public async Task AddAsync(Brand brand) =>
+        public async Task AddAsync(Brand brand)
+        {
             await _context.Brands.AddAsync(brand);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task<Brand?> UpdateBrandAsync(int id, Brand brand)
         {
             var existing = await _context.Brands.FindAsync(id);
-            if (existing == null) return null;
+            if (existing == null) 
+                return null;
 
             existing.BrandName = brand.BrandName;
             _context.Brands.Update(existing);
@@ -39,23 +45,20 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<bool> DeleteAsync(int id)
         {
             var brand = await _context.Brands.FindAsync(id);
-            if (brand == null) return false;
+            if (brand == null) 
+                return false;
 
             _context.Brands.Remove(brand);
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task SaveAsync()
-        {
-            await _context.SaveChangesAsync();
-        }
-
         //update: with transaction handling
         public async Task<Brand> UpdateBrandWithTransactionAsync(int id, Brand brand)
         {
             var existing = await _context.Brands.FindAsync(id);
-            if (existing == null) throw new Exception("Brand not found");
+            if (existing == null) 
+                throw new Exception("Brand not found");
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -91,6 +94,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<bool> ExistsByBrandNameAsync(string name)
+        {
+            return await _context.Categories
+                .AnyAsync(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task<bool> ExistsByBrandNameAsync(string name, int excludeId)
+        {
+            return await _context.Categories
+                .AnyAsync(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase) && c.CategoryID != excludeId);
         }
     }
 }

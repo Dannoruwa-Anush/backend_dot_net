@@ -1,23 +1,21 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.DTOs.RequestDto;
+using WebApplication1.DTOs.ResponseDto;
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
-using WebApplication1.DTOs.ResponseDto;
-using WebApplication1.DTOs.RequestDto;
-using WebApplication1.DTOs.ResponseDto.Common;
 
 namespace WebApplication1.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")] //api/brand 
-    public class BrandController : ControllerBase
+    public class CustomerController : ControllerBase
     {
-        private readonly IBrandService _service;
+        private readonly ICustomerService _service;
+
         private readonly IMapper _mapper;
 
         // Constructor
-        public BrandController(IBrandService service, IMapper mapper)
+        public CustomerController(ICustomerService service, IMapper mapper)
         {
             // Dependency injection
             _service = service;
@@ -27,38 +25,38 @@ namespace WebApplication1.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var brand = await _service.GetBrandByIdAsync(id);
-            if (brand == null)
-                return NotFound(new ApiResponseDto<string>(404, "Brand not found"));
+            var customer = await _service.GetCustomerByIdAsync(id);
+            if (customer == null)
+                return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
 
-            var dto = _mapper.Map<BrandResponseDto>(brand);
-            var response = new ApiResponseDto<BrandResponseDto>(200, "Brand retrieved successfully", dto);
+            var dto = _mapper.Map<CustomerResponseDto>(customer);
+            var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", dto);
 
             return Ok(response);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BrandRequestDto brandCreateDto)
+        public async Task<IActionResult> Create([FromBody] CustomerRequestDto customerCreateDto)
         {
-            var brand = _mapper.Map<Brand>(brandCreateDto);
-            var created = await _service.AddBrandAsync(brand);
-            var dto = _mapper.Map<BrandResponseDto>(created);
+            var customer = _mapper.Map<Customer>(customerCreateDto);
+            var created = await _service.AddCustomerAsync(customer);
+            var dto = _mapper.Map<CustomerResponseDto>(created);
 
-            var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", dto);
+            var response = new ApiResponseDto<CustomerResponseDto>(201, "Customer created successfully", dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.BrandId }, response);
+            return CreatedAtAction(nameof(GetById), new { id = dto.CustomerID}, response);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] BrandRequestDto brandUpdateDto)
+        public async Task<IActionResult> Update(int id, [FromBody] CustomerRequestDto customerUpdateDto)
         {
             try
             {
-                var brand = _mapper.Map<Brand>(brandUpdateDto);
-                var updated = await _service.UpdateBrandAsync(id, brand);
-                var dto = _mapper.Map<BrandResponseDto>(updated);
+                var customer = _mapper.Map<Customer>(customerUpdateDto);
+                var updated = await _service.UpdateCustomerAsync(id, customer);
+                var dto = _mapper.Map<CustomerResponseDto>(updated);
 
-                var response = new ApiResponseDto<BrandResponseDto>(200, "Brand updated successfully", dto);
+                var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer updated successfully", dto);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -66,10 +64,10 @@ namespace WebApplication1.Controllers
                 var message = ex.Message;
 
                 if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ApiResponseDto<string>(404, "Brand not found"));
+                    return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
 
                 if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
-                    return BadRequest(new ApiResponseDto<string>(400, "Brand with the given name already exists"));
+                    return BadRequest(new ApiResponseDto<string>(400, "Customer with the given name already exists"));
 
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
@@ -80,9 +78,9 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                await _service.DeleteBrandAsync(id);
+                await _service.DeleteCustomerAsync(id);
 
-                var response = new ApiResponseDto<string>(204, "Brand deleted successfully");
+                var response = new ApiResponseDto<string>(204, "Customer deleted successfully");
                 return Ok(response);
             }
             catch (Exception ex)
@@ -90,7 +88,7 @@ namespace WebApplication1.Controllers
                 var message = ex.Message;
 
                 if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ApiResponseDto<string>(404, "Brand not found"));
+                    return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
 
                 // Generic error
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
@@ -105,9 +103,9 @@ namespace WebApplication1.Controllers
                 // Call service to get paginated data
                 var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
 
-                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(pageResultDto.Items);
+                var dtos = _mapper.Map<IEnumerable<CustomerResponseDto>>(pageResultDto.Items);
 
-                var paginationResult = new PaginationResultDto<BrandResponseDto>
+                var paginationResult = new PaginationResultDto<CustomerResponseDto>
                 {
                     Items      = dtos,
                     TotalCount = pageResultDto.TotalCount,
@@ -115,9 +113,9 @@ namespace WebApplication1.Controllers
                     PageSize   = pageResultDto.PageSize
                 };
 
-                var response = new ApiResponseDto<PaginationResultDto<BrandResponseDto>>(
+                var response = new ApiResponseDto<PaginationResultDto<CustomerResponseDto>>(
                     200,
-                    "Brands retrieved successfully with pagination",
+                    "Customers retrieved successfully with pagination",
                     paginationResult
                 );
 
@@ -126,12 +124,12 @@ namespace WebApplication1.Controllers
             else
             {
                 // Return all data without pagination
-                var brands = await _service.GetAllBrandsAsync();
-                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(brands);
+                var customers = await _service.GetAllCustomersAsync();
+                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(customers);
 
                 var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
                     200,
-                    "All brands retrieved successfully",
+                    "All customers retrieved successfully",
                     dtos
                 );
 

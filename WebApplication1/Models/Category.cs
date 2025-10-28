@@ -6,6 +6,7 @@ namespace WebApplication1.Models
     [Index(nameof(CategoryName), IsUnique = true)]
     public class Category
     {
+        [Key]
         public int CategoryID { get; set; }
 
         [Required(ErrorMessage = "Category name is required")]

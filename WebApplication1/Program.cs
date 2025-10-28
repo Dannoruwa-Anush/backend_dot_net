@@ -17,7 +17,12 @@ builder.Services.AddSwaggerGen();           // For Swagger UI
 builder.Services.AddControllers();
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(BrandAutoMapperProfile));
+builder.Services.AddAutoMapper(
+    typeof(BrandAutoMapperProfile),
+    typeof(CategoryAutoMapperProfiles),
+    typeof(CustomerAutoMapperProfiles),
+    typeof(BNPL_PlanTypeAutoMapperProfiles)
+);
 
 // Configure EF Core (MySQL)
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -25,10 +30,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
 //Register Repositories Layers (Dependency Injection)
-builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>();
+builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
+                .AddScoped<ICategoryRepository, CategoryRepositoryImpl>()
+                .AddScoped<ICustomerRepository, CustomerRepositoryImpl>()
+                .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>();
 
 //Register Services Layers (Dependency Injection)
-builder.Services.AddScoped<IBrandService, BrandServiceImpl>();
+builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
+                .AddScoped<ICategoryService, CategoryServiceImpl>()
+                .AddScoped<ICustomerService, CustomerServiceImpl>()
+                .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>();
 
 var app = builder.Build();
 
