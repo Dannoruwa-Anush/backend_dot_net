@@ -29,7 +29,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             var existing = await _context.Brands.FindAsync(id);
             if (existing == null) return null;
 
-            existing.Name = brand.Name;
+            existing.BrandName = brand.BrandName;
             _context.Brands.Update(existing);
             await _context.SaveChangesAsync();
 
@@ -60,7 +60,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                existing.Name = brand.Name;
+                existing.BrandName = brand.BrandName;
                 _context.Brands.Update(existing);
                 await _context.SaveChangesAsync();
 

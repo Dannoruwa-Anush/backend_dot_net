@@ -6,6 +6,6 @@ namespace WebApplication1.DTOs.RequestDto
     {
         [Required(ErrorMessage = "Brand name is required")]
         [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
+        public string BrandName { get; set; } = string.Empty;
     }
 }

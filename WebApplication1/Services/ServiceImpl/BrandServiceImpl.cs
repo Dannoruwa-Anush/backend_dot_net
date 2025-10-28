@@ -27,13 +27,13 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Brand> AddBrandAsync(Brand brand)
         {
             var existing = await _repository.GetAllAsync();
-            if (existing.Any(b => b.Name.ToLower() == brand.Name.ToLower()))
-                throw new Exception($"Brand with name '{brand.Name}' already exists.");
+            if (existing.Any(b => b.BrandName.ToLower() == brand.BrandName.ToLower()))
+                throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             await _repository.AddAsync(brand);
             await _repository.SaveAsync();
 
-            _logger.LogInformation("Brand created: Id={Id}, Name={Name}", brand.Id, brand.Name);
+            _logger.LogInformation("Brand created: Id={Id}, Name={Name}", brand.BrandId, brand.BrandName);
             return brand;
         }
 
@@ -44,11 +44,11 @@ namespace WebApplication1.Services.ServiceImpl
             if (existingBrand == null) throw new Exception("Brand not found");
 
             var duplicate = (await _repository.GetAllAsync())
-                            .Any(b => b.Name.ToLower() == brand.Name.ToLower() && b.Id != id);
-            if (duplicate) throw new Exception($"Brand with name '{brand.Name}' already exists.");
+                            .Any(b => b.BrandName.ToLower() == brand.BrandName.ToLower() && b.BrandId != id);
+            if (duplicate) throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             var updatedBrand = await _repository.UpdateBrandWithTransactionAsync(id, brand);
-            _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.Id, updatedBrand.Name);
+            _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandId, updatedBrand.BrandName);
             return updatedBrand;
         }
 
