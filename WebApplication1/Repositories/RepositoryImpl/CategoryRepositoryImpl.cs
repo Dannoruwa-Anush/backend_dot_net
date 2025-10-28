@@ -70,12 +70,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<bool> ExistsByCategoryNameAsync(string name)
         {
-            return await _context.Categories.AnyAsync(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return await _context.Categories.AnyAsync(c => c.CategoryName.ToLower() == name.ToLower());
         }
 
         public async Task<bool> ExistsByCategoryNameAsync(string name, int excludeId)
         {
-            return await _context.Categories.AnyAsync(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase) && c.CategoryID != excludeId);
+            return await _context.Categories.AnyAsync(c => c.CategoryName.ToLower() == name.ToLower() && c.CategoryID != excludeId);
         }
     }
 }

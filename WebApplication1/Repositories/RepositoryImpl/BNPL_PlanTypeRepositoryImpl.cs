@@ -75,12 +75,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
         
         public async Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name)
         {
-            return await _context.BNPL_PlanTypes.AnyAsync(bnpTy => bnpTy.Bnpl_PlanTypeName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return await _context.BNPL_PlanTypes.AnyAsync(bnpTy => bnpTy.Bnpl_PlanTypeName.ToLower() == name.ToLower());
         }
 
         public async Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name, int excludeId)
         {
-             return await _context.BNPL_PlanTypes.AnyAsync(bnpTy => bnpTy.Bnpl_PlanTypeName.Equals(name, StringComparison.OrdinalIgnoreCase) && bnpTy.Bnpl_PlanTypeID != excludeId);
+             return await _context.BNPL_PlanTypes.AnyAsync(bnpTy => bnpTy.Bnpl_PlanTypeName.ToLower() == name.ToLower() && bnpTy.Bnpl_PlanTypeID != excludeId);
         }
     }
 }

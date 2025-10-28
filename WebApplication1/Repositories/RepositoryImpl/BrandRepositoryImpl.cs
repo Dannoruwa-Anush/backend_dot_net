@@ -98,14 +98,14 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<bool> ExistsByBrandNameAsync(string name)
         {
-            return await _context.Categories
-                .AnyAsync(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return await _context.Brands
+                .AnyAsync(B => B.BrandName.ToLower() == name.ToLower());
         }
 
         public async Task<bool> ExistsByBrandNameAsync(string name, int excludeId)
         {
-            return await _context.Categories
-                .AnyAsync(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase) && c.CategoryID != excludeId);
+            return await _context.Brands
+                .AnyAsync(B => B.BrandName.ToLower() == name.ToLower() && B.BrandId != excludeId);
         }
     }
 }

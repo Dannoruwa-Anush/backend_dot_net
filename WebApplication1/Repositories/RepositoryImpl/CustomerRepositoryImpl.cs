@@ -77,12 +77,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<bool> ExistsByEmailAsync(string email)
         {
-            return await _context.Customers.AnyAsync(cu => cu.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+            return await _context.Customers.AnyAsync(cu => cu.Email.ToLower() == email.ToLower());
         }
 
         public async Task<bool> ExistsByEmailAsync(string email, int excludeId)
         {
-            return await _context.Customers.AnyAsync(cu => cu.Email.Equals(email, StringComparison.OrdinalIgnoreCase) && cu.CustomerID != excludeId);
+            return await _context.Customers.AnyAsync(cu => cu.Email.ToLower() == email.ToLower() && cu.CustomerID != excludeId);
         }
     }
 }
