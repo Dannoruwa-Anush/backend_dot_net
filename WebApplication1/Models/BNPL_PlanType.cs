@@ -13,7 +13,12 @@ namespace WebApplication1.Models
 
         [Required(ErrorMessage = "Bnpl duration us required")]
         public int Bnpl_DurationDays { get; set; }
-        
+
         public string Bnpl_Description { get; set; } = string.Empty;
+
+        //******* [Start: BNPL_PlanType (1) — BNPL_PLAN (M)] ****
+        // One Side: Navigation property
+        public ICollection<BNPL_PLAN> BNPL_PLANs { get; set; } = new List<BNPL_PLAN>();
+        //******* [End: BNPL_PlanType (1) — BNPL_PLAN (M)] ******
     }
 }
