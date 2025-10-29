@@ -55,5 +55,12 @@ namespace WebApplication1.Models
         [ForeignKey(nameof(OrderID))]
         public required CustomerOrder CustomerOrder { get; set; }
         //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
+
+
+        //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
+        // One Side: Navigation property
+        [InverseProperty(nameof(BNPL_Installment.BNPL_PLAN))]
+        public ICollection<BNPL_Installment> BNPL_Installments { get; set; } = new List<BNPL_Installment>();
+        //******* [End: BNPL_PLAN (1) — BNPL_Installment (M)] ******
     }
 }
