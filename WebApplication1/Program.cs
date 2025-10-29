@@ -43,6 +43,23 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
 
 var app = builder.Build();
 
+//------------------[Start: Set default time zone globally]-----------------------
+TimeZoneInfo sriLankaZone;
+try
+{
+    // Works on Windows
+    sriLankaZone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
+}
+catch
+{
+    // Works on Linux/macOS
+    sriLankaZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Colombo");
+}
+
+TimeZoneInfo.ClearCachedData();
+TimeZoneInfo.Local.Equals(sriLankaZone);
+//------------------[End: Set default time zone globally]-------------------------
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

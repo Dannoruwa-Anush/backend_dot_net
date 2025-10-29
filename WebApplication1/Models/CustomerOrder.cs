@@ -16,8 +16,14 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
 
-        [Required(ErrorMessage = "payment Status is required")]
+        [Required]
+        [Column(TypeName = "nvarchar(20)")]
+        [EnumDataType(typeof(PaymentStatusEnum))]
         public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
+
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         //FK
@@ -27,5 +33,11 @@ namespace WebApplication1.Models
         [ForeignKey(nameof(CustomerID))]
         public required Customer Customer { get; set; }
         //******* [End: Customer (1) — CustomerOrder (M)] ******
+
+
+        //******* [Start: CustomerOrder (1) — Payment (M)] ****
+        // One Side: Navigation property
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+        //******* [End: CustomerOrder (1) — Payment (M)] ******
     }
 }
