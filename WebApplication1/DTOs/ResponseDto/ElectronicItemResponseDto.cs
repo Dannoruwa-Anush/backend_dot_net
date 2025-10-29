@@ -10,10 +10,10 @@ namespace WebApplication1.DTOs.ResponseDto
         
         public int QOH { get; set; }
         
-        //FK
-        public int BrandId { get; set; }
+        // Include simplified info about FK: Brand 
+        public required BrandResponseDto BrandResponseDto { get; set; } 
 
-        //FK
-        public int CategoryID { get; set; }
+        // Include simplified info about FK: Category 
+        public required CategoryResponseDto CategoryResponseDto { get; set; }
     }
 }

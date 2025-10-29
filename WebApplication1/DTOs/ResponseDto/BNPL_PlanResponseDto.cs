@@ -20,13 +20,11 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Incomplete;
 
-        //FK 
-        public int Bnpl_PlanTypeID { get; set; }
 
-        //FK associated fields from BNPL_PlanType
-        public string Bnpl_PlanTypeName { get; set; } = string.Empty;
+        // Include simplified info about FK: Bnpl_PlanType
+        public required BNPL_PlanTypeResponseDto BNPL_PlanTypeResponseDto { get; set; }
 
-        //FK
-        public int OrderID { get; set; }
+        // Include simplified info about FK: Order (need to change can be nullable)
+        public required CustomerOrderResponseDto  CustomerOrderResponseDto { get; set; }
     }
 }

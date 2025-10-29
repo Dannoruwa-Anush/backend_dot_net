@@ -8,11 +8,10 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal ItemPrice { get; set; }
 
-        //FK
-        public int E_ItemID { get; set; }
+        // Include simplified info about FK: ElectronicItem 
+        public required ElectronicItemResponseDto ElectronicItemResponseDto { get; set; }
 
-
-        //FK
-        public int OrderID { get; set; }
+        // Include simplified info about FK: CustomerOrder 
+        public required CustomerOrderResponseDto CustomerOrderResponseDto { get; set; }
     }
 }

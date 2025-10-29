@@ -8,9 +8,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal AmountPaid { get; set; }
         
-        //FK
-        public int OrderID { get; set; }
-
-        //Fk Associated fields from Order (customer name, email)
+        // Include simplified info about FK: Order 
+        public required CustomerOrderResponseDto CustomerOrderResponseDto{ get; set; }
     }
 }
