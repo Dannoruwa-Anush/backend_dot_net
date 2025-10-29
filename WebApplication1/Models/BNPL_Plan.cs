@@ -19,8 +19,10 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Interest rate is required")]
         public double Bnpl_InterestRate { get; set; }
 
+        [Required(ErrorMessage = "Bnpl Start date is required")]
         public DateTime Bnpl_StartDate { get; set; }
 
+        [Required(ErrorMessage = "Bnpl next due date is required")]
         public DateTime Bnpl_NextDueDate { get; set; }
 
         [Required(ErrorMessage = "Remaining balance is required")]
@@ -52,6 +54,7 @@ namespace WebApplication1.Models
 
         // One Side: Navigation property
         [ForeignKey(nameof(OrderID))]
+        [InverseProperty(nameof(CustomerOrder.BNPL_PLAN))]
         public required CustomerOrder CustomerOrder { get; set; }
         //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
 

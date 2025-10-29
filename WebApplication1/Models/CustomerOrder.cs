@@ -45,6 +45,7 @@ namespace WebApplication1.Models
 
         //******* [Start: CustomerOrder (1) — BNPL_PLAN (1)] ****
         // One Side: Navigation property
+        [InverseProperty(nameof(BNPL_PLAN.CustomerOrder))]
         public required BNPL_PLAN BNPL_PLAN { get; set; }
         //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
 
