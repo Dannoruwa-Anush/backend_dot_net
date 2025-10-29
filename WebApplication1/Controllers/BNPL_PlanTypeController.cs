@@ -8,6 +8,8 @@ using WebApplication1.Services.IService;
 
 namespace WebApplication1.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")] //api/BNPL_PlanType
     public class BNPL_PlanTypeController : ControllerBase
     {
         private readonly IBNPL_PlanTypeService _service;

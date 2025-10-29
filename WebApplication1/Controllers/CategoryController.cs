@@ -8,6 +8,8 @@ using WebApplication1.Services.IService;
 
 namespace WebApplication1.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")] //api/category 
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _service;

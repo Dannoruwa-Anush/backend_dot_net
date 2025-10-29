@@ -24,9 +24,11 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Customer?> GetByIdAsync(int id) =>
             await _context.Customers.FindAsync(id);
 
-        public async Task AddAsync(Customer customer) =>
+        public async Task AddAsync(Customer customer)
+        {
             await _context.Customers.AddAsync(customer);
-
+            await _context.SaveChangesAsync();
+        }
 
         public async Task<Customer?> UpdateAsync(int id, Customer customer)
         {

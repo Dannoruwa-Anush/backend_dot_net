@@ -8,6 +8,8 @@ using WebApplication1.Services.IService;
 
 namespace WebApplication1.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")] //api/customer 
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _service;
