@@ -53,10 +53,11 @@ namespace WebApplication1.Data
                       .HasForeignKey(p => p.OrderID)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // (1) — (1) BNPL_PLAN
+                // (1) — (0..1) BNPL_PLAN
                 entity.HasOne(o => o.BNPL_PLAN)
                       .WithOne(p => p.CustomerOrder)
                       .HasForeignKey<BNPL_PLAN>(p => p.OrderID)
+                      .IsRequired(false)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 // (1) — (M) CustomerOrderElectronicItem

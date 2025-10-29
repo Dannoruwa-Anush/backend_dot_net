@@ -24,7 +24,7 @@ namespace WebApplication1.DTOs.ResponseDto
         // Include simplified info about FK: Bnpl_PlanType
         public required BNPL_PlanTypeResponseDto BNPL_PlanTypeResponseDto { get; set; }
 
-        // Include simplified info about FK: Order (need to change can be nullable)
+        // Include simplified info about FK: Order
         public required CustomerOrderResponseDto  CustomerOrderResponseDto { get; set; }
     }
 }
