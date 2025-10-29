@@ -17,23 +17,23 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal ItemPrice { get; set; }
 
-        //******* [Start: CustomerOrderElectronicItem (1) — ElectronicItem (1)] ******
+        //******* [Start: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ******
         //FK
         public int E_ItemID { get; set; }
 
-        // One Side: Navigation property
+        // Many Side: Navigation property
         [ForeignKey(nameof(E_ItemID))]
         public required ElectronicItem ElectronicItem { get; set; }
-        //******* [End: CustomerOrderElectronicItem (1) — ElectronicItem (1)] ********
+        //******* [End: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ********
 
 
-        //******* [Start: CustomerOrderElectronicItem (1) — CustomerOrder (1)] *******
+        //******* [Start: CustomerOrderElectronicItem(M) —- CustomerOrder(1)] *******
         //FK
         public int OrderID { get; set; }
 
-        // One Side: Navigation property
+        // Many Side: Navigation property
         [ForeignKey(nameof(OrderID))]
         public required CustomerOrder CustomerOrder { get; set; }
-        //******* [End: CustomerOrderElectronicItem (1) — CustomerOrder (1)] *********
+        //******* [End: CustomerOrderElectronicItem(M) —- CustomerOrder(1)] *********
     }
 }

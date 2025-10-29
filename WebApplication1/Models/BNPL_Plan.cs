@@ -10,8 +10,7 @@ namespace WebApplication1.Models
         public int Bnpl_PlanID { get; set; }
 
         [Required(ErrorMessage = "Total installments are required")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Bnpl_TotalInstallments { get; set; }
+        public int Bnpl_TotalInstallments { get; set; }
 
         [Required(ErrorMessage = "Installment amount is required")]
         [Column(TypeName = "decimal(18,2)")]

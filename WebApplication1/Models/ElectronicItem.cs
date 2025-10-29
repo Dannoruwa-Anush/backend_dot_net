@@ -39,9 +39,10 @@ namespace WebApplication1.Models
         //******* [End: Category (1) — ElectronicItems (M)] ******
 
 
-        //******* [Start: CustomerOrderElectronicItem (1) — ElectronicItem (1)] ******
-        // One Side: Navigation property
-        public required CustomerOrderElectronicItem CustomerOrderElectronicItem { get; set; }
-        //******* [End: CustomerOrderElectronicItem (1) — ElectronicItem (1)] ********
+        //******* [Start: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ******
+        // Many Side: Navigation property
+        [InverseProperty(nameof(CustomerOrderElectronicItem.ElectronicItem))]
+        public ICollection<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; } = new List<CustomerOrderElectronicItem>();
+        //******* [End: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ********
     }
 }

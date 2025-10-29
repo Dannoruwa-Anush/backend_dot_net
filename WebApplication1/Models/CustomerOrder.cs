@@ -48,9 +48,10 @@ namespace WebApplication1.Models
         public required BNPL_PLAN BNPL_PLAN { get; set; }
         //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
 
-        //******* [Start: CustomerOrderElectronicItem (1) — CustomerOrder (1)] *******
+        //******* [Start: CustomerOrderElectronicItem(M) —- CustomerOrder(1)] *******
         // One Side: Navigation property
-        public required CustomerOrderElectronicItem CustomerOrderElectronicItem { get; set; }
-        //******* [End: CustomerOrderElectronicItem (1) — CustomerOrder (1)] *********
+        [InverseProperty(nameof(CustomerOrderElectronicItem.CustomerOrder))]
+        public ICollection<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; } = new List<CustomerOrderElectronicItem>();
+        //******* [End: CustomerOrderElectronicItem(M) —- CustomerOrder(1)] *********
     }
 }
