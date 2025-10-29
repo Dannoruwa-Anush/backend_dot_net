@@ -21,6 +21,12 @@ builder.Services.AddAutoMapper(
     typeof(BrandAutoMapperProfile),
     typeof(CategoryAutoMapperProfiles),
     typeof(CustomerAutoMapperProfiles),
+    typeof(BNPL_InstallmentAutoMapperProfiles),
+    typeof(BNPL_PlanAutoMapperProfiles),
+    typeof(CustomerOrderAutoMapperProfiles),
+    typeof(CustomerOrderElectronicItemAutoMapperProfiles),
+    typeof(ElectronicItemAutoMapperProfiles),
+    typeof(PaymentAutoMapperProfiles),
     typeof(BNPL_PlanTypeAutoMapperProfiles)
 );
 
