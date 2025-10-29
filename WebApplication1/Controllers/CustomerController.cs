@@ -127,9 +127,9 @@ namespace WebApplication1.Controllers
             {
                 // Return all data without pagination
                 var customers = await _service.GetAllCustomersAsync();
-                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(customers);
+                var dtos = _mapper.Map<IEnumerable<CustomerResponseDto>>(customers);
 
-                var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
+                var response = new ApiResponseDto<IEnumerable<CustomerResponseDto>>(
                     200,
                     "All customers retrieved successfully",
                     dtos
