@@ -8,7 +8,7 @@ namespace WebApplication1.DTOs.RequestDto
         [MaxLength(100)]
         public string Bnpl_PlanTypeName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Bnpl duration us required")]
+        [Required(ErrorMessage = "Bnpl duration is required")]
         public int Bnpl_DurationDays { get; set; }
 
         public string Bnpl_Description { get; set; } = string.Empty;

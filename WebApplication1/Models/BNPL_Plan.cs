@@ -17,6 +17,7 @@ namespace WebApplication1.Models
         public decimal Bnpl_InstallmentAmount { get; set; }
 
         [Required(ErrorMessage = "Interest rate is required")]
+        [Range(0, 100)]
         public double Bnpl_InterestRate { get; set; }
 
         [Required(ErrorMessage = "Bnpl Start date is required")]

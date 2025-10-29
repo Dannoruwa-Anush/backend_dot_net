@@ -10,10 +10,12 @@ namespace WebApplication1.DTOs.RequestDto
         public string E_ItemName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Price is required")]
+        [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; } 
-        
+        public decimal Price { get; set; }
+
         [Required(ErrorMessage = "QOH is required")]
+        [Range(0, int.MaxValue, ErrorMessage = "QOH cannot be negative")]
         public int QOH { get; set; }
         
         //FK

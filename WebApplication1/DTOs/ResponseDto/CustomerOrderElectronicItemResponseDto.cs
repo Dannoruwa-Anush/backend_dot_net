@@ -11,7 +11,7 @@ namespace WebApplication1.DTOs.ResponseDto
         // Include simplified info about FK: ElectronicItem 
         public required ElectronicItemResponseDto ElectronicItemResponseDto { get; set; }
 
-        // Include simplified info about FK: CustomerOrder 
-        public required CustomerOrderResponseDto CustomerOrderResponseDto { get; set; }
+        // FK: CustomerOrder 
+        public int CustomerOrderID { get; set; }
     }
 }

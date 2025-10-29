@@ -11,6 +11,7 @@ namespace WebApplication1.Models
         public int OrderItemID { get; set; }
 
         [Required(ErrorMessage = "Quantity is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
         public int Quantity { get; set; }
 
         [Required(ErrorMessage = "Item price is required")]
