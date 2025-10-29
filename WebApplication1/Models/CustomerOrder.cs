@@ -31,13 +31,21 @@ namespace WebApplication1.Models
 
         // Many Side: Navigation property
         [ForeignKey(nameof(CustomerID))]
+        [InverseProperty(nameof(Customer.CustomerOrders))]
         public required Customer Customer { get; set; }
         //******* [End: Customer (1) — CustomerOrder (M)] ******
 
 
         //******* [Start: CustomerOrder (1) — Payment (M)] ****
         // One Side: Navigation property
+        [InverseProperty(nameof(Payment.CustomerOrder))]
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
         //******* [End: CustomerOrder (1) — Payment (M)] ******
+
+
+        //******* [Start: CustomerOrder (1) — BNPL_PLAN (1)] ****
+        // One Side: Navigation property
+        public required BNPL_PLAN BNPL_PLAN { get; set; }
+        //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
     }
 }

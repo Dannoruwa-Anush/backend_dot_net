@@ -45,5 +45,15 @@ namespace WebApplication1.Models
         [ForeignKey(nameof(Bnpl_PlanTypeID))]
         public required BNPL_PlanType BNPL_PlanType { get; set; }
         //******* [End: BNPL_PlanType (1) — BNPL_PLAN (M)] ******
+
+
+        //******* [Start: CustomerOrder (1) — BNPL_PLAN (1)] ****
+        //FK
+        public int OrderID { get; set; }
+
+        // One Side: Navigation property
+        [ForeignKey(nameof(OrderID))]
+        public required CustomerOrder CustomerOrder { get; set; }
+        //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
     }
 }

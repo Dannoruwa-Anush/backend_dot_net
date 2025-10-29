@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Models
@@ -27,6 +28,7 @@ namespace WebApplication1.Models
 
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         // One Side: Navigation property
+        [InverseProperty(nameof(CustomerOrder.Customer))]
         public ICollection<CustomerOrder> CustomerOrders { get; set; } = new List<CustomerOrder>();
         //******* [End: Customer (1) — CustomerOrder (M)] ******
     }

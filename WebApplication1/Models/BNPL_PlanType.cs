@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApplication1.Models
 {
@@ -18,6 +19,7 @@ namespace WebApplication1.Models
 
         //******* [Start: BNPL_PlanType (1) — BNPL_PLAN (M)] ****
         // One Side: Navigation property
+        [InverseProperty(nameof(BNPL_PLAN.BNPL_PlanType))]
         public ICollection<BNPL_PLAN> BNPL_PLANs { get; set; } = new List<BNPL_PLAN>();
         //******* [End: BNPL_PlanType (1) — BNPL_PLAN (M)] ******
     }
