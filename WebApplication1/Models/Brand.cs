@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Models
@@ -12,5 +13,11 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Brand name is required")]
         [MaxLength(100)]
         public string BrandName { get; set; } = string.Empty; //initializes the string, avoids null.
+
+        //******* [Start: Brand (1) — ElectronicItems (M)] ****
+        // One Side: Navigation property
+        [InverseProperty(nameof(ElectronicItem.Brand))]
+        public ICollection<ElectronicItem> ElectronicItems { get; set; } = new List<ElectronicItem>();
+        //******* [End: Brand (1) — ElectronicItems (M)] ******
     }
 }
