@@ -127,9 +127,9 @@ namespace WebApplication1.Controllers
             {
                 // Return all data without pagination
                 var bNPL_PlanTypes = await _service.GetAllBNPL_PlanTypesAsync();
-                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(bNPL_PlanTypes);
+                var dtos = _mapper.Map<IEnumerable<BNPL_PlanTypeResponseDto>>(bNPL_PlanTypes);
 
-                var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
+                var response = new ApiResponseDto<IEnumerable<BNPL_PlanTypeResponseDto>>(
                     200,
                     "All BNPL Plan Types retrieved successfully",
                     dtos
