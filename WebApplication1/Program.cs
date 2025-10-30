@@ -40,6 +40,7 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICategoryRepository, CategoryRepositoryImpl>()
                 .AddScoped<IElectronicItemRepository, ElectronicItemRepositoryImpl>()
                 .AddScoped<ICustomerRepository, CustomerRepositoryImpl>()
+                .AddScoped<ICustomerOrderRepository, CustomerOrderRepositoryImpl>()
                 .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>();
 
 //Register Services Layers (Dependency Injection)

@@ -17,7 +17,6 @@ namespace WebApplication1.Repositories.IRepository
         //Task<IEnumerable<CustomerOrder>> GetAllBySearchKeyAsync(string searchKey);
         //Task<IEnumerable<CustomerOrder>> GetAllByPaymentStatusAsync(string paymentStatus);
         //Task<IEnumerable<CustomerOrder>> GetAllByBnplPlansync(int bnplPlanId);
-        //Task<bool> ExistsByCustomerAsync(int customerId);
-        //Task<bool> ExistsByPaymentAsync(int paymentId);
+        Task<bool> ExistsByCustomerAsync(int customerId);
     }
 }

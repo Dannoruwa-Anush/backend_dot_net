@@ -9,15 +9,18 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICustomerRepository _repository;
 
+        private readonly ICustomerOrderRepository _customerOrderRepository;
+
         //logger: for auditing
         private readonly ILogger<CustomerServiceImpl> _logger;
 
         // Constructor
-        public CustomerServiceImpl(ICustomerRepository repository, ILogger<CustomerServiceImpl> logger)
+        public CustomerServiceImpl(ICustomerRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _logger = logger;
+            _repository              = repository;
+            _customerOrderRepository = customerOrderRepository;
+            _logger                  = logger;
         }
 
         public async Task<IEnumerable<Customer>> GetAllCustomersAsync() =>
@@ -62,6 +65,15 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task DeleteCustomerAsync(int id)
         {
+            // Check if any CustomerOrders reference this customer
+            bool hasItems = await _customerOrderRepository.ExistsByCustomerAsync(id);
+            if (hasItems)
+            {
+                _logger.LogWarning("Cannot delete customer {Id} — associated customer orders exist.", id);
+                throw new InvalidOperationException("Cannot delete this customer because customer orders are associated with it.");
+            }
+
+            // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
             if (!deleted)
             {

@@ -32,7 +32,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder)
         {
             var existing = await _context.CustomerOrders.FindAsync(id);
-            if (existing == null) 
+            if (existing == null)
                 return null;
 
             existing.PaymentStatus = customerOrder.PaymentStatus;
@@ -40,7 +40,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context.CustomerOrders.Update(existing);
             await _context.SaveChangesAsync();
 
-            return existing; 
+            return existing;
+        }
+        
+        //Custom Query Operations
+        public async Task<bool> ExistsByCustomerAsync(int customerId)
+        {
+            return await _context.CustomerOrders.AnyAsync(o => o.CustomerID == customerId);
         }
     }
 }
