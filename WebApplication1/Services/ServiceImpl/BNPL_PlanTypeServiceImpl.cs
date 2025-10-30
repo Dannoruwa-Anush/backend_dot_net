@@ -9,15 +9,18 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly IBNPL_PlanTypeRepository _repository;
 
+        private readonly IBNPL_PlanRepository _bnpl_planRepository;
+
         //logger: for auditing
         private readonly ILogger<BNPL_PlanTypeServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, ILogger<BNPL_PlanTypeServiceImpl> logger)
+        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IBNPL_PlanRepository bnpl_planRepository, ILogger<BNPL_PlanTypeServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _logger = logger;
+            _repository          = repository;
+            _bnpl_planRepository = bnpl_planRepository;
+            _logger              = logger;
         }
 
         public async Task<IEnumerable<BNPL_PlanType>> GetAllBNPL_PlanTypesAsync() =>
@@ -61,7 +64,16 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task DeleteBNPL_PlanTypeAsync(int id)
         {
-             var deleted = await _repository.DeleteAsync(id);
+            // Check if any BNPL_Plans reference this BNPL_PlanType
+            bool hasItems = await _bnpl_planRepository.ExistsByBnplPlanTypeAsync(id);
+            if (hasItems)
+            {
+                _logger.LogWarning("Cannot delete BNPL plan type {Id} — associated BNPL plans exist.", id);
+                throw new InvalidOperationException("Cannot delete this BNPL plan type because BNPL plan types are associated with it.");
+            }
+
+            // Proceed with deletion if safe
+            var deleted = await _repository.DeleteAsync(id);
             if (!deleted)
             {
                 _logger.LogWarning("Attempted to delete BNPL  plan type with id {Id}, but it does not exist.", id);
