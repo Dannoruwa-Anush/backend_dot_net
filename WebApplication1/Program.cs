@@ -38,12 +38,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //Register Repositories Layers (Dependency Injection)
 builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICategoryRepository, CategoryRepositoryImpl>()
+                .AddScoped<IElectronicItemRepository, ElectronicItemRepositoryImpl>()
                 .AddScoped<ICustomerRepository, CustomerRepositoryImpl>()
                 .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>();
 
 //Register Services Layers (Dependency Injection)
 builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICategoryService, CategoryServiceImpl>()
+                .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>();
 
