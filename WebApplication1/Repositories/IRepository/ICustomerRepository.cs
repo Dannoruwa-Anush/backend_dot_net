@@ -13,7 +13,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> DeleteAsync(int id);
         Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
-        //Helping operations
+        //Custom Query Operations
         Task<bool> ExistsByEmailAsync(string email);
         Task<bool> ExistsByEmailAsync(string email, int excludeId);
     }

@@ -18,6 +18,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<Customer>> GetAllAsync() =>
             await _context.Customers.ToListAsync();
 
@@ -50,7 +51,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<bool> DeleteAsync(int id)
         {
             var customer = await _context.Customers.FindAsync(id);
-            if (customer == null) 
+            if (customer == null)
                 return false;
 
             _context.Customers.Remove(customer);
@@ -58,7 +59,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             return true;
         }
-
+        
+        //Custom Query Operations
         public async Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.Customers.CountAsync();
