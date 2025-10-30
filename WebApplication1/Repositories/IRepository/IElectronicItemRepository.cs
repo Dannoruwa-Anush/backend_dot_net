@@ -12,7 +12,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<ElectronicItem?> UpdateAsync(int id, ElectronicItem electronicItem);
         Task<bool> DeleteAsync(int id);
 
-        //Custom Quaries 
+        //Custom Query Operations
         Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
         Task<bool> ExistsByNameAsync(string name);
         Task<bool> ExistsByNameAsync(string name, int excludeId);

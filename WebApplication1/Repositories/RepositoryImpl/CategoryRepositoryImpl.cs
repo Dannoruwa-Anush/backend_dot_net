@@ -17,6 +17,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<Category>> GetAllAsync() =>
             await _context.Categories.ToListAsync();
 
@@ -45,7 +46,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<bool> DeleteAsync(int id)
         {
             var category = await _context.Categories.FindAsync(id);
-            if (category == null) 
+            if (category == null)
                 return false;
 
             _context.Categories.Remove(category);
@@ -53,6 +54,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return true;
         }
 
+        //Custom Query Operations
         public async Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.Categories.CountAsync();

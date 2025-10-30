@@ -16,7 +16,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
-
+        
+        //CRUD operations
         public async Task<IEnumerable<Brand>> GetAllAsync() =>
             await _context.Brands.ToListAsync();
 
@@ -78,6 +79,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             }
         }
 
+        //Custom Query Operations
         public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.Brands.CountAsync();

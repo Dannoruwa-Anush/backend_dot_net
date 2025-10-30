@@ -17,7 +17,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
 
-        //Basic CRUD
+        //CRUD operations
         public async Task<IEnumerable<ElectronicItem>> GetAllAsync() =>
             await _context.ElectronicItems
                 .Include(e => e.Brand)
@@ -66,7 +66,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return true;
         }
 
-        //Custom Quaries
+        //Custom Query Operations
         public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.ElectronicItems.CountAsync();

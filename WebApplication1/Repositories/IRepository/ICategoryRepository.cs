@@ -11,9 +11,9 @@ namespace WebApplication1.Repositories.IRepository
         Task AddAsync(Category category);
         Task<Category?> UpdateAsync(int id, Category category);
         Task<bool> DeleteAsync(int id);
-        Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
-        //Helping operations
+        //Custom Query Operations
+        Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
         Task<bool> ExistsByCategoryNameAsync(string name);
         Task<bool> ExistsByCategoryNameAsync(string name, int excludeId);
 

@@ -8,18 +8,21 @@ namespace WebApplication1.Services.ServiceImpl
     public class CategoryServiceImpl : ICategoryService
     {
         private readonly ICategoryRepository _repository;
+        private readonly IElectronicItemRepository _electronicItemRepository;
 
         //logger: for auditing
         private readonly ILogger<CategoryServiceImpl> _logger;
 
         // Constructor
-        public CategoryServiceImpl(ICategoryRepository repository, ILogger<CategoryServiceImpl> logger)
+        public CategoryServiceImpl(ICategoryRepository repository, IElectronicItemRepository electronicItemRepository, ILogger<CategoryServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _logger = logger;
+            _repository               = repository;
+            _electronicItemRepository = electronicItemRepository;
+            _logger                   = logger;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<Category>> GetAllCategoriesAsync() =>
             await _repository.GetAllAsync();
 
@@ -60,6 +63,15 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task DeleteCategoryAsync(int id)
         {
+            // Check if any ElectronicItems reference this category
+            bool hasItems = await _electronicItemRepository.ExistsByCategoryAsync(id);
+            if (hasItems)
+            {
+                _logger.LogWarning("Cannot delete category {Id} — associated electronic items exist.", id);
+                throw new InvalidOperationException("Cannot delete this categoey because electronic items are associated with it.");
+            }
+
+            // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
             if (!deleted)
             {
@@ -70,6 +82,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Category deleted successfully: Id={Id}", id);
         }
 
+        //Custom Query Operations
         public async Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);

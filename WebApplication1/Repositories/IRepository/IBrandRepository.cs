@@ -12,9 +12,9 @@ namespace WebApplication1.Repositories.IRepository
         Task<Brand?> UpdateBrandAsync(int id, Brand brand);
         Task<bool> DeleteAsync(int id);
         Task<Brand> UpdateBrandWithTransactionAsync(int id, Brand brand);
-        Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
-        //Helping operations
+        //Custom Query Operations
+        Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
         Task<bool> ExistsByBrandNameAsync(string name);
         Task<bool> ExistsByBrandNameAsync(string name, int excludeId);
     }

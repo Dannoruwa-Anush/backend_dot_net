@@ -9,17 +9,21 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly IBrandRepository _repository;
 
+        private readonly IElectronicItemRepository _electronicItemRepository;
+
         // logger: for auditing
         private readonly ILogger<BrandServiceImpl> _logger;
 
         // Constructor
-        public BrandServiceImpl(IBrandRepository repository, ILogger<BrandServiceImpl> logger)
+        public BrandServiceImpl(IBrandRepository repository, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _logger = logger;
+            _repository               = repository;
+            _electronicItemRepository = electronicItemRepository;
+            _logger                   = logger;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<Brand>> GetAllBrandsAsync() =>
             await _repository.GetAllAsync();
 
@@ -42,11 +46,11 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Brand> UpdateBrandAsync(int id, Brand brand)
         {
             var existingBrand = await _repository.GetByIdAsync(id);
-            if (existingBrand == null) 
+            if (existingBrand == null)
                 throw new Exception("Brand not found");
 
             var duplicate = await _repository.ExistsByBrandNameAsync(brand.BrandName, id);
-            if (duplicate) 
+            if (duplicate)
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             var updatedBrand = await _repository.UpdateBrandWithTransactionAsync(id, brand);
@@ -56,16 +60,26 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task DeleteBrandAsync(int id)
         {
+            // Check if any ElectronicItems reference this brand
+            bool hasItems = await _electronicItemRepository.ExistsByBrandAsync(id);
+            if (hasItems)
+            {
+                _logger.LogWarning("Cannot delete brand {Id} — associated electronic items exist.", id);
+                throw new InvalidOperationException("Cannot delete this brand because electronic items are associated with it.");
+            }
+
+            // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
             if (!deleted)
             {
                 _logger.LogWarning("Attempted to delete brand with id {Id}, but it does not exist.", id);
-                throw new Exception("Brand not found");
+                throw new KeyNotFoundException("Brand not found.");
             }
 
             _logger.LogInformation("Brand deleted successfully: Id={Id}", id);
         }
 
+        //Custom Query Operations
         public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);

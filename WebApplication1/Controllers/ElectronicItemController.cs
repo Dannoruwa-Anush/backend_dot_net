@@ -24,6 +24,7 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
 
+        //CRUD operations
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -46,7 +47,7 @@ namespace WebApplication1.Controllers
 
             var response = new ApiResponseDto<ElectronicItemResponseDto>(201, "Electronic item created successfully", dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.E_ItemID}, response);
+            return CreatedAtAction(nameof(GetById), new { id = dto.E_ItemID }, response);
         }
 
         [HttpPut("{id}")]
@@ -97,6 +98,7 @@ namespace WebApplication1.Controllers
             }
         }
 
+        //Custom Query Operations
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? pageNumber, [FromQuery] int? pageSize)
         {
@@ -109,10 +111,10 @@ namespace WebApplication1.Controllers
 
                 var paginationResult = new PaginationResultDto<ElectronicItemResponseDto>
                 {
-                    Items      = dtos,
+                    Items = dtos,
                     TotalCount = pageResultDto.TotalCount,
                     PageNumber = pageResultDto.PageNumber,
-                    PageSize   = pageResultDto.PageSize
+                    PageSize = pageResultDto.PageSize
                 };
 
                 var response = new ApiResponseDto<PaginationResultDto<ElectronicItemResponseDto>>(
@@ -127,9 +129,9 @@ namespace WebApplication1.Controllers
             {
                 // Return all data without pagination
                 var electronicItems = await _service.GetAllElectronicItemsAsync();
-                var dtos = _mapper.Map<IEnumerable<CustomerResponseDto>>(electronicItems);
+                var dtos = _mapper.Map<IEnumerable<ElectronicItemResponseDto>>(electronicItems);
 
-                var response = new ApiResponseDto<IEnumerable<CustomerResponseDto>>(
+                var response = new ApiResponseDto<IEnumerable<ElectronicItemResponseDto>>(
                     200,
                     "All electronic items retrieved successfully",
                     dtos
@@ -137,6 +139,32 @@ namespace WebApplication1.Controllers
 
                 return Ok(response);
             }
+        }
+
+        [HttpGet("category/{categoryId}")]
+        public async Task<IActionResult> GetAllByCategoryId(int categoryId)
+        {
+            var items = await _service.GetAllElectronicItemsByCategoryIdAsync(categoryId);
+            if (items == null || !items.Any())
+                return NotFound(new ApiResponseDto<string>(404, "No electronic items found for this category."));
+
+            var dtos = _mapper.Map<IEnumerable<ElectronicItemResponseDto>>(items);
+            var response = new ApiResponseDto<IEnumerable<ElectronicItemResponseDto>>(200, "Electronic items retrieved successfully", dtos);
+
+            return Ok(response);
+        }
+
+        [HttpGet("brand/{brandId}")]
+        public async Task<IActionResult> GetAllByBrandId(int brandId)
+        {
+            var items = await _service.GetAllElectronicItemsByBrandIdAsync(brandId);
+            if (items == null || !items.Any())
+                return NotFound(new ApiResponseDto<string>(404, "No electronic items found for this brand."));
+
+            var dtos = _mapper.Map<IEnumerable<ElectronicItemResponseDto>>(items);
+            var response = new ApiResponseDto<IEnumerable<ElectronicItemResponseDto>>(200, "Electronic items retrieved successfully", dtos);
+
+            return Ok(response);
         }
     }
 }
