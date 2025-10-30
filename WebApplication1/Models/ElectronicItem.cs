@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Models
 {
+    [Index(nameof(E_ItemName), IsUnique = true)]
     public class ElectronicItem
     {
         [Key]
