@@ -20,6 +20,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger = logger;
         }
 
+        //Basic CRUD
         public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsAsync() =>
             await _repository.GetAllAsync();
 
@@ -72,9 +73,17 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Electronic item deleted successfully: Id={Id}", id);
         }
 
+        //Custom Quaries 
         public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);
         }
+
+        public async Task<IEnumerable<ElectronicItem>> GetAllAllElectronicItemsByCategoryIdAsync(int categoryId)=>
+            await _repository.GetAllByCategoryAsync(categoryId);
+
+
+        public async Task<IEnumerable<ElectronicItem>> GetAllAllElectronicItemsByBrandIdAsync(int brandId)=>
+            await _repository.GetAllByBrandAsync(brandId);
     }
 }

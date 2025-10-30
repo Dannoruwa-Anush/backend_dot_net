@@ -17,6 +17,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
 
+        //Basic CRUD
         public async Task<IEnumerable<ElectronicItem>> GetAllAsync() =>
             await _context.ElectronicItems
                 .Include(e => e.Brand)
@@ -65,6 +66,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return true;
         }
 
+        //Custom Quaries
         public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.ElectronicItems.CountAsync();
@@ -94,5 +96,34 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             return await _context.ElectronicItems.AnyAsync(i => i.E_ItemName.ToLower() == name.ToLower() && i.E_ItemID != excludeId);
         }
+
+        public async Task<IEnumerable<ElectronicItem>> GetAllByCategoryAsync(int categoryId)
+        {
+            return await _context.ElectronicItems
+                .Include(e => e.Brand)
+                .Include(e => e.Category)
+                .Where(e => e.CategoryID == categoryId)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ElectronicItem>> GetAllByBrandAsync(int brandId)
+        {
+            return await _context.ElectronicItems
+                .Include(e => e.Brand)
+                .Include(e => e.Category)
+                .Where(e => e.BrandId == brandId)
+                .ToListAsync();
+        }
+
+        public async Task<bool> ExistsByCategoryAsync(int categoryId)
+        {
+            return await _context.ElectronicItems.AnyAsync(e => e.CategoryID == categoryId);
+        }
+
+        public async Task<bool> ExistsByBrandAsync(int brandId)
+        {
+            return await _context.ElectronicItems.AnyAsync(e => e.BrandId == brandId);
+        }
+
     }
 }

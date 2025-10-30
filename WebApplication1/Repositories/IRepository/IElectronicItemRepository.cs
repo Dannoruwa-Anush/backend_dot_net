@@ -11,10 +11,14 @@ namespace WebApplication1.Repositories.IRepository
         Task AddAsync(ElectronicItem electronicItem);
         Task<ElectronicItem?> UpdateAsync(int id, ElectronicItem electronicItem);
         Task<bool> DeleteAsync(int id);
-        Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
-        //Helping operations
+        //Custom Quaries 
+        Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
         Task<bool> ExistsByNameAsync(string name);
         Task<bool> ExistsByNameAsync(string name, int excludeId);
+        Task<IEnumerable<ElectronicItem>> GetAllByCategoryAsync(int categoryId);
+        Task<IEnumerable<ElectronicItem>> GetAllByBrandAsync(int brandId);
+        Task<bool> ExistsByCategoryAsync(int categoryId);
+        Task<bool> ExistsByBrandAsync(int brandId);
     }
 }
