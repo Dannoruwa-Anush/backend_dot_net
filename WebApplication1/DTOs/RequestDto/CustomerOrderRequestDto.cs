@@ -15,6 +15,11 @@ namespace WebApplication1.DTOs.RequestDto
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]
+        [EnumDataType(typeof(OrderStatusEnum))]
+        public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
+
+        [Required]
+        [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(PaymentStatusEnum))]
         public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
 

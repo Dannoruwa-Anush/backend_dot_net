@@ -10,6 +10,8 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal TotalAmount { get; set; }
 
+        public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
+
         public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
 
         // Include simplified info about FK: Customer 
