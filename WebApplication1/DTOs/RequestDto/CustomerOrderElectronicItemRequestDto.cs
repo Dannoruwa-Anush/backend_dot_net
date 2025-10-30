@@ -9,9 +9,13 @@ namespace WebApplication1.DTOs.RequestDto
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
         public int Quantity { get; set; }
 
-        [Required(ErrorMessage = "Item price is required")]
+        [Required(ErrorMessage = "Unit price is required")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal ItemPrice { get; set; }
+        public decimal UnitPrice { get; set; }
+
+        [Required(ErrorMessage = "Sub total is required")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SubTotal { get; set; }
 
         //FK
         public int E_ItemID { get; set; }

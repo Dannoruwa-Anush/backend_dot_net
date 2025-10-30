@@ -8,11 +8,8 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public int Quantity { get; set; }
 
-        public decimal ItemPrice { get; set; }
-
-        public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
-
-        public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
+        public decimal UnitPrice { get; set; }
+        public decimal SubTotal { get; set; }
 
         // Include simplified info about FK: ElectronicItem 
         public required ElectronicItemResponseDto ElectronicItemResponseDto { get; set; }

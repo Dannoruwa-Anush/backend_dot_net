@@ -20,6 +20,10 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal Bnpl_Installment_ArrearsCarried { get; set; }
 
+        public DateTime? Bnpl_Installment_CancelledDate { get; set; }
+
+        public DateTime? Bnpl_Installment_RefundedAtate { get; set; }
+
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 
         // FK: Bnpl_Plan 

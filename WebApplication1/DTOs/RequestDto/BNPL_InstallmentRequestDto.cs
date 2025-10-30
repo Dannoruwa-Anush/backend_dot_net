@@ -9,9 +9,6 @@ namespace WebApplication1.DTOs.RequestDto
         [Required(ErrorMessage = "Installment No is required")]
         public int Bnpl_InstallmentNo { get; set; }
 
-        [Required(ErrorMessage = "Installment due date is required")]
-        public DateTime Bnpl_Installment_DueDate { get; set; }
-
         [Required(ErrorMessage = "Installment amount due is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Bnpl_Installment_AmountDue { get; set; }

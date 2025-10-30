@@ -14,6 +14,10 @@ namespace WebApplication1.Models
         [MaxLength(100)]
         public string BrandName { get; set; } = string.Empty; //initializes the string, avoids null.
 
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+
         //******* [Start: Brand (1) — ElectronicItems (M)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(ElectronicItem.Brand))]

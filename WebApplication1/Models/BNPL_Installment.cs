@@ -12,12 +12,12 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Installment No is required")]
         public int Bnpl_InstallmentNo { get; set; }
 
-        [Required(ErrorMessage = "Installment due date is required")]
-        public DateTime Bnpl_Installment_DueDate { get; set; }
-
         [Required(ErrorMessage = "Installment amount due is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Bnpl_Installment_AmountDue { get; set; }
+
+        [Required(ErrorMessage = "Installment due date is required")]
+        public DateTime Bnpl_Installment_DueDate { get; set; }
 
         [Required(ErrorMessage = "Installment amount paid is required")]
         [Column(TypeName = "decimal(18,2)")]
@@ -33,11 +33,18 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Bnpl_Installment_ArrearsCarried { get; set; }
 
+        public DateTime? Bnpl_Installment_CancelledDate { get; set; }
+
+        public DateTime? Bnpl_Installment_RefundedAtate { get; set; }
+
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(BNPL_Installment_StatusEnum))]
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
         //FK

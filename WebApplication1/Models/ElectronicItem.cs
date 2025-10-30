@@ -22,6 +22,10 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "QOH is required")]
         [Range(0, int.MaxValue, ErrorMessage = "QOH cannot be negative")]
         public int QOH { get; set; }
+
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
         
         //******* [Start: Brand (1) — ElectronicItems (M)] ****
         //FK

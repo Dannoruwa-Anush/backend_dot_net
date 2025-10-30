@@ -6,23 +6,10 @@ namespace WebApplication1.DTOs.RequestDto
 {
     public class CustomerOrderRequestDto
     {
-        [Required(ErrorMessage = "Order date is required")]
-        public DateTime OrderDate { get; set; }
-
         [Required(ErrorMessage = "Total amount is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
-
-        [Required]
-        [Column(TypeName = "nvarchar(20)")]
-        [EnumDataType(typeof(OrderStatusEnum))]
-        public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
-
-        [Required]
-        [Column(TypeName = "nvarchar(20)")]
-        [EnumDataType(typeof(PaymentStatusEnum))]
-        public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
-
+        
         //FK
         public int CustomerID { get; set; }
 

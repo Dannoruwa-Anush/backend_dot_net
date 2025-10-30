@@ -9,12 +9,20 @@ namespace WebApplication1.Models
         [Key]
         public int OrderID { get; set; }
 
-        [Required(ErrorMessage = "Order date is required")]
-        public DateTime OrderDate { get; set; }
-
         [Required(ErrorMessage = "Total amount is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
+
+        [Required(ErrorMessage = "Order date is required")]
+        public DateTime OrderDate { get; set; }
+
+        public DateTime? ShippingDate { get; set; }
+
+        public DateTime? DeliveredDate { get; set; }
+
+        public DateTime? CancelledDate { get; set; }
+
+        public DateTime? CompletedDate { get; set; }
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]
@@ -23,8 +31,8 @@ namespace WebApplication1.Models
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]
-        [EnumDataType(typeof(PaymentStatusEnum))]
-        public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
+        [EnumDataType(typeof(OrderPaymentStatusEnum))]
+        public OrderPaymentStatusEnum PaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

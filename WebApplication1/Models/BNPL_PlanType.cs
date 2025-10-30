@@ -17,6 +17,10 @@ namespace WebApplication1.Models
 
         public string Bnpl_Description { get; set; } = string.Empty;
 
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+
         //******* [Start: BNPL_PlanType (1) — BNPL_PLAN (M)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(BNPL_PLAN.BNPL_PlanType))]

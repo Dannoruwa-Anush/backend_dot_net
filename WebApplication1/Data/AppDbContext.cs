@@ -81,10 +81,7 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<BNPL_PLAN>(entity =>
             {
-                entity.Property(p => p.Bnpl_InstallmentAmount)
-                      .HasColumnType("decimal(18,2)");
-
-                entity.Property(p => p.Bnpl_RemainingBalance)
+                entity.Property(p => p.Bnpl_AmountPerInstallment)
                       .HasColumnType("decimal(18,2)");
 
                 // (1) — (M) BNPL_Installment
@@ -173,7 +170,7 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<CustomerOrderElectronicItem>(entity =>
             {
-                entity.Property(oi => oi.ItemPrice)
+                entity.Property(oi => oi.UnitPrice)
                       .HasColumnType("decimal(18,2)");
             });
         }

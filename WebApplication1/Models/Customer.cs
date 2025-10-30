@@ -28,6 +28,10 @@ namespace WebApplication1.Models
         [MaxLength(255)]
         public string Address { get; set; } = string.Empty;
 
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(CustomerOrder.Customer))]

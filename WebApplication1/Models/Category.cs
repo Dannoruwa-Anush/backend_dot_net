@@ -14,6 +14,10 @@ namespace WebApplication1.Models
         [MaxLength(100)]
         public string CategoryName { get; set; } = string.Empty;
 
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+
         //******* [Start: Category (1) — ElectronicItems (M)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(ElectronicItem.Category))]

@@ -14,9 +14,17 @@ namespace WebApplication1.Models
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
         public int Quantity { get; set; }
 
-        [Required(ErrorMessage = "Item price is required")]
+        [Required(ErrorMessage = "Unit price is required")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal ItemPrice { get; set; }
+        public decimal UnitPrice { get; set; }
+
+        [Required(ErrorMessage = "Sub total is required")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SubTotal { get; set; }
+
+        //for: creation/modification tracking
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ******
         //FK

@@ -6,13 +6,21 @@ namespace WebApplication1.DTOs.ResponseDto
     {
         public int OrderID { get; set; }
 
+        public decimal TotalAmount { get; set; }
+
         public DateTime OrderDate { get; set; }
 
-        public decimal TotalAmount { get; set; }
+        public DateTime? ShippingDate { get; set; }
+
+        public DateTime? DeliveredDate { get; set; }
+
+        public DateTime? CancelledDate { get; set; }
+
+        public DateTime? CompletedDate { get; set; }
 
         public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
 
-        public PaymentStatusEnum PaymentStatus { get; set; } = PaymentStatusEnum.Partially_Paid;
+        public OrderPaymentStatusEnum PaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
         // Include simplified info about FK: Customer 
         public required CustomerResponseDto CustomerResponseDto { get; set; }
