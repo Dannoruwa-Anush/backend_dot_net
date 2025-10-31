@@ -20,7 +20,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
 
-        public OrderPaymentStatusEnum PaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
+        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
         // Include simplified info about FK: Customer 
         public required CustomerResponseDto CustomerResponseDto { get; set; }

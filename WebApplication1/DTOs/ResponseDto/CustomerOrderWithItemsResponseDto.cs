@@ -11,7 +11,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal TotalAmount { get; set; }
 
-        public OrderPaymentStatusEnum PaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
+        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
         // Include simplified info about FK: Customer 
         public required CustomerResponseDto CustomerResponseDto { get; set; }

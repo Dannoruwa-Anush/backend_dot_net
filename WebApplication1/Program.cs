@@ -52,6 +52,7 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICategoryService, CategoryServiceImpl>()
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
+                .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()
                 .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>();
 
 var app = builder.Build();

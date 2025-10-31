@@ -32,7 +32,7 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderPaymentStatusEnum))]
-        public OrderPaymentStatusEnum PaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
+        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
