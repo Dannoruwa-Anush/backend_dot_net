@@ -1,5 +1,6 @@
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.IRepository
 {
@@ -9,10 +10,12 @@ namespace WebApplication1.Repositories.IRepository
         Task<IEnumerable<CustomerOrder>> GetAllAsync();
         Task<CustomerOrder?> GetByIdAsync(int id);
         Task AddAsync(CustomerOrder customerOrder);
-        Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder);
-        //Task<bool> DeleteAsync(int id);
 
         //Custom Query Operations
+        Task<CustomerOrder?> UpdateOrderStatusAsync(int id, OrderStatusEnum newStatus);
+        Task<CustomerOrder?> UpdatePaymentStatusAsync(int id, OrderPaymentStatusEnum newPaymentStatus);
+
+        
         //Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
         //Task<IEnumerable<CustomerOrder>> GetAllBySearchKeyAsync(string searchKey);
         //Task<IEnumerable<CustomerOrder>> GetAllByPaymentStatusAsync(string paymentStatus);
