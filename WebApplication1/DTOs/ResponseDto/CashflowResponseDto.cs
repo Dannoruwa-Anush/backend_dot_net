@@ -2,15 +2,15 @@ using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.DTOs.ResponseDto
 {
-    public class TransactionResponseDto
+    public class CashflowResponseDto
     {
-        public int TransactionID { get; set; }
+        public int CashflowID { get; set; }
 
         public decimal AmountPaid { get; set; }
 
-        public DateTime TransactionDate { get; set; }
+        public DateTime CashflowDate { get; set; }
 
-        public TransactionStatusEnum TransactionStatus { get; set; } = TransactionStatusEnum.Paid;
+        public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
 
         public DateTime? RefundDate { get; set; }
         

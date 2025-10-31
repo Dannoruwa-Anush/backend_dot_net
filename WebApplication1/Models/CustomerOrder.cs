@@ -49,11 +49,11 @@ namespace WebApplication1.Models
         //******* [End: Customer (1) — CustomerOrder (M)] ******
 
 
-        //******* [Start: CustomerOrder (1) — Transaction (M)] ****
+        //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
         // One Side: Navigation property
-        [InverseProperty(nameof(Transaction.CustomerOrder))]
-        public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
-        //******* [End: CustomerOrder (1) — Transaction (M)] ******
+        [InverseProperty(nameof(Cashflow.CustomerOrder))]
+        public ICollection<Cashflow> Cashflows { get; set; } = new List<Cashflow>();
+        //******* [End: CustomerOrder (1) — Cashflow (M)] ******
 
 
         //******* [Start: CustomerOrder (1) — BNPL_PLAN (1)] ****

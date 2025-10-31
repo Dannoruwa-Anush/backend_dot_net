@@ -15,7 +15,7 @@ namespace WebApplication1.Data
         public DbSet<ElectronicItem> ElectronicItems { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Brand> Brands { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Cashflow> Cashflows { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
@@ -47,8 +47,8 @@ namespace WebApplication1.Data
                 entity.Property(o => o.TotalAmount)
                       .HasColumnType("decimal(18,2)");
 
-                // (1) — (M) Transaction
-                entity.HasMany(o => o.Transactions)
+                // (1) — (M) Cashflow
+                entity.HasMany(o => o.Cashflows)
                       .WithOne(p => p.CustomerOrder)
                       .HasForeignKey(p => p.OrderID)
                       .OnDelete(DeleteBehavior.Cascade);
@@ -68,9 +68,9 @@ namespace WebApplication1.Data
             });
 
             // -------------------------------------------------------------
-            // Transaction
+            // Cashflow
             // -------------------------------------------------------------
-            modelBuilder.Entity<Transaction>(entity =>
+            modelBuilder.Entity<Cashflow>(entity =>
             {
                 entity.Property(p => p.AmountPaid)
                       .HasColumnType("decimal(18,2)");
