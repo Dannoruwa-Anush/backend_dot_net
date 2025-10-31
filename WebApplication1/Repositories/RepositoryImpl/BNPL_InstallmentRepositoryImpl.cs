@@ -95,6 +95,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
 
+        public async Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId)
+        {
+            return await _context.BNPL_Installments
+                .Include(i => i.BNPL_PLAN)
+                    .ThenInclude(p => p.CustomerOrder)
+                .Where(i => i.Bnpl_PlanID == planId)
+                .OrderBy(i => i.InstallmentNo)
+                .ToListAsync();
+        }
+
         //Bulk insert
         public async Task AddRangeAsync(IEnumerable<BNPL_Installment> installments)
         {

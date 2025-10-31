@@ -9,6 +9,6 @@ namespace WebApplication1.Utils.Project_Enums
         PartiallyPaid_Late = 5,
         Overdue = 6,
         Cancelled = 7,
-        Refunded = 7
+        Refunded = 8
     }
 }
