@@ -10,12 +10,9 @@ namespace WebApplication1.Repositories.IRepository
         Task<IEnumerable<CustomerOrder>> GetAllAsync();
         Task<CustomerOrder?> GetByIdAsync(int id);
         Task AddAsync(CustomerOrder customerOrder);
+        Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder);
 
-        //Custom Query Operations
-        Task<CustomerOrder?> UpdateOrderStatusAsync(int id, OrderStatusEnum newStatus);
-        Task<CustomerOrder?> UpdatePaymentStatusAsync(int id, OrderPaymentStatusEnum newPaymentStatus);
-
-        
+        //Custom Query Operations        
         //Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
         //Task<IEnumerable<CustomerOrder>> GetAllBySearchKeyAsync(string searchKey);
         //Task<IEnumerable<CustomerOrder>> GetAllByPaymentStatusAsync(string paymentStatus);
