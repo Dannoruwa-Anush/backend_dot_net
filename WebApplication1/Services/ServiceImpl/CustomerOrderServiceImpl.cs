@@ -19,11 +19,11 @@ namespace WebApplication1.Services.ServiceImpl
         public CustomerOrderServiceImpl(ICustomerOrderRepository repository, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ICustomerOrderElectronicItemRepository customerOrderElectronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
-            _repository                             = repository;
-            _customerRepository                     = customerRepository;
-            _electronicItemRepository               = electronicItemRepository;
-            _customerOrderElectronicItemRepository  = customerOrderElectronicItemRepository;
-            _logger                                 = logger;
+            _repository = repository;
+            _customerRepository = customerRepository;
+            _electronicItemRepository = electronicItemRepository;
+            _customerOrderElectronicItemRepository = customerOrderElectronicItemRepository;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -33,9 +33,71 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
+        public async Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
         {
-            throw new NotImplementedException();
+            await using var transaction = await _repository.BeginTransactionAsync();
+            try
+            {
+                // Validate customer exists
+                var customer = await _customerRepository.GetByIdAsync(customerOrder.CustomerID);
+                if (customer == null)
+                    throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
+
+                decimal totalAmount = 0;
+
+                // Validate stock & calculate subtotal for each order item
+                foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
+                {
+                    var electronicItem = await _electronicItemRepository.GetByIdAsync(orderItem.E_ItemID);
+                    if (electronicItem == null)
+                        throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
+
+                    if (electronicItem.QOH < orderItem.Quantity)
+                        throw new InvalidOperationException($"Insufficient stock for {electronicItem.E_ItemName}");
+
+                    // Compute subtotal
+                    orderItem.SubTotal = orderItem.Quantity * orderItem.UnitPrice;
+                    totalAmount += orderItem.SubTotal;
+
+                    // Deduct stock
+                    electronicItem.QOH -= orderItem.Quantity;
+                    electronicItem.UpdatedAt = DateTime.UtcNow;
+                    await _electronicItemRepository.UpdateAsync(electronicItem.E_ItemID, electronicItem);
+
+                    // Set creation timestamp
+                    orderItem.CreatedAt = DateTime.UtcNow;
+                }
+
+                // Set order total & default statuses
+                customerOrder.TotalAmount = totalAmount;
+                customerOrder.OrderStatus = OrderStatusEnum.Pending;
+                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+                customerOrder.CreatedAt = DateTime.UtcNow;
+
+                // Save order
+                await _repository.AddAsync(customerOrder);
+                await _repository.SaveChangesAsync();
+
+                // Save order items separately if repository requires it
+                foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
+                {
+                    orderItem.OrderID = customerOrder.OrderID; // FK linking
+                    await _customerOrderElectronicItemRepository.AddAsync(orderItem);
+                }
+
+                await _repository.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Customer order created: Id={Id}, TotalAmount={Total}", customerOrder.OrderID, totalAmount);
+                return customerOrder;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to create customer order.");
+                throw;
+            }
         }
 
         public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, OrderPaymentStatusEnum newOrderPaymentStatus)
@@ -91,6 +153,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (oldStatus == newOrderStatus)
                 return existing; // No change
 
+            // Validation: allowed transitions
             switch (oldStatus)
             {
                 case OrderStatusEnum.Pending:
@@ -104,34 +167,69 @@ namespace WebApplication1.Services.ServiceImpl
                     break;
 
                 case OrderStatusEnum.Delivered:
-                    if (newOrderStatus != OrderStatusEnum.Cancelled)
-                        throw new InvalidOperationException("Delivered orders can only move to 'Cancelled' within 14 days.");
+                    if (newOrderStatus == OrderStatusEnum.Cancelled)
+                    {
+                        // 14-day cancellation window
+                        var daysSinceDelivery = (DateTime.UtcNow - (existing.DeliveredDate ?? DateTime.UtcNow)).TotalDays;
+                        if (daysSinceDelivery > 14)
+                            throw new InvalidOperationException("Cannot cancel delivered orders after 14 days.");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Delivered orders cannot change status except cancellation within 14 days.");
+                    }
                     break;
 
                 case OrderStatusEnum.Cancelled:
                     throw new InvalidOperationException("Cancelled orders cannot change status.");
             }
 
-            // Apply date tracking
-            switch (newOrderStatus)
+            // Begin transaction for atomicity
+            await using var transaction = await _repository.BeginTransactionAsync();
+            try
             {
-                case OrderStatusEnum.Shipped:
-                    existing.ShippingDate = DateTime.UtcNow;
-                    break;
-                case OrderStatusEnum.Delivered:
-                    existing.DeliveredDate = DateTime.UtcNow;
-                    break;
-                case OrderStatusEnum.Cancelled:
+                // If cancelling, reverse stock
+                if (newOrderStatus == OrderStatusEnum.Cancelled)
+                {
+                    foreach (var item in existing.CustomerOrderElectronicItems)
+                    {
+                        var electronicItem = await _electronicItemRepository.GetByIdAsync(item.E_ItemID);
+                        if (electronicItem != null)
+                        {
+                            electronicItem.QOH += item.Quantity; // Restock
+                            electronicItem.UpdatedAt = DateTime.UtcNow;
+                            await _electronicItemRepository.UpdateAsync(electronicItem.E_ItemID, electronicItem);
+                        }
+                    }
+
                     existing.CancelledDate = DateTime.UtcNow;
-                    break;
+                }
+                else if (newOrderStatus == OrderStatusEnum.Shipped)
+                {
+                    existing.ShippingDate = DateTime.UtcNow;
+                }
+                else if (newOrderStatus == OrderStatusEnum.Delivered)
+                {
+                    existing.DeliveredDate = DateTime.UtcNow;
+                }
+
+                existing.OrderStatus = newOrderStatus;
+                existing.UpdatedAt = DateTime.UtcNow;
+
+                await _repository.UpdateAsync(id, existing);
+                await _repository.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", existing.OrderID, existing.OrderStatus);
+
+                return existing;
             }
-
-            existing.OrderStatus = newOrderStatus;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            await _repository.UpdateAsync(id, existing);
-            _logger.LogInformation("Customer order status updated: Id={Id}, OrderStatus={OrderStatus}", existing.OrderID, existing.OrderStatus);
-            return existing;
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to update order status.");
+                throw;
+            }
         }
 
         //Custom Query Operations

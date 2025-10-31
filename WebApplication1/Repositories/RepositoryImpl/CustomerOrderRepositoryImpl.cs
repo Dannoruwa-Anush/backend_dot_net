@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -35,7 +36,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
-            existing.PaymentStatus = customerOrder.PaymentStatus;
+            existing.OrderPaymentStatus = customerOrder.OrderPaymentStatus;
             existing.OrderStatus = customerOrder.OrderStatus;
 
             _context.CustomerOrders.Update(existing);
@@ -43,11 +44,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             return existing;
         }
-        
+
         //Custom Query Operations
         public async Task<bool> ExistsByCustomerAsync(int customerId)
         {
             return await _context.CustomerOrders.AnyAsync(o => o.CustomerID == customerId);
         }
+
+        // EF transaction support
+        public async Task<IDbContextTransaction> BeginTransactionAsync() =>
+            await _context.Database.BeginTransactionAsync();
+
+        public async Task SaveChangesAsync()=>
+            await _context.SaveChangesAsync();
     }
 }

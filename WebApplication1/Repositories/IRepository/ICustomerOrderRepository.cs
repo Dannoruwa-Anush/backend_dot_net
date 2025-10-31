@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Utils.Project_Enums;
@@ -18,5 +19,9 @@ namespace WebApplication1.Repositories.IRepository
         //Task<IEnumerable<CustomerOrder>> GetAllByPaymentStatusAsync(string paymentStatus);
         //Task<IEnumerable<CustomerOrder>> GetAllByBnplPlansync(int bnplPlanId);
         Task<bool> ExistsByCustomerAsync(int customerId);
+
+        // EF transaction support
+        Task<IDbContextTransaction> BeginTransactionAsync();
+        Task SaveChangesAsync();
     }
 }
