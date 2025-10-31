@@ -207,7 +207,7 @@ namespace WebApplication1.Services.ServiceImpl
                 }
                 else if (newOrderStatus == OrderStatusEnum.Shipped)
                 {
-                    existing.ShippingDate = DateTime.UtcNow;
+                    existing.ShippedDate = DateTime.UtcNow;
                 }
                 else if (newOrderStatus == OrderStatusEnum.Delivered)
                 {

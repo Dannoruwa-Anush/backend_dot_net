@@ -16,7 +16,7 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Order date is required")]
         public DateTime OrderDate { get; set; }
 
-        public DateTime? ShippingDate { get; set; }
+        public DateTime? ShippedDate { get; set; }
 
         public DateTime? DeliveredDate { get; set; }
 

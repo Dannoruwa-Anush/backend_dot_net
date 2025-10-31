@@ -10,7 +10,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public DateTime OrderDate { get; set; }
 
-        public DateTime? ShippingDate { get; set; }
+        public DateTime? ShippedDate { get; set; }
 
         public DateTime? DeliveredDate { get; set; }
 
