@@ -46,6 +46,10 @@ namespace WebApplication1.Services.ServiceImpl
                     cashflow.CashflowRef = $"{order.OrderID}_full_payment";
                     break;
 
+                case CashflowTypeEnum.BnplInitialPayment:
+                    cashflow.CashflowRef = $"{order.OrderID}_bnpl_initial_payment";
+                    break;    
+
                 case CashflowTypeEnum.BnplInstallmentPayment:
                     var installmentType = isFullInstallmentPayment ? "full_payment" : "partial_payment";
                     cashflow.CashflowRef = $"{order.OrderID}_bnpl_installment_{installmentNo}_{installmentType}";
