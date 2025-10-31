@@ -12,6 +12,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment);
 
         //Custom Query Operations
-        Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? installmentStatusId = null, string? searchKey = null);
+        Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
     }
 }

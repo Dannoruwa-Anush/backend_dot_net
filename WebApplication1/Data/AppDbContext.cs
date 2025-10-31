@@ -102,13 +102,19 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<BNPL_Installment>(entity =>
             {
-                entity.Property(i => i.Bnpl_Installment_AmountDue)
+                entity.Property(i => i.Installment_BaseAmount)
                       .HasColumnType("decimal(18,2)");
 
-                entity.Property(i => i.Bnpl_Installment_AmountPaid)
+                entity.Property(i => i.OverPaymentCarried)
                       .HasColumnType("decimal(18,2)");
 
-                entity.Property(i => i.Bnpl_Installment_ArrearsCarried)
+                entity.Property(i => i.ArrearsCarried)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.TotalDueAmount)
+                    .HasColumnType("decimal(18,2)");
+                      
+                entity.Property(i => i.AmountPaid)
                       .HasColumnType("decimal(18,2)");
             });
 
