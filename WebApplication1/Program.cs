@@ -26,7 +26,7 @@ builder.Services.AddAutoMapper(
     typeof(CustomerOrderAutoMapperProfiles),
     typeof(CustomerOrderElectronicItemAutoMapperProfiles),
     typeof(ElectronicItemAutoMapperProfiles),
-    typeof(PaymentAutoMapperProfiles),
+    typeof(TransactionAutoMapperProfiles),
     typeof(BNPL_PlanTypeAutoMapperProfiles)
 );
 
@@ -42,7 +42,7 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICustomerRepository, CustomerRepositoryImpl>()
                 .AddScoped<ICustomerOrderRepository, CustomerOrderRepositoryImpl>()
                 .AddScoped<ICustomerOrderElectronicItemRepository, CustomerOrderElectronicItemRepositoryImpl>()
-                .AddScoped<IPaymentRepository, PaymentRepositoryImpl>()
+                .AddScoped<ITransactionRepository, TransactionRepositoryImpl>()
                 .AddScoped<IBNPL_PlanRepository, BNPL_PlanRepositoryImpl>()
                 //installment?
                 .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>();

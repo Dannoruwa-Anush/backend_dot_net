@@ -4,10 +4,10 @@ using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class Payment
+    public class Transaction
     {
         [Key]
-        public int PaymentID { get; set; }
+        public int TransactionID { get; set; }
 
         [Required(ErrorMessage = "Amount paid is required")]
         [Column(TypeName = "decimal(18,2)")]
@@ -17,8 +17,8 @@ namespace WebApplication1.Models
         [MaxLength(100)]
         public string TransactionRef { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Payment date time is required")]
-        public DateTime PaymentDate { get; set; }
+        [Required(ErrorMessage = "Transaction date time is required")]
+        public DateTime TransactionDate { get; set; }
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]
@@ -31,15 +31,15 @@ namespace WebApplication1.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         
-        //******* [Start: CustomerOrder (1) — Payment (M)] ****
+        //******* [Start: CustomerOrder (1) — Transaction (M)] ****
         //FK
         public int OrderID { get; set; }
 
         // Many Side: Navigation property
         [ForeignKey(nameof(OrderID))]
-        [InverseProperty(nameof(CustomerOrder.Payments))]
+        [InverseProperty(nameof(CustomerOrder.Transactions))]
         public required CustomerOrder CustomerOrder { get; set; }
-        //******* [End: CustomerOrder (1) — Payment (M)] ******
+        //******* [End: CustomerOrder (1) — Transaction (M)] ******
 
     }
 }
