@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -9,16 +10,18 @@ namespace WebApplication1.Services.ServiceImpl
     public class CashflowServiceImpl : ICashflowService
     {
         private readonly ICashflowRepository _repository;
+        private readonly ICustomerOrderRepository _customerOrderRepository;
 
         //logger: for auditing
         private readonly ILogger<CashflowServiceImpl> _logger;
 
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository, ILogger<CashflowServiceImpl> logger)
+        public CashflowServiceImpl(ICashflowRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<CashflowServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _logger = logger;
+            _repository              = repository;
+            _customerOrderRepository = customerOrderRepository;
+            _logger                  = logger;
         }
 
         //CRUD operations
@@ -28,19 +31,26 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Cashflow?> GetCashflowByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task AddCashflowAsync(CustomerOrder order, decimal amountPaid, CashflowTypeEnum type, int? installmentNo = null, bool isFullInstallmentPayment = false)
+        public async Task<Cashflow> AddCashflowAsync(CashflowRequestDto request)
         {
+            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+                throw new Exception($"Customer order with ID {request.OrderId} not found.");
+
+            if (request.Type == CashflowTypeEnum.BnplInstallmentPayment && request.InstallmentNo is null)
+                throw new ArgumentException("Installment number is required for BNPL installment payments.");
+
             var cashflow = new Cashflow
             {
                 OrderID = order.OrderID,
                 CustomerOrder = order,
-                AmountPaid = amountPaid,
+                AmountPaid = request.AmountPaid,
                 CashflowDate = DateTime.UtcNow,
                 CashflowStatus = CashflowStatusEnum.Paid,
                 CreatedAt = DateTime.UtcNow
             };
 
-            switch (type)
+            switch (request.Type)
             {
                 case CashflowTypeEnum.FullPayment:
                     cashflow.CashflowRef = $"{order.OrderID}_full_payment";
@@ -51,15 +61,18 @@ namespace WebApplication1.Services.ServiceImpl
                     break;    
 
                 case CashflowTypeEnum.BnplInstallmentPayment:
-                    var installmentType = isFullInstallmentPayment ? "full_payment" : "partial_payment";
-                    cashflow.CashflowRef = $"{order.OrderID}_bnpl_installment_{installmentNo}_{installmentType}";
+                    var installmentType = request.IsFullInstallmentPayment ? "full_payment" : "partial_payment";
+                    cashflow.CashflowRef = $"{order.OrderID}_bnpl_installment_{request.InstallmentNo}_{installmentType}";
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(type), "Unsupported cashflow type");
+                    throw new ArgumentOutOfRangeException(nameof(request.Type), "Unsupported cashflow type");
             }
 
             await _repository.AddAsync(cashflow);
+            _logger.LogInformation("Cashflow created for OrderID={OrderID}, Type={Type}, Amount={Amount}, Ref={Ref}", order.OrderID, request.Type, request.AmountPaid, cashflow.CashflowRef);
+
+            return cashflow;
         }
 
         public async Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow updatedCashflow)
