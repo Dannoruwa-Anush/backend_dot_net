@@ -18,6 +18,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<BNPL_PlanType>> GetAllAsync() =>
             await _context.BNPL_PlanTypes.ToListAsync();
 
@@ -66,7 +67,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-            
+
             return new PaginationResultDto<BNPL_PlanType>
             {
                 Items = items,
@@ -76,6 +77,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
         
+        //Custom Query Operations
         public async Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name)
         {
             return await _context.BNPL_PlanTypes.AnyAsync(bnpTy => bnpTy.Bnpl_PlanTypeName.ToLower() == name.ToLower());

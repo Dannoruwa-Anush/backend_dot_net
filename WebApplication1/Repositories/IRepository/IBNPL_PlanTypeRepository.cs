@@ -13,7 +13,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> DeleteAsync(int id);
         Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
-        //Helping operations
+        //Custom Query Operations
         Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name);
         Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name, int excludeId);
     }

@@ -23,6 +23,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger              = logger;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<BNPL_PlanType>> GetAllBNPL_PlanTypesAsync() =>
             await _repository.GetAllAsync();
 
@@ -83,6 +84,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("BNPL plan type deleted successfully: Id={Id}", id);
         }
 
+        //CRUD operations
         public async Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);
