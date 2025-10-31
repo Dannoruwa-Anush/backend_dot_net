@@ -14,10 +14,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder);
 
         //Custom Query Operations        
-        //Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
-        //Task<IEnumerable<CustomerOrder>> GetAllBySearchKeyAsync(string searchKey);
-        //Task<IEnumerable<CustomerOrder>> GetAllByPaymentStatusAsync(string paymentStatus);
-        //Task<IEnumerable<CustomerOrder>> GetAllByBnplPlansync(int bnplPlanId);
+        Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<bool> ExistsByCustomerAsync(int customerId);
 
         // EF transaction support
