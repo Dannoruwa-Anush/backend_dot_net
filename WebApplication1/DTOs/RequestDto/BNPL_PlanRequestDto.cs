@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.DTOs.RequestDto
 {

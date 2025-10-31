@@ -9,13 +9,13 @@ namespace WebApplication1.Services.IService
     public interface IBNPL_PlanService
     {
         //CRUD operations
-        Task<IEnumerable<BNPL_PLAN>> GetAllAsync();
-        Task<BNPL_PLAN?> GetByIdAsync(int id);
-        Task<BNPL_PLAN> AddAsync(BNPL_PLAN bNPL_Plan);
-        Task<BNPL_PLAN?> UpdateAsync(int id, BnplStatusEnum newStatus);
+        Task<IEnumerable<BNPL_PLAN>> GetAllBNPL_PlansAsync();
+        Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id);
+        Task<BNPL_PLAN> AddBNPL_PlanAsync(BNPL_PLAN bNPL_Plan);
+        Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BnplStatusEnum newStatus);
 
         //Custom Query Operations
-        Task<BNPLInstallmentCalculatorResponseDto> CalculateAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request);
+        Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request);
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);
     }
 }

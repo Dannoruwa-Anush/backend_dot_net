@@ -25,13 +25,13 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //CRUD operations
-        public async Task<IEnumerable<BNPL_PLAN>> GetAllAsync() =>
+        public async Task<IEnumerable<BNPL_PLAN>> GetAllBNPL_PlansAsync() =>
             await _repository.GetAllAsync();
 
-        public async Task<BNPL_PLAN?> GetByIdAsync(int id) =>
+        public async Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<BNPL_PLAN> AddAsync(BNPL_PLAN bNPL_Plan)
+        public async Task<BNPL_PLAN> AddBNPL_PlanAsync(BNPL_PLAN bNPL_Plan)
         {
             await _repository.AddAsync(bNPL_Plan);
 
@@ -39,7 +39,7 @@ namespace WebApplication1.Services.ServiceImpl
             return bNPL_Plan;
         }
 
-        public async Task<BNPL_PLAN?> UpdateAsync(int id, BnplStatusEnum newStatus)
+        public async Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BnplStatusEnum newStatus)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -67,7 +67,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Custom Query Operations
-        public async Task<BNPLInstallmentCalculatorResponseDto> CalculateAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
+        public async Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
             var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(request.Bnpl_PlanTypeID);
             if (planType == null)

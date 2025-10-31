@@ -1,8 +1,11 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.RequestDto.BnplCal;
+using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.BnplCal;
 using WebApplication1.DTOs.ResponseDto.Common;
+using WebApplication1.Models;
 using WebApplication1.Services.IService;
 
 namespace WebApplication1.Controllers
@@ -22,21 +25,40 @@ namespace WebApplication1.Controllers
             _service = service;
             _mapper = mapper;
         }
-        
+
         //CRUD operations
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var bnpl_Plan = await _service.GetBNPL_PlanByIdAsync(id);
+            if (bnpl_Plan == null)
+                return NotFound(new ApiResponseDto<String>(404, "BNPL plan not found"));
 
+            var dto = _mapper.Map<BNPL_PlanResponseDto>(bnpl_Plan);
+            var response = new ApiResponseDto<BNPL_PlanResponseDto>(200, "BNPL Plans retrieved successfully", dto);
 
+            return Ok(response);
+        }
 
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] BNPL_PlanRequestDto bNPL_PlanCreateDto)
+        {
+            var bNPL_Plan = _mapper.Map<BNPL_PLAN>(bNPL_PlanCreateDto);
+            var created = await _service.AddBNPL_PlanAsync(bNPL_Plan);
+            var dto = _mapper.Map<BNPL_PlanResponseDto>(created);
 
+            var response = new ApiResponseDto<BNPL_PlanResponseDto>(201, "BNPL Plan created successfully", dto);
 
-
+            return CreatedAtAction(nameof(GetById), new { id = dto.Bnpl_PlanID}, response);
+        }
+   
         //Custom Query Operations
         [HttpPost("calculateInstallment")]
-        public async Task<IActionResult> Calculate([FromBody] BNPLInstallmentCalculatorRequestDto request)
+        public async Task<IActionResult> CalculateInstallment([FromBody] BNPLInstallmentCalculatorRequestDto request)
         {
             try
             {
-                var result = await _service.CalculateAmountPerInstallmentAsync(request);
+                var result = await _service.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
 
                 var response = new ApiResponseDto<BNPLInstallmentCalculatorResponseDto>(
                     200,
