@@ -114,7 +114,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
 
-         // EF transaction support
+        // EF transaction support
         public async Task<IDbContextTransaction> BeginTransactionAsync() =>
             await _context.Database.BeginTransactionAsync();
 

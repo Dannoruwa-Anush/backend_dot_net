@@ -13,5 +13,8 @@ namespace WebApplication1.Repositories.IRepository
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
+
+        //Bulk insert
+        Task AddRangeAsync(IEnumerable<BNPL_Installment> installments);
     }
 }

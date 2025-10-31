@@ -95,5 +95,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
 
+        //Bulk insert
+        public async Task AddRangeAsync(IEnumerable<BNPL_Installment> installments)
+        {
+            await _context.BNPL_Installments.AddRangeAsync(installments);
+        }
     }
 }
