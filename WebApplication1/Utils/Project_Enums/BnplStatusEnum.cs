@@ -6,6 +6,6 @@ namespace WebApplication1.Utils.Project_Enums
         Completed = 2,
         Cancelled = 3,
         Defaulted = 4,
-        Refunde = 5
+        Refunded = 5
     }
 }
