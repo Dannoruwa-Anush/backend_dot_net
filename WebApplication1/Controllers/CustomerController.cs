@@ -24,6 +24,7 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
 
+        //CRUD operations
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -97,6 +98,7 @@ namespace WebApplication1.Controllers
             }
         }
 
+        //Custom Query Operations
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? pageNumber, [FromQuery] int? pageSize)
         {

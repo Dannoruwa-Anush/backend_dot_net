@@ -23,6 +23,14 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
         
+        //CRUD operations
+
+
+
+
+
+
+        //Custom Query Operations
         [HttpPost("calculateInstallment")]
         public async Task<IActionResult> Calculate([FromBody] BNPLInstallmentCalculatorRequestDto request)
         {
