@@ -53,7 +53,7 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()
-                //cashflow
+                .AddScoped<ICashflowService, CashflowServiceImpl>()
                 .AddScoped<IBNPL_PlanService, BNPL_PlanServiceImpl>()
                 //installment
                 .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>();
