@@ -18,9 +18,10 @@ namespace WebApplication1.Services.ServiceImpl
         //logger: for auditing
         private readonly ILogger<BNPL_PlanServiceImpl> _logger;
 
+        // Constructor
         public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ILogger<BNPL_PlanServiceImpl> logger)
         {
-            // Constructor
+            // Dependency injection
             _repository = repository;
             _bnpl_PlanTypeRepository = bnpl_PlanTypeRepository;
             _bnpl_installmentRepository = bnpl_installmentRepository;
