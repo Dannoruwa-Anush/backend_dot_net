@@ -12,10 +12,11 @@ namespace WebApplication1.Data
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<ElectronicItem> ElectronicItems { get; set; }
+        public DbSet<Customer> Customers { get; set; }
         //---
 
 
-        public DbSet<Customer> Customers { get; set; }
+        
         public DbSet<CustomerOrder> CustomerOrders { get; set; }
         public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
 
@@ -73,8 +74,6 @@ namespace WebApplication1.Data
                       .HasForeignKey(oi => oi.E_ItemID)
                       .OnDelete(DeleteBehavior.Cascade);
             });
-
-
 
             // -------------------------------------------------------------
             // Customer
