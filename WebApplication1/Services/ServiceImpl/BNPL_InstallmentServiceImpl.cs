@@ -1,3 +1,5 @@
+using WebApplication1.DTOs.RequestDto.BnplPaymentSimulation;
+using WebApplication1.DTOs.ResponseDto.BnplPaymentSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -213,6 +215,63 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             _logger.LogInformation("Late interest update completed. {Count} installments updated.", updatedCount);
+        }
+
+        //simulator
+        public async Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request)
+        {
+            var installment = await _repository.GetByIdAsync(request.InstallmentId);
+            if (installment == null)
+                throw new Exception("Installment not found.");
+
+            if (request.PaymentAmount <= 0)
+                throw new Exception("Payment amount must be greater than zero.");
+
+            decimal remaining = request.PaymentAmount;
+            decimal paidToArrears = 0m;
+            decimal paidToInterest = 0m;
+            decimal paidToBase = 0m;
+
+            // Calculate as per business rules (no DB updates!)
+            if (installment.ArrearsCarried > 0 && remaining > 0)
+            {
+                paidToArrears = Math.Min(installment.ArrearsCarried, remaining);
+                remaining -= paidToArrears;
+            }
+
+            if (installment.LateInterest > 0 && remaining > 0)
+            {
+                paidToInterest = Math.Min(installment.LateInterest, remaining);
+                remaining -= paidToInterest;
+            }
+
+            var baseRemaining = installment.Installment_BaseAmount - installment.AmountPaid;
+            if (baseRemaining > 0 && remaining > 0)
+            {
+                paidToBase = Math.Min(baseRemaining, remaining);
+                remaining -= paidToBase;
+            }
+
+            // Determine result status
+            string resultStatus;
+            if (paidToBase + paidToInterest + paidToArrears == installment.TotalDueAmount)
+                resultStatus = "Fully Settled";
+            else if (paidToBase + paidToInterest + paidToArrears > 0)
+                resultStatus = "Partially Paid";
+            else
+                resultStatus = "Pending";
+
+            return new BnplInstallmentPaymentSimulationResultDto
+            {
+                InstallmentId = installment.InstallmentID,
+                InputPayment = request.PaymentAmount,
+                PaidToArrears = paidToArrears,
+                PaidToInterest = paidToInterest,
+                PaidToBase = paidToBase,
+                RemainingBalance = remaining,
+                OverPaymentCarried = remaining > 0 ? remaining : 0,
+                ResultStatus = resultStatus
+            };
         }
     }
 }

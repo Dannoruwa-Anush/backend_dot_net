@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.DTOs.RequestDto.BnplPaymentSimulation;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -62,7 +63,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        //For testing : Manual trigger
+        //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
         [HttpPost("apply-late-interest")]
         public async Task<IActionResult> ApplyLateInterest()
         {
@@ -79,6 +80,29 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new ApiResponseDto<string>(
                     500,
                     "An internal server error occurred. Please try again later."
+                ));
+            }
+        }
+
+        //
+        [HttpPost("bnpl-installmant-payment-simulate")]
+        public async Task<IActionResult> SimulateBnplInstallmentPayment([FromBody] BnplInstallmentPaymentSimulationRequestDto request)
+        {
+            try
+            {
+                var result = await _service.SimulateBnplInstallmentPaymentAsync(request);
+                var response = new ApiResponseDto<object>(
+                    200,
+                    "Payment simulation successful",
+                    result
+                );
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponseDto<string>(
+                    400,
+                    ex.Message
                 ));
             }
         }
