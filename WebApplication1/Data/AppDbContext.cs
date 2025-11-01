@@ -9,12 +9,15 @@ namespace WebApplication1.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         //Tables in DB.
+        public DbSet<Brand> Brands { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        //---
+
+        
         public DbSet<Customer> Customers { get; set; }
         public DbSet<CustomerOrder> CustomerOrders { get; set; }
         public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
         public DbSet<ElectronicItem> ElectronicItems { get; set; }
-        public DbSet<Category> Categories { get; set; }
-        public DbSet<Brand> Brands { get; set; }
         public DbSet<Cashflow> Cashflows { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
@@ -24,6 +27,36 @@ namespace WebApplication1.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // -------------------------------------------------------------
+            // Brand
+            // -------------------------------------------------------------
+            modelBuilder.Entity<Brand>(entity =>
+            {
+                entity.HasIndex(b => b.BrandName).IsUnique();
+
+                // (1) — (M) ElectronicItem
+                entity.HasMany(b => b.ElectronicItems)
+                      .WithOne(i => i.Brand)
+                      .HasForeignKey(i => i.BrandId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // -------------------------------------------------------------
+            // Category
+            // -------------------------------------------------------------
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.HasIndex(c => c.CategoryName).IsUnique();
+
+                // (1) — (M) ElectronicItem
+                entity.HasMany(c => c.ElectronicItems)
+                      .WithOne(i => i.Category)
+                      .HasForeignKey(i => i.CategoryID)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+
 
             // -------------------------------------------------------------
             // Customer
@@ -124,34 +157,6 @@ namespace WebApplication1.Data
             modelBuilder.Entity<BNPL_PlanType>(entity =>
             {
                 // (1) — (M) BNPL_PLAN handled in BNPL_PLAN entity
-            });
-
-            // -------------------------------------------------------------
-            // Brand
-            // -------------------------------------------------------------
-            modelBuilder.Entity<Brand>(entity =>
-            {
-                entity.HasIndex(b => b.BrandName).IsUnique();
-
-                // (1) — (M) ElectronicItem
-                entity.HasMany(b => b.ElectronicItems)
-                      .WithOne(i => i.Brand)
-                      .HasForeignKey(i => i.BrandId)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // -------------------------------------------------------------
-            // Category
-            // -------------------------------------------------------------
-            modelBuilder.Entity<Category>(entity =>
-            {
-                entity.HasIndex(c => c.CategoryName).IsUnique();
-
-                // (1) — (M) ElectronicItem
-                entity.HasMany(c => c.ElectronicItems)
-                      .WithOne(i => i.Category)
-                      .HasForeignKey(i => i.CategoryID)
-                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             // -------------------------------------------------------------
