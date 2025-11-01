@@ -8,6 +8,8 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal AmountPaid { get; set; }
 
+        public string CashflowRef { get; set; } = string.Empty;
+
         public DateTime CashflowDate { get; set; }
 
         public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;

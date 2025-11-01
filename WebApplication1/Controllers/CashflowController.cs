@@ -1,6 +1,5 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -12,6 +11,8 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")] 
     public class CashflowController : ControllerBase
     {
+        //Note: All payment/ payment refund will be handled by PaymentController
+        //Note: This controller is only for list down all cashflows
         private readonly ICashflowService _service;
 
         private readonly IMapper _mapper;
@@ -24,7 +25,6 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
 
-        //CRUD operations
         //CRUD operations
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -39,28 +39,26 @@ namespace WebApplication1.Controllers
             return Ok(response);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CashflowRequestDto cashflowCreateDto)
+        //Custom Query Operations
+        [HttpGet]
+        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? cashflowStatusId = null, [FromQuery] string? searchKey = null)
         {
             try
             {
-                var created = await _service.AddCashflowAsync(cashflowCreateDto);
-                var dto = _mapper.Map<CashflowResponseDto>(created);
+                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
 
-                var response = new ApiResponseDto<CashflowResponseDto>(
-                    201,
-                    "Cashflow created successfully",
-                    dto
+                var response = new ApiResponseDto<PaginationResultDto<Cashflow>>(
+                    200,
+                    "Cashflow records retrieved successfully",
+                    result
                 );
 
-                return CreatedAtAction(nameof(GetById), new { id = dto.CashflowID }, response);
+                return Ok(response);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new ApiResponseDto<string>(400, ex.Message));
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
-
-        //Custom Query Operations
     }
 }
