@@ -61,5 +61,26 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
+
+        //For testing : Manual trigger
+        [HttpPost("apply-late-interest")]
+        public async Task<IActionResult> ApplyLateInterest()
+        {
+            try
+            {
+                await _service.ApplyLateInterestAsync();
+                return Ok(new ApiResponseDto<string>(
+                    200,
+                    "Late interest applied successfully to all overdue installments."
+                ));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
+        }
     }
 }
