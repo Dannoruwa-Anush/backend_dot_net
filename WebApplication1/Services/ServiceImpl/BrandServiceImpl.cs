@@ -38,7 +38,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             await _repository.AddAsync(brand);
 
-            _logger.LogInformation("Brand created: Id={Id}, BrandName={Name}", brand.BrandId, brand.BrandName);
+            _logger.LogInformation("Brand created: Id={Id}, BrandName={Name}", brand.BrandID, brand.BrandName);
             return brand;
         }
 
@@ -54,7 +54,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             var updatedBrand = await _repository.UpdateBrandWithTransactionAsync(id, brand);
-            _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandId, updatedBrand.BrandName);
+            _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandID, updatedBrand.BrandName);
             return updatedBrand;
         }
 

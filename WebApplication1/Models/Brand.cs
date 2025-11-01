@@ -8,11 +8,11 @@ namespace WebApplication1.Models
     public class Brand
     {
         [Key]
-        public int BrandId { get; set; }
+        public int BrandID { get; set; }
 
         [Required(ErrorMessage = "Brand name is required")]
         [MaxLength(100)]
-        public string BrandName { get; set; } = string.Empty; //initializes the string, avoids null.
+        public string BrandName { get; set; } = string.Empty;
 
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -47,7 +47,7 @@ namespace WebApplication1.Controllers
 
             var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.BrandId }, response);
+            return CreatedAtAction(nameof(GetById), new { id = dto.BrandID }, response);
         }
 
         [HttpPut("{id}")]

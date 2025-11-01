@@ -107,7 +107,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<bool> ExistsByBrandNameAsync(string name, int excludeId)
         {
             return await _context.Brands
-                .AnyAsync(B => B.BrandName.ToLower() == name.ToLower() && B.BrandId != excludeId);
+                .AnyAsync(B => B.BrandName.ToLower() == name.ToLower() && B.BrandID != excludeId);
         }
     }
 }
