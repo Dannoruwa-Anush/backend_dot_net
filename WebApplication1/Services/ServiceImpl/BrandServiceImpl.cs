@@ -18,9 +18,9 @@ namespace WebApplication1.Services.ServiceImpl
         public BrandServiceImpl(IBrandRepository repository, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
         {
             // Dependency injection
-            _repository               = repository;
+            _repository = repository;
             _electronicItemRepository = electronicItemRepository;
-            _logger                   = logger;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -42,7 +42,6 @@ namespace WebApplication1.Services.ServiceImpl
             return brand;
         }
 
-        //update: with transaction handling
         public async Task<Brand> UpdateBrandAsync(int id, Brand brand)
         {
             var existingBrand = await _repository.GetByIdAsync(id);
@@ -53,9 +52,15 @@ namespace WebApplication1.Services.ServiceImpl
             if (duplicate)
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
-            var updatedBrand = await _repository.UpdateBrandWithTransactionAsync(id, brand);
-            _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandID, updatedBrand.BrandName);
-            return updatedBrand;
+            var updatedBrand = await _repository.UpdateBrandAsync(id, brand);
+
+            if (updatedBrand != null)
+            {
+                _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandID, updatedBrand.BrandName);
+                return updatedBrand;
+            }
+
+            throw new Exception("Category update failed.");
         }
 
         public async Task DeleteBrandAsync(int id)

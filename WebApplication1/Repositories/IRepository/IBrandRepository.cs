@@ -11,7 +11,6 @@ namespace WebApplication1.Repositories.IRepository
         Task AddAsync(Brand brand);
         Task<Brand?> UpdateBrandAsync(int id, Brand brand);
         Task<bool> DeleteAsync(int id);
-        Task<Brand> UpdateBrandWithTransactionAsync(int id, Brand brand);
 
         //Custom Query Operations
         Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);

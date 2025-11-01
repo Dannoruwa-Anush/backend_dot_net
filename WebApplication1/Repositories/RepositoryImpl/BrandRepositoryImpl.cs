@@ -54,31 +54,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return true;
         }
 
-        //update: with transaction handling
-        public async Task<Brand> UpdateBrandWithTransactionAsync(int id, Brand brand)
-        {
-            var existing = await _context.Brands.FindAsync(id);
-            if (existing == null) 
-                throw new Exception("Brand not found");
-
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                existing.BrandName = brand.BrandName;
-                _context.Brands.Update(existing);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-
-                return existing;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
-
         //Custom Query Operations
         public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
         {
