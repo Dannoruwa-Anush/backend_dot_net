@@ -19,7 +19,7 @@ namespace WebApplication1.DTOs.RequestDto
         public int QOH { get; set; }
         
         //FK
-        public int BrandId { get; set; }
+        public int BrandID { get; set; }
 
         //FK
         public int CategoryID { get; set; }

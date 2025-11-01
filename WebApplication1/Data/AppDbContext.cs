@@ -11,13 +11,14 @@ namespace WebApplication1.Data
         //Tables in DB.
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<ElectronicItem> ElectronicItems { get; set; }
         //---
 
-        
+
         public DbSet<Customer> Customers { get; set; }
         public DbSet<CustomerOrder> CustomerOrders { get; set; }
         public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
-        public DbSet<ElectronicItem> ElectronicItems { get; set; }
+
         public DbSet<Cashflow> Cashflows { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
@@ -38,7 +39,7 @@ namespace WebApplication1.Data
                 // (1) — (M) ElectronicItem
                 entity.HasMany(b => b.ElectronicItems)
                       .WithOne(i => i.Brand)
-                      .HasForeignKey(i => i.BrandId)
+                      .HasForeignKey(i => i.BrandID)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -54,6 +55,23 @@ namespace WebApplication1.Data
                       .WithOne(i => i.Category)
                       .HasForeignKey(i => i.CategoryID)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // -------------------------------------------------------------
+            // ElectronicItem
+            // -------------------------------------------------------------
+            modelBuilder.Entity<ElectronicItem>(entity =>
+            {
+                entity.HasIndex(i => i.E_ItemName).IsUnique();
+
+                entity.Property(i => i.Price)
+                      .HasColumnType("decimal(18,2)");
+
+                // (1) — (M) CustomerOrderElectronicItem
+                entity.HasMany(i => i.CustomerOrderElectronicItems)
+                      .WithOne(oi => oi.ElectronicItem)
+                      .HasForeignKey(oi => oi.E_ItemID)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
 
@@ -159,22 +177,6 @@ namespace WebApplication1.Data
                 // (1) — (M) BNPL_PLAN handled in BNPL_PLAN entity
             });
 
-            // -------------------------------------------------------------
-            // ElectronicItem
-            // -------------------------------------------------------------
-            modelBuilder.Entity<ElectronicItem>(entity =>
-            {
-                entity.HasIndex(i => i.E_ItemName).IsUnique();
-
-                entity.Property(i => i.Price)
-                      .HasColumnType("decimal(18,2)");
-
-                // (1) — (M) CustomerOrderElectronicItem
-                entity.HasMany(i => i.CustomerOrderElectronicItems)
-                      .WithOne(oi => oi.ElectronicItem)
-                      .HasForeignKey(oi => oi.E_ItemID)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
 
             // -------------------------------------------------------------
             // CustomerOrderElectronicItem

@@ -45,7 +45,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.E_ItemName = electronicItem.E_ItemName;
             existing.Price = electronicItem.Price;
             existing.QOH = electronicItem.QOH;
-            existing.BrandId = electronicItem.BrandId;
+            existing.BrandID = electronicItem.BrandID;
             existing.CategoryID = electronicItem.CategoryID;
 
             _context.ElectronicItems.Update(existing);
@@ -111,7 +111,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.ElectronicItems
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
-                .Where(e => e.BrandId == brandId)
+                .Where(e => e.BrandID == brandId)
                 .ToListAsync();
         }
 
@@ -122,7 +122,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<bool> ExistsByBrandAsync(int brandId)
         {
-            return await _context.ElectronicItems.AnyAsync(e => e.BrandId == brandId);
+            return await _context.ElectronicItems.AnyAsync(e => e.BrandID == brandId);
         }
 
     }

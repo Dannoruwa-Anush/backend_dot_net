@@ -29,10 +29,10 @@ namespace WebApplication1.Models
         
         //******* [Start: Brand (1) — ElectronicItems (M)] ****
         //FK
-        public int BrandId { get; set; }
+        public int BrandID { get; set; }
 
         // Many Side: Navigation property
-        [ForeignKey(nameof(BrandId))]
+        [ForeignKey(nameof(BrandID))]
         public required Brand Brand { get; set; }
         //******* [End: Brand (1) — ElectronicItems (M)] ********
 
