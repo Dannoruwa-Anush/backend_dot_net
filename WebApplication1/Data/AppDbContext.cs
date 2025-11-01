@@ -18,17 +18,8 @@ namespace WebApplication1.Data
         public DbSet<Cashflow> Cashflows { get; set; }
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
-        //---
-
-
-        
-        
-        
-
-        
-        
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
-        
+        //---
 
         //-------- [Start: configure model] -----------
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -181,11 +172,6 @@ namespace WebApplication1.Data
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-
-
-
-
-
             // -------------------------------------------------------------
             // BNPL_Installment
             // -------------------------------------------------------------
@@ -206,8 +192,6 @@ namespace WebApplication1.Data
                 entity.Property(i => i.AmountPaid)
                       .HasColumnType("decimal(18,2)");
             });
-
-
         }
         //-------- [End: configure model] -------------
 

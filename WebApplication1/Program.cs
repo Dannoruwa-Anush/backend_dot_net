@@ -43,9 +43,9 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICustomerOrderRepository, CustomerOrderRepositoryImpl>()
                 .AddScoped<ICustomerOrderElectronicItemRepository, CustomerOrderElectronicItemRepositoryImpl>()
                 .AddScoped<ICashflowRepository, CashflowRepositoryImpl>()
+                .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>()
                 .AddScoped<IBNPL_PlanRepository, BNPL_PlanRepositoryImpl>()
-                .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>()
-                .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>();
+                .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>();
 
 //Register Services Layers (Dependency Injection)
 builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
@@ -54,9 +54,9 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()
                 .AddScoped<ICashflowService, CashflowServiceImpl>()
+                .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>()
                 .AddScoped<IBNPL_PlanService, BNPL_PlanServiceImpl>()
-                .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>()
-                .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>();
+                .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>();
 
 var app = builder.Build();
 

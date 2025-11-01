@@ -4,25 +4,27 @@ namespace WebApplication1.DTOs.ResponseDto
 {
     public class BNPL_InstallmentResponseDto
     {
-        public int Bnpl_InstallmentID { get; set; }
+        public int InstallmentID { get; set; }
 
-        public int Bnpl_InstallmentNo { get; set; }
+        public int InstallmentNo { get; set; }
 
-        public DateTime Bnpl_Installment_DueDate { get; set; }
+        public decimal Installment_BaseAmount { get; set; }
 
-        public decimal Bnpl_Installment_AmountDue { get; set; }
+        public DateTime Installment_DueDate { get; set; }
 
-        public decimal Bnpl_Installment_AmountPaid { get; set; }
+        public decimal OverPaymentCarried { get; set; } = 0m;
 
-        public DateTime Bnpl_Installment_PaymentDate { get; set; }
+        public decimal ArrearsCarried { get; set; } = 0m;
 
-        public double Bnpl_Installment_LateInterest { get; set; }
+        public double LateInterest { get; set; } = 0.0;
 
-        public decimal Bnpl_Installment_ArrearsCarried { get; set; }
+        public decimal TotalDueAmount { get; set; }
 
-        public DateTime? Bnpl_Installment_CancelledDate { get; set; }
+        public decimal AmountPaid { get; set; } = 0m;
 
-        public DateTime? Bnpl_Installment_RefundedAtate { get; set; }
+        public DateTime? LastPaymentDate { get; set; }
+
+        public DateTime? RefundDate { get; set; }
 
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 

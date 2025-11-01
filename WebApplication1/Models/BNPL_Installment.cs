@@ -33,13 +33,12 @@ namespace WebApplication1.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal AmountPaid { get; set; } = 0m;
+        public DateTime? LastPaymentDate { get; set; }
+        public DateTime? RefundDate { get; set; }
 
         [EnumDataType(typeof(BNPL_Installment_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
-
-        public DateTime? LastPaymentDate { get; set; }
-        public DateTime? RefundDate { get; set; }
 
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

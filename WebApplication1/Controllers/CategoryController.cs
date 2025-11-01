@@ -30,7 +30,7 @@ namespace WebApplication1.Controllers
         {
             var category = await _service.GetCategoryByIdAsync(id);
             if (category == null)
-                return NotFound(new ApiResponseDto<String>(404, "Category not found"));
+                return NotFound(new ApiResponseDto<string>(404, "Category not found"));
 
             var dto = _mapper.Map<CategoryResponseDto>(category);
             var response = new ApiResponseDto<CategoryResponseDto>(200, "Categories retrieved successfully", dto);
