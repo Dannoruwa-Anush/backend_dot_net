@@ -22,12 +22,12 @@ namespace WebApplication1.Models
 
         public DateTime? CancelledDate { get; set; }
 
-        public DateTime? CompletedDate { get; set; }
-
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderStatusEnum))]
         public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
+
+        public DateTime? PaymentCompletedDate { get; set; }
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]

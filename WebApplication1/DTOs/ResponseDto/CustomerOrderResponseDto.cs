@@ -16,9 +16,9 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public DateTime? CancelledDate { get; set; }
 
-        public DateTime? CompletedDate { get; set; }
-
         public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
+
+        public DateTime? PaymentCompletedDate { get; set; }
 
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 

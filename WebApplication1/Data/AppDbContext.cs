@@ -13,14 +13,17 @@ namespace WebApplication1.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<ElectronicItem> ElectronicItems { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<CustomerOrder> CustomerOrders { get; set; }
+        public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
+        public DbSet<Cashflow> Cashflows { get; set; }
         //---
 
 
         
-        public DbSet<CustomerOrder> CustomerOrders { get; set; }
-        public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
+        
+        
 
-        public DbSet<Cashflow> Cashflows { get; set; }
+        
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
@@ -118,6 +121,21 @@ namespace WebApplication1.Data
             });
 
             // -------------------------------------------------------------
+            // CustomerOrderElectronicItem
+            // -------------------------------------------------------------
+            modelBuilder.Entity<CustomerOrderElectronicItem>(entity =>
+            {
+                // Composite primary key : OrderID and E_ItemID
+                entity.HasKey(oi => new { oi.OrderID, oi.E_ItemID });
+
+                entity.Property(oi => oi.UnitPrice)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(oi => oi.SubTotal)
+                       .HasColumnType("decimal(18,2)");         
+            });
+
+            // -------------------------------------------------------------
             // Cashflow
             // -------------------------------------------------------------
             modelBuilder.Entity<Cashflow>(entity =>
@@ -125,6 +143,11 @@ namespace WebApplication1.Data
                 entity.Property(p => p.AmountPaid)
                       .HasColumnType("decimal(18,2)");
             });
+
+
+
+
+
 
             // -------------------------------------------------------------
             // BNPL_PLAN
@@ -174,16 +197,6 @@ namespace WebApplication1.Data
             modelBuilder.Entity<BNPL_PlanType>(entity =>
             {
                 // (1) — (M) BNPL_PLAN handled in BNPL_PLAN entity
-            });
-
-
-            // -------------------------------------------------------------
-            // CustomerOrderElectronicItem
-            // -------------------------------------------------------------
-            modelBuilder.Entity<CustomerOrderElectronicItem>(entity =>
-            {
-                entity.Property(oi => oi.UnitPrice)
-                      .HasColumnType("decimal(18,2)");
             });
         }
         //-------- [End: configure model] -------------
