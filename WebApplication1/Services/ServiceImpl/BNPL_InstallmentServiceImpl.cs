@@ -62,6 +62,7 @@ namespace WebApplication1.Services.ServiceImpl
             return installment;
         }
 
+        //calculations
         public async Task<List<BNPL_Installment>> ApplyPaymentToInstallmentAsync(int installmentId, decimal paymentAmount)
         {
             if (paymentAmount <= 0)
@@ -131,7 +132,7 @@ namespace WebApplication1.Services.ServiceImpl
                 installment.LateInterest -= pay;
                 remaining -= pay;
             }
-            
+
             // Base Amount
             var baseRemaining = installment.Installment_BaseAmount - installment.AmountPaid;
             if (baseRemaining > 0 && remaining > 0)
@@ -164,6 +165,54 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             return remaining;
+        }
+
+        public async Task ApplyLateInterestAsync()
+        {
+            var allInstallments = await _repository.GetAllAsync();
+            int updatedCount = 0;
+
+            foreach (var inst in allInstallments)
+            {
+                // Skip if already paid, cancelled, or refunded
+                if (inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Paid_OnTime ||
+                    inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Paid_Late ||
+                    inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Cancelled ||
+                    inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Refunded)
+                    continue;
+
+                // Determine overdue (after grace period)
+                var overdueDate = inst.Installment_DueDate.AddDays(BnplSystemConstants.FreeTrialPeriodDays);
+                if (DateTime.UtcNow <= overdueDate)
+                    continue; // not overdue yet
+
+                var planType = inst.BNPL_PLAN?.BNPL_PlanType;
+                if (planType == null)
+                {
+                    _logger.LogWarning("Skipping installment {Id} — missing BNPL plan type reference.", inst.InstallmentID);
+                    continue;
+                }
+
+                // Calculate late interest
+                decimal lateRate = planType.LatePayInterestRate / 100m; // convert from percent to decimal
+                decimal basePlusArrears = inst.Installment_BaseAmount + inst.ArrearsCarried;
+                decimal interestAmount = basePlusArrears * lateRate;
+
+                // Update fields
+                inst.LateInterest = interestAmount;
+                inst.TotalDueAmount = inst.Installment_BaseAmount + inst.ArrearsCarried + inst.LateInterest;
+                inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
+                inst.UpdatedAt = DateTime.UtcNow;
+
+                await _repository.UpdateAsync(inst.InstallmentID, inst);
+                updatedCount++;
+
+                _logger.LogInformation(
+                    "Late interest {Interest:C} applied to installment {InstId}. New total due: {Total:C}",
+                    interestAmount, inst.InstallmentID, inst.TotalDueAmount);
+            }
+
+            _logger.LogInformation("Late interest update completed. {Count} installments updated.", updatedCount);
         }
     }
 }

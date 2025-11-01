@@ -12,6 +12,9 @@ namespace WebApplication1.Services.IService
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
         Task<BNPL_Installment?> CancelInstallmentAsync(int id);
+
+        //calculations
         Task<List<BNPL_Installment>> ApplyPaymentToInstallmentAsync(int installmentId, decimal paymentAmount);
+        Task ApplyLateInterestAsync();
     }
 }
