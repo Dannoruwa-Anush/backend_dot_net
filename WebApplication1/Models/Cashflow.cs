@@ -20,12 +20,12 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Cashflow date time is required")]
         public DateTime CashflowDate { get; set; }
 
+        public DateTime? RefundDate { get; set; }
+        
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(CashflowStatusEnum))]
         public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
-
-        public DateTime? RefundDate { get; set; }
 
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

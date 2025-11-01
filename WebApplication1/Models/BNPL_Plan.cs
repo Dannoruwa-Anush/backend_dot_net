@@ -19,10 +19,6 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Remaining installment count is required")]
         public int Bnpl_RemainingInstallmentCount { get; set; }
 
-        [Required(ErrorMessage = "Interest rate is required")]
-        [Range(0, 100)]
-        public double Bnpl_InterestRate { get; set; }
-
         [Required(ErrorMessage = "Bnpl Start date is required")]
         public DateTime Bnpl_StartDate { get; set; }
 

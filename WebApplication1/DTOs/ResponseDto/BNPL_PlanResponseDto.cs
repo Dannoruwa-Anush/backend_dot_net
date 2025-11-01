@@ -12,8 +12,6 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public int Bnpl_RemainingInstallmentCount { get; set; }
 
-        public double Bnpl_InterestRate { get; set; }
-
         public DateTime Bnpl_StartDate { get; set; }
 
         public DateTime Bnpl_NextDueDate { get; set; }

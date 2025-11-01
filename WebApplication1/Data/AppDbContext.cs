@@ -17,6 +17,7 @@ namespace WebApplication1.Data
         public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
         public DbSet<Cashflow> Cashflows { get; set; }
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
+        public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         //---
 
 
@@ -25,7 +26,7 @@ namespace WebApplication1.Data
         
 
         
-        public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
+        
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
         
 
@@ -159,11 +160,6 @@ namespace WebApplication1.Data
                 // (1) — (M) BNPL_PLAN handled in BNPL_PLAN entity
             });
             
-
-
-
-
-
             // -------------------------------------------------------------
             // BNPL_PLAN
             // -------------------------------------------------------------
@@ -184,6 +180,11 @@ namespace WebApplication1.Data
                       .HasForeignKey(p => p.Bnpl_PlanTypeID)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+
+
+
+
+
 
             // -------------------------------------------------------------
             // BNPL_Installment

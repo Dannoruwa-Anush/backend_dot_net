@@ -14,10 +14,6 @@ namespace WebApplication1.DTOs.RequestDto
 
         [Required(ErrorMessage = "Remaining installment count is required")]
         public int Bnpl_RemainingInstallmentCount { get; set; }
-
-        [Required(ErrorMessage = "Interest rate is required")]
-        [Range(0, 100)]
-        public double Bnpl_InterestRate { get; set; }
            
         //FK
         public int Bnpl_PlanTypeID { get; set; }
