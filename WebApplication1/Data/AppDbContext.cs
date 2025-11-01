@@ -185,6 +185,9 @@ namespace WebApplication1.Data
 
                 entity.Property(i => i.ArrearsCarried)
                       .HasColumnType("decimal(18,2)");
+                      
+                entity.Property(i => i.LateInterest)
+                      .HasColumnType("decimal(18,2)");
 
                 entity.Property(i => i.TotalDueAmount)
                     .HasColumnType("decimal(18,2)");

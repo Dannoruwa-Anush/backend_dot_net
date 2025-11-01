@@ -127,11 +127,11 @@ namespace WebApplication1.Services.ServiceImpl
             // Late Interest
             if (installment.LateInterest > 0 && remaining > 0)
             {
-                decimal pay = Math.Min((decimal)installment.LateInterest, remaining);
-                installment.LateInterest -= (double)pay;
+                decimal pay = Math.Min(installment.LateInterest, remaining);
+                installment.LateInterest -= pay;
                 remaining -= pay;
             }
-
+            
             // Base Amount
             var baseRemaining = installment.Installment_BaseAmount - installment.AmountPaid;
             if (baseRemaining > 0 && remaining > 0)

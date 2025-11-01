@@ -16,7 +16,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal ArrearsCarried { get; set; } = 0m;
 
-        public double LateInterest { get; set; } = 0.0;
+        public decimal LateInterest { get; set; } = 0m;
 
         public decimal TotalDueAmount { get; set; }
 

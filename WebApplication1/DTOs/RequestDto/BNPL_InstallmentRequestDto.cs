@@ -6,30 +6,36 @@ namespace WebApplication1.DTOs.RequestDto
 {
     public class BNPL_InstallmentRequestDto
     {
-        [Required(ErrorMessage = "Installment No is required")]
-        public int Bnpl_InstallmentNo { get; set; }
-
-        [Required(ErrorMessage = "Installment amount due is required")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Bnpl_Installment_AmountDue { get; set; }
-
-        [Required(ErrorMessage = "Installment amount paid is required")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Bnpl_Installment_AmountPaid { get; set; }
-
-        [Required(ErrorMessage = "Installment payment date is required")]
-        public DateTime Bnpl_Installment_PaymentDate { get; set; }
-
-        [Required(ErrorMessage = "Installment late interest is required")]
-        public double Bnpl_Installment_LateInterest { get; set; }
-
-        [Required(ErrorMessage = "Installment arrears carried is required")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Bnpl_Installment_ArrearsCarried { get; set; }
+        [Required]
+        public int InstallmentNo { get; set; }
 
         [Required]
-        [Column(TypeName = "nvarchar(20)")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Installment_BaseAmount { get; set; }
+
+        [Required]
+        public DateTime Installment_DueDate { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal OverPaymentCarried { get; set; } = 0m;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ArrearsCarried { get; set; } = 0m;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal LateInterest { get; set; } = 0m;
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalDueAmount { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AmountPaid { get; set; } = 0m;
+        public DateTime? LastPaymentDate { get; set; }
+        public DateTime? RefundDate { get; set; }
+
         [EnumDataType(typeof(BNPL_Installment_StatusEnum))]
+        [Column(TypeName = "nvarchar(30)")]
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 
         //FK

@@ -24,8 +24,9 @@ namespace WebApplication1.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal ArrearsCarried { get; set; } = 0m;
-
-        public double LateInterest { get; set; } = 0.0;
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal LateInterest { get; set; } = 0m;
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
