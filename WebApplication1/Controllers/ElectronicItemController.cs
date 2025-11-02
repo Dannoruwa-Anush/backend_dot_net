@@ -14,13 +14,16 @@ namespace WebApplication1.Controllers
     {
         private readonly IElectronicItemService _service;
 
+        private readonly IFileService _fileService;
+
         private readonly IMapper _mapper;
 
         // Constructor
-        public ElectronicItemController(IElectronicItemService service, IMapper mapper)
+        public ElectronicItemController(IElectronicItemService service, IFileService fileService, IMapper mapper)
         {
             // Dependency injection
             _service = service;
+            _fileService = fileService;
             _mapper = mapper;
         }
 
@@ -39,9 +42,16 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ElectronicItemRequestDto electronicItemCreateDto)
+        public async Task<IActionResult> Create([FromForm] ElectronicItemRequestDto electronicItemCreateDto)
         {
             var electronicItem = _mapper.Map<ElectronicItem>(electronicItemCreateDto);
+
+            // Save image first, if exists
+            if (electronicItemCreateDto.ImageFile != null)
+            {
+                electronicItem.E_ItemImage = await _fileService.SaveFileAsync(electronicItemCreateDto.ImageFile, "uploads/images");
+            }
+
             var created = await _service.AddElectronicItemAsync(electronicItem);
             var dto = _mapper.Map<ElectronicItemResponseDto>(created);
 
@@ -51,11 +61,33 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] ElectronicItemRequestDto electronicItemUpdateDto)
+        public async Task<IActionResult> Update(int id, [FromForm] ElectronicItemRequestDto electronicItemUpdateDto)
         {
             try
             {
                 var electronicItem = _mapper.Map<ElectronicItem>(electronicItemUpdateDto);
+
+                // Load existing item to check for old image
+                var existingItem = await _service.GetElectronicItemByIdAsync(id);
+                if (existingItem == null)
+                    return NotFound(new ApiResponseDto<string>(404, "Electronic item not found"));
+
+                // Replace image if new one is uploaded
+                if (electronicItemUpdateDto.ImageFile != null)
+                {
+                    // Delete old file
+                    if (!string.IsNullOrEmpty(existingItem.E_ItemImage))
+                        _fileService.DeleteFile(existingItem.E_ItemImage);
+
+                    // Save new file
+                    electronicItem.E_ItemImage = await _fileService.SaveFileAsync(electronicItemUpdateDto.ImageFile, "uploads/images");
+                }
+                else
+                {
+                    // Keep old image if no new file uploaded
+                    electronicItem.E_ItemImage = existingItem.E_ItemImage;
+                }
+
                 var updated = await _service.UpdateElectronicItemAsync(id, electronicItem);
                 var dto = _mapper.Map<ElectronicItemResponseDto>(updated);
 
@@ -81,6 +113,14 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                var existingItem = await _service.GetElectronicItemByIdAsync(id);
+                if (existingItem == null)
+                    return NotFound(new ApiResponseDto<string>(404, "Electronic item not found"));
+
+                // Delete image file
+                if (!string.IsNullOrEmpty(existingItem.E_ItemImage))
+                    _fileService.DeleteFile(existingItem.E_ItemImage);    
+
                 await _service.DeleteElectronicItemAsync(id);
 
                 var response = new ApiResponseDto<string>(204, "Electronic item deleted successfully");

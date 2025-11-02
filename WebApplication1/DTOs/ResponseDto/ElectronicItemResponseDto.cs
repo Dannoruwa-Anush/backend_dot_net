@@ -9,6 +9,12 @@ namespace WebApplication1.DTOs.ResponseDto
         public decimal Price { get; set; } 
         
         public int QOH { get; set; }
+
+        // full URL in response
+        public string? E_ItemImageUrl { get; set; }
+        
+        // Store filename in DB
+        public string? E_ItemImage { get; set; }
         
         // Include simplified info about FK: Brand 
         public required BrandResponseDto BrandResponseDto { get; set; } 

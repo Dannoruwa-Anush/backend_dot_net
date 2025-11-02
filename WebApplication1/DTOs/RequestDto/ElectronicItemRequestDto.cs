@@ -17,6 +17,9 @@ namespace WebApplication1.DTOs.RequestDto
         [Required(ErrorMessage = "QOH is required")]
         [Range(0, int.MaxValue, ErrorMessage = "QOH cannot be negative")]
         public int QOH { get; set; }
+
+        // Image upload
+        public IFormFile? ImageFile { get; set; }
         
         //FK
         public int BrandID { get; set; }

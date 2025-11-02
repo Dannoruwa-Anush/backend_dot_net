@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using AutoMapper;
+using Microsoft.Extensions.FileProviders;
 
 using WebApplication1.Data;
 using WebApplication1.AutoMapperProfiles;
@@ -10,13 +10,14 @@ using WebApplication1.Services.ServiceImpl;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer(); // For Swagger
-builder.Services.AddSwaggerGen();           // For Swagger UI
+//--------------------[Swagger]--------------------
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-// Add services to the container.
+//--------------------[Controllers]----------------
 builder.Services.AddControllers();
 
-// Add AutoMapper
+//--------------------[AutoMapper]-----------------
 builder.Services.AddAutoMapper(
     typeof(BrandAutoMapperProfile),
     typeof(CategoryAutoMapperProfiles),
@@ -30,12 +31,14 @@ builder.Services.AddAutoMapper(
     typeof(BNPL_PlanTypeAutoMapperProfiles)
 );
 
-// Configure EF Core (MySQL)
+//--------------------[EF Core - MySQL]-------------
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
-    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    ));
 
-//Register Repositories Layers (Dependency Injection)
+//--------------------[Repositories DI]-------------
 builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICategoryRepository, CategoryRepositoryImpl>()
                 .AddScoped<IElectronicItemRepository, ElectronicItemRepositoryImpl>()
@@ -47,9 +50,10 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<IBNPL_PlanRepository, BNPL_PlanRepositoryImpl>()
                 .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>();
 
-//Register Services Layers (Dependency Injection)
+//--------------------[Services DI]-----------------
 builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICategoryService, CategoryServiceImpl>()
+                .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()
@@ -60,7 +64,7 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
 
 var app = builder.Build();
 
-//------------------[Start: Set default time zone globally]-----------------------
+//------------------[Set default time zone globally]-----------------------
 TimeZoneInfo sriLankaZone;
 try
 {
@@ -72,12 +76,23 @@ catch
     // Works on Linux/macOS
     sriLankaZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Colombo");
 }
-
 TimeZoneInfo.ClearCachedData();
 TimeZoneInfo.Local.Equals(sriLankaZone);
-//------------------[End: Set default time zone globally]-------------------------
 
-// Configure the HTTP request pipeline.
+// -------------------- Ensure wwwroot & uploads/images exist --------------------
+var webRootPath = builder.Environment.WebRootPath;
+if (string.IsNullOrEmpty(webRootPath))
+{
+    webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+    Directory.CreateDirectory(webRootPath);
+}
+
+// Create uploads/images folder
+var uploadsFolder = Path.Combine(webRootPath, "uploads/images");
+Directory.CreateDirectory(uploadsFolder);
+
+// -------------------- Middleware --------------------------------
+//------------------[HTTP request pipeline]------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -86,6 +101,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
+//------------------[Static file serving]------------------------
+// Serve wwwroot
+app.UseStaticFiles();
+
+// Serve uploads/images folder explicitly
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.WebRootPath, "uploads/images")
+    ),
+    RequestPath = "/uploads/images"
+});
 
 app.MapControllers(); // Map controller routes
 

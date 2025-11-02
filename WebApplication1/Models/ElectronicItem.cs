@@ -23,6 +23,14 @@ namespace WebApplication1.Models
         [Range(0, int.MaxValue, ErrorMessage = "QOH cannot be negative")]
         public int QOH { get; set; }
 
+        // Store relative image path (e.g., "uploads/images/abc.jpg")
+        [MaxLength(255)]
+        public string? E_ItemImage { get; set; }
+
+        // Not mapped to DB — only for file upload
+        [NotMapped]
+        public IFormFile? ImageFile { get; set; }
+
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
