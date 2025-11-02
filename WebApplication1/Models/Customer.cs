@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Models
 {
-    [Index(nameof(Email), IsUnique = true)]
+    [Index(nameof(PhoneNo), IsUnique = true)]
     public class Customer
     {
         [Key]
@@ -13,11 +13,6 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Customer name is required")]
         [MaxLength(100)]
         public string CustomerName { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email format")]
-        [MaxLength(255)]
-        public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Phone number is required")]
         [MaxLength(15)]
@@ -31,6 +26,16 @@ namespace WebApplication1.Models
         //for: creation/modification tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        //******* [Start: User (1) — Customer (1)] ****
+        //FK
+        public int UserID { get; set; }
+
+        // One Side: Navigation property
+        [ForeignKey(nameof(UserID))]
+        [InverseProperty(nameof(User.Customer))]
+        public required User User { get; set; }
+        //******* [End: User (1) — Customer (1)] ******
 
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         // One Side: Navigation property

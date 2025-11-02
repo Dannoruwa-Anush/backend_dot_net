@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Models.Base;
 
 namespace WebApplication1.Models
 {
-    public class CustomerOrderElectronicItem
+    public class CustomerOrderElectronicItem : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         //This is joint table (CustomerOrder(M) - ElectronicItem(M))
 
@@ -21,10 +22,6 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Sub total is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubTotal { get; set; }
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ******
         //FK

@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class CustomerOrder
+    public class CustomerOrder : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int OrderID { get; set; }
@@ -33,10 +34,6 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderPaymentStatusEnum))]
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         //FK

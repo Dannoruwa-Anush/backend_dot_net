@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class BNPL_Installment
+    public class BNPL_Installment : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int InstallmentID { get; set; }
@@ -40,10 +41,6 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(BNPL_Installment_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
 
         // Derived convenience fields
         [NotMapped]

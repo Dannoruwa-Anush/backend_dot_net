@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class BNPL_PLAN
+    public class BNPL_PLAN : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int Bnpl_PlanID { get; set; }
@@ -33,10 +34,6 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(BnplStatusEnum))]
         public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Active;
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: BNPL_PlanType (1) — BNPL_PLAN (M)] ****
         //FK

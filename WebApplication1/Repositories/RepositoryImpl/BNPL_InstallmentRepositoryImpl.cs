@@ -70,7 +70,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 query = query.Where(i =>
                     i.BNPL_PLAN.OrderID.ToString().Contains(searchKey) ||
                     i.BNPL_PLAN.Bnpl_PlanID.ToString().Contains(searchKey) ||
-                    i.BNPL_PLAN.CustomerOrder.Customer.Email.ToLower().Contains(searchKey) ||
+                    i.BNPL_PLAN.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey) ||
                     i.BNPL_PLAN.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey)
                 );
             }

@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Models.Base;
 
 namespace WebApplication1.Models
 {
     [Index(nameof(E_ItemName), IsUnique = true)]
-    public class ElectronicItem
+    public class ElectronicItem : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int E_ItemID { get; set; }
@@ -30,10 +31,6 @@ namespace WebApplication1.Models
         // Not mapped to DB — only for file upload
         [NotMapped]
         public IFormFile? ImageFile { get; set; }
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
         
         //******* [Start: Brand (1) — ElectronicItems (M)] ****
         //FK

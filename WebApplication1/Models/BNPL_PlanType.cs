@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Models.Base;
 
 namespace WebApplication1.Models
 {
-    public class BNPL_PlanType
+    public class BNPL_PlanType : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int Bnpl_PlanTypeID { get; set; }
@@ -26,10 +27,6 @@ namespace WebApplication1.Models
         public decimal LatePayInterestRate { get; set; }
 
         public string Bnpl_Description { get; set; } = string.Empty;
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: BNPL_PlanType (1) — BNPL_PLAN (M)] ****
         // One Side: Navigation property

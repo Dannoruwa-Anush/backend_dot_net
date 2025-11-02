@@ -108,7 +108,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             {
                 searchKey = searchKey.Trim().ToLower();
                 query = query.Where(o =>
-                    (o.Customer.Email != null && o.Customer.Email.ToLower().Contains(searchKey)) ||
+                    (o.Customer.User.Email != null && o.Customer.User.Email.ToLower().Contains(searchKey)) ||
                     (o.Customer.PhoneNo != null && o.Customer.PhoneNo.ToLower().Contains(searchKey)) ||
                     o.OrderDate.ToString("yyyy-MM-dd").Contains(searchKey)
                 );

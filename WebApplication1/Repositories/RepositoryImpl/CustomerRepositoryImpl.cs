@@ -38,7 +38,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return null;
 
             existing.CustomerName = customer.CustomerName;
-            existing.Email = customer.Email;
             existing.PhoneNo = customer.PhoneNo;
             existing.Address = customer.Address;
 
@@ -79,14 +78,14 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
 
-        public async Task<bool> ExistsByEmailAsync(string email)
+        public async Task<bool> ExistsByPhoneNoAsync(string phoneNo)
         {
-            return await _context.Customers.AnyAsync(cu => cu.Email.ToLower() == email.ToLower());
+            return await _context.Customers.AnyAsync(cu => cu.PhoneNo == phoneNo);
         }
 
-        public async Task<bool> ExistsByEmailAsync(string email, int excludeId)
+        public async Task<bool> ExistsByPhoneNoAsync(string phoneNo, int excludeId)
         {
-            return await _context.Customers.AnyAsync(cu => cu.Email.ToLower() == email.ToLower() && cu.CustomerID != excludeId);
+            return await _context.Customers.AnyAsync(cu => cu.PhoneNo == phoneNo && cu.CustomerID != excludeId);
         }
     }
 }

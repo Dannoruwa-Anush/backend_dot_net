@@ -32,13 +32,13 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Customer> AddCustomerAsync(Customer customer)
         {
-            var duplicate = await _repository.ExistsByEmailAsync(customer.Email);
+            var duplicate = await _repository.ExistsByPhoneNoAsync(customer.PhoneNo);
             if (duplicate)
-                throw new Exception($"Customer with email '{customer.Email}' already exists.");
+                throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
 
             await _repository.AddAsync(customer);
 
-            _logger.LogInformation("Customer created: Id={Id}, Email={Email}", customer.CustomerID, customer.Email);
+            _logger.LogInformation("Customer created: Id={Id}, PhoneNo={PhoneNo}", customer.CustomerID, customer.PhoneNo);
             return customer;
         }
 
@@ -48,15 +48,15 @@ namespace WebApplication1.Services.ServiceImpl
             if (existing == null)
                 throw new Exception("Customer not found");
 
-            var duplicate = await _repository.ExistsByEmailAsync(customer.Email, id);
+            var duplicate = await _repository.ExistsByPhoneNoAsync(customer.PhoneNo, id);
             if (duplicate)
-                throw new Exception($"Customer with email '{customer.Email}' already exists.");
+                throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
 
             var updatedCustomer = await _repository.UpdateAsync(id, customer);
 
             if (updatedCustomer != null)
             {
-                _logger.LogInformation("Customer updated: Id={Id}, Email={Email}", updatedCustomer.CustomerID, updatedCustomer.Email);
+                _logger.LogInformation("Customer updated: Id={Id}, PhoneNo={PhoneNo}", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
                 return updatedCustomer;
             }
 

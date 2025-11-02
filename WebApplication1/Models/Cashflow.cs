@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class Cashflow
+    public class Cashflow : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int CashflowID { get; set; }
@@ -26,10 +27,6 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(CashflowStatusEnum))]
         public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
         
         //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
         //FK

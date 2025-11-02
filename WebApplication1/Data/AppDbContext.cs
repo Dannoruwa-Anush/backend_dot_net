@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
+using WebApplication1.Models.Base;
 using WebApplication1.Utils.Helpers;
 
 namespace WebApplication1.Data
@@ -12,6 +13,8 @@ namespace WebApplication1.Data
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<ElectronicItem> ElectronicItems { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Employee> Employees { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<CustomerOrder> CustomerOrders { get; set; }
         public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
@@ -72,11 +75,41 @@ namespace WebApplication1.Data
             });
 
             // -------------------------------------------------------------
+            // User
+            // -------------------------------------------------------------
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(u => u.Email).IsUnique();
+
+                // (1) — (1) Employee
+                entity.HasOne(u => u.Employee)
+                      .WithOne(e => e.User)
+                      .HasForeignKey<Employee>(e => e.UserID)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // (1) — (1) Customer
+                entity.HasOne(u => u.Customer)
+                     .WithOne(c => c.User)
+                     .HasForeignKey<Customer>(c => c.UserID)
+                     .IsRequired(false)
+                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // -------------------------------------------------------------
+            // Employee
+            // -------------------------------------------------------------
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                // (1) — (1) User handled in User entity
+            });
+
+            // -------------------------------------------------------------
             // Customer
             // -------------------------------------------------------------
             modelBuilder.Entity<Customer>(entity =>
             {
-                entity.HasIndex(c => c.Email).IsUnique();
+                entity.HasIndex(c => c.PhoneNo).IsUnique();
 
                 // (1) — (M) CustomerOrder
                 entity.HasMany(c => c.CustomerOrders)
@@ -125,7 +158,7 @@ namespace WebApplication1.Data
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(oi => oi.SubTotal)
-                       .HasColumnType("decimal(18,2)");         
+                       .HasColumnType("decimal(18,2)");
             });
 
             // -------------------------------------------------------------
@@ -150,7 +183,7 @@ namespace WebApplication1.Data
 
                 // (1) — (M) BNPL_PLAN handled in BNPL_PLAN entity
             });
-            
+
             // -------------------------------------------------------------
             // BNPL_PLAN
             // -------------------------------------------------------------
@@ -185,13 +218,13 @@ namespace WebApplication1.Data
 
                 entity.Property(i => i.ArrearsCarried)
                       .HasColumnType("decimal(18,2)");
-                      
+
                 entity.Property(i => i.LateInterest)
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(i => i.TotalDueAmount)
                     .HasColumnType("decimal(18,2)");
-                      
+
                 entity.Property(i => i.AmountPaid)
                       .HasColumnType("decimal(18,2)");
             });
@@ -200,16 +233,18 @@ namespace WebApplication1.Data
 
 
 
-        //-------- [Start: Intercept All DateTime Before Save] -----------
+        //-------- [Start: Intercept DateTime + Auto Timestamp] -----------
         public override int SaveChanges()
         {
             ApplySriLankaTimeZone();
+            ApplyTimestamps();
             return base.SaveChanges();
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             ApplySriLankaTimeZone();
+            ApplyTimestamps();
             return await base.SaveChangesAsync(cancellationToken);
         }
 
@@ -224,7 +259,6 @@ namespace WebApplication1.Data
                 {
                     if (property.Metadata.ClrType == typeof(DateTime) && property.CurrentValue is DateTime dateTimeValue)
                     {
-                        // Convert UTC or unspecified times to Sri Lanka time
                         if (dateTimeValue.Kind == DateTimeKind.Utc || dateTimeValue.Kind == DateTimeKind.Unspecified)
                         {
                             property.CurrentValue = TimeZoneHelper.ToSriLankaTime(dateTimeValue);
@@ -233,6 +267,21 @@ namespace WebApplication1.Data
                 }
             }
         }
-        //-------- [End: Intercept All DateTime Before Save] -------------
+
+        private void ApplyTimestamps()
+        {
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            foreach (var entry in ChangeTracker.Entries<BaseModel>())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = now;
+                }
+
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+        //-------- [End: Intercept DateTime + Auto Timestamp] -----------
     }
 }

@@ -14,7 +14,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
         //Custom Query Operations
-        Task<bool> ExistsByEmailAsync(string email);
-        Task<bool> ExistsByEmailAsync(string email, int excludeId);
+        Task<bool> ExistsByPhoneNoAsync(string phoneNo);
+        Task<bool> ExistsByPhoneNoAsync(string phoneNo, int excludeId);
     }
 }
