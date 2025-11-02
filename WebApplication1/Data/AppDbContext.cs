@@ -40,7 +40,7 @@ namespace WebApplication1.Data
                 entity.HasMany(b => b.ElectronicItems)
                       .WithOne(i => i.Brand)
                       .HasForeignKey(i => i.BrandID)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related ElectronicItems exist
             });
 
             // -------------------------------------------------------------
@@ -54,7 +54,7 @@ namespace WebApplication1.Data
                 entity.HasMany(c => c.ElectronicItems)
                       .WithOne(i => i.Category)
                       .HasForeignKey(i => i.CategoryID)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related ElectronicItems exist
             });
 
             // -------------------------------------------------------------
@@ -71,7 +71,7 @@ namespace WebApplication1.Data
                 entity.HasMany(i => i.CustomerOrderElectronicItems)
                       .WithOne(oi => oi.ElectronicItem)
                       .HasForeignKey(oi => oi.E_ItemID)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related CustomerOrderElectronicItems exist
             });
 
             // -------------------------------------------------------------
@@ -86,14 +86,14 @@ namespace WebApplication1.Data
                       .WithOne(e => e.User)
                       .HasForeignKey<Employee>(e => e.UserID)
                       .IsRequired(false)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Employee exist
 
                 // (1) — (1) Customer
                 entity.HasOne(u => u.Customer)
                      .WithOne(c => c.User)
                      .HasForeignKey<Customer>(c => c.UserID)
                      .IsRequired(false)
-                     .OnDelete(DeleteBehavior.Cascade);
+                     .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Customer exist
             });
 
             // -------------------------------------------------------------
@@ -115,7 +115,7 @@ namespace WebApplication1.Data
                 entity.HasMany(c => c.CustomerOrders)
                       .WithOne(o => o.Customer)
                       .HasForeignKey(o => o.CustomerID)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related CustomerOrders exist
             });
 
             // -------------------------------------------------------------
@@ -130,20 +130,20 @@ namespace WebApplication1.Data
                 entity.HasMany(o => o.Cashflows)
                       .WithOne(p => p.CustomerOrder)
                       .HasForeignKey(p => p.OrderID)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Cashflows exist
 
                 // (1) — (0..1) BNPL_PLAN
                 entity.HasOne(o => o.BNPL_PLAN)
                       .WithOne(p => p.CustomerOrder)
                       .HasForeignKey<BNPL_PLAN>(p => p.OrderID)
                       .IsRequired(false)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_PLAN exist
 
                 // (1) — (M) CustomerOrderElectronicItem
                 entity.HasMany(o => o.CustomerOrderElectronicItems)
                       .WithOne(oi => oi.CustomerOrder)
                       .HasForeignKey(oi => oi.OrderID)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related CustomerOrderElectronicItems exist
             });
 
             // -------------------------------------------------------------
@@ -196,13 +196,13 @@ namespace WebApplication1.Data
                 entity.HasMany(p => p.BNPL_Installments)
                       .WithOne(i => i.BNPL_PLAN)
                       .HasForeignKey(i => i.Bnpl_PlanID)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_Installments exist
 
                 // (M) — (1) BNPL_PlanType
                 entity.HasOne(p => p.BNPL_PlanType)
                       .WithMany(pt => pt.BNPL_PLANs)
                       .HasForeignKey(p => p.Bnpl_PlanTypeID)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_PlanType exist
             });
 
             // -------------------------------------------------------------
