@@ -16,7 +16,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
-        
+
         //CRUD operations
         public async Task<IEnumerable<Brand>> GetAllAsync() =>
             await _context.Brands.ToListAsync();
@@ -33,7 +33,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Brand?> UpdateBrandAsync(int id, Brand brand)
         {
             var existing = await _context.Brands.FindAsync(id);
-            if (existing == null) 
+            if (existing == null)
                 return null;
 
             existing.BrandName = brand.BrandName;
@@ -46,7 +46,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<bool> DeleteAsync(int id)
         {
             var brand = await _context.Brands.FindAsync(id);
-            if (brand == null) 
+            if (brand == null)
                 return false;
 
             _context.Brands.Remove(brand);
@@ -55,11 +55,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var totalCount = await _context.Brands.CountAsync();
+            var query = _context.Brands.AsQueryable();
 
-            var items = await _context.Brands
+            // Apply filters from helper
+            query = ApplyBrandFilters(query, searchKey);
+
+            // Get total count after filtering
+            var totalCount = await query.CountAsync();
+
+            // Get paginated data
+            var items = await query
+                .OrderBy(b => b.BrandName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -71,6 +79,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+
+        //Helper method
+        private IQueryable<Brand> ApplyBrandFilters(IQueryable<Brand> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim();
+                query = query.Where(b => EF.Functions.Like(b.BrandName, $"%{searchKey}%"));
+            }
+
+            return query;
         }
 
         public async Task<bool> ExistsByBrandNameAsync(string name)

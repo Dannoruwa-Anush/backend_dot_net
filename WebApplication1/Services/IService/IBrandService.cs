@@ -13,6 +13,6 @@ namespace WebApplication1.Services.IService
         Task DeleteBrandAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
     }
 }

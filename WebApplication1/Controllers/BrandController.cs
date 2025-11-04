@@ -113,44 +113,24 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int? pageNumber, [FromQuery] int? pageSize)
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
-            if (pageNumber.HasValue && pageSize.HasValue && pageNumber > 0 && pageSize > 0)
+            try
             {
                 // Call service to get paginated data
-                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
+                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
 
-                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(pageResultDto.Items);
-
-                var paginationResult = new PaginationResultDto<BrandResponseDto>
-                {
-                    Items = dtos,
-                    TotalCount = pageResultDto.TotalCount,
-                    PageNumber = pageResultDto.PageNumber,
-                    PageSize = pageResultDto.PageSize
-                };
-
-                var response = new ApiResponseDto<PaginationResultDto<BrandResponseDto>>(
+                var response = new ApiResponseDto<PaginationResultDto<Brand>>(
                     200,
                     "Brands retrieved successfully with pagination",
-                    paginationResult
+                    result
                 );
 
                 return Ok(response);
             }
-            else
+            catch(Exception)
             {
-                // Return all data without pagination
-                var brands = await _service.GetAllBrandsAsync();
-                var dtos = _mapper.Map<IEnumerable<BrandResponseDto>>(brands);
-
-                var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
-                    200,
-                    "All brands retrieved successfully",
-                    dtos
-                );
-
-                return Ok(response);
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
     }
