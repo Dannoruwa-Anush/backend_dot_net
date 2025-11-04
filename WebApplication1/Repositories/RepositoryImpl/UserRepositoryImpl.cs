@@ -1,0 +1,34 @@
+using Microsoft.EntityFrameworkCore;
+using WebApplication1.Data;
+using WebApplication1.Models;
+using WebApplication1.Repositories.IRepository;
+
+namespace WebApplication1.Repositories.RepositoryImpl.Auth
+{
+    public class UserRepositoryImpl : IUserRepository
+    {
+        private readonly AppDbContext _context;
+
+        // Constructor
+        public UserRepositoryImpl(AppDbContext context)
+        {
+            // Dependency injection
+            _context = context;
+        }
+
+        //CRUD operations
+        public async Task AddAsync(User user)
+        {
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+        }
+
+        //Custom Query Operations
+        public async Task<bool> EmailExistsAsync(string email) =>
+            await _context.Users.AnyAsync(u => u.Email == email);
+
+
+        public async Task<User?> GetByEmailAsync(string email) =>
+            await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+    }
+}

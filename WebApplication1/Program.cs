@@ -7,6 +7,14 @@ using WebApplication1.Repositories.IRepository;
 using WebApplication1.Repositories.RepositoryImpl;
 using WebApplication1.Services.IService;
 using WebApplication1.Services.ServiceImpl;
+using WebApplication1.Utils.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using WebApplication1.Repositories.RepositoryImpl.Auth;
+using WebApplication1.Services.IService.Auth;
+using WebApplication1.AutoMapperProfiles.Auth;
+using WebApplication1.Services.ServiceImpl.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +34,8 @@ builder.Services.AddAutoMapper(
     typeof(CustomerAutoMapperProfiles),
     typeof(BNPL_InstallmentAutoMapperProfiles),
     typeof(BNPL_PlanAutoMapperProfiles),
+    typeof(AuthAutoMapperProfile),
+    //employee
     typeof(CustomerOrderAutoMapperProfiles),
     typeof(CustomerOrderElectronicItemAutoMapperProfiles),
     typeof(ElectronicItemAutoMapperProfiles),
@@ -44,6 +54,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICategoryRepository, CategoryRepositoryImpl>()
                 .AddScoped<IElectronicItemRepository, ElectronicItemRepositoryImpl>()
+                .AddScoped<IUserRepository, UserRepositoryImpl>()
+                //employee
                 .AddScoped<ICustomerRepository, CustomerRepositoryImpl>()
                 .AddScoped<ICustomerOrderRepository, CustomerOrderRepositoryImpl>()
                 .AddScoped<ICustomerOrderElectronicItemRepository, CustomerOrderElectronicItemRepositoryImpl>()
@@ -57,12 +69,38 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICategoryService, CategoryServiceImpl>()
                 .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
+                .AddScoped<IAuthService, AuthServiceImpl>()
+                //employee
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()
                 .AddScoped<ICashflowService, CashflowServiceImpl>()
                 .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>()
                 .AddScoped<IBNPL_PlanService, BNPL_PlanServiceImpl>()
                 .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>();
+
+//--------------------[Configure JWT authentication]-----------------------
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JWT configuration section 'Jwt' is missing or invalid.");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            RoleClaimType = "role"
+        };
+    });
 
 var app = builder.Build();
 
@@ -102,6 +140,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication(); // Required before authorization
 app.UseAuthorization();
 
 //------------------[Static file serving]------------------------
