@@ -41,13 +41,26 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BrandRequestDto brandCreateDto)
         {
-            var brand = _mapper.Map<Brand>(brandCreateDto);
-            var created = await _service.AddBrandAsync(brand);
-            var dto = _mapper.Map<BrandResponseDto>(created);
+            try
+            {
+                var brand = _mapper.Map<Brand>(brandCreateDto);
+                var created = await _service.AddBrandAsync(brand);
+                var dto = _mapper.Map<BrandResponseDto>(created);
 
-            var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", dto);
+                var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.BrandID }, response);
+                return CreatedAtAction(nameof(GetById), new { id = dto.BrandID }, response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Brand name is already exists"));
+
+                // Generic error
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
         }
 
         [HttpPut("{id}")]
@@ -111,10 +124,10 @@ namespace WebApplication1.Controllers
 
                 var paginationResult = new PaginationResultDto<BrandResponseDto>
                 {
-                    Items      = dtos,
+                    Items = dtos,
                     TotalCount = pageResultDto.TotalCount,
                     PageNumber = pageResultDto.PageNumber,
-                    PageSize   = pageResultDto.PageSize
+                    PageSize = pageResultDto.PageSize
                 };
 
                 var response = new ApiResponseDto<PaginationResultDto<BrandResponseDto>>(
