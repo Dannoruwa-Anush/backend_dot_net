@@ -35,10 +35,9 @@ publish/
 dist/
 
 # Ignore everything in wwwroot except uploads/images
-# Track the folder structure but not necessarily the uploaded files themselves
 wwwroot/*
 !wwwroot/uploads/
-!wwwroot/uploads/images/
+wwwroot/uploads/images/*
 
 # =========================
 # Environment and config files
