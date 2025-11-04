@@ -31,7 +31,8 @@ namespace WebApplication1.Controllers
             var brands = await _service.GetAllBrandsAsync();
             if (brands == null || !brands.Any())
                 return NotFound(new ApiResponseDto<string>(404, "Brands not found"));
-
+            
+            // Model -> ResponseDto
             var responseDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(brands);
             var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
                 200,
@@ -48,6 +49,7 @@ namespace WebApplication1.Controllers
             if (brand == null)
                 return NotFound(new ApiResponseDto<string>(404, "Brand not found"));
 
+            // Model -> ResponseDto
             var responseDto = _mapper.Map<BrandResponseDto>(brand);
             var response = new ApiResponseDto<BrandResponseDto>(200, "Brand retrieved successfully", responseDto);
             return Ok(response);
@@ -57,10 +59,11 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> Create([FromBody] BrandRequestDto brandCreateDto)
         {
             try
-            {
+            {   // RequestDto -> Model
                 var brand = _mapper.Map<Brand>(brandCreateDto);
                 var created = await _service.AddBrandAsync(brand);
 
+                // Model -> ResponseDto
                 var responseDto = _mapper.Map<BrandResponseDto>(created);
                 var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", responseDto);
                 return CreatedAtAction(nameof(GetById), new { id = responseDto.BrandID }, response);
@@ -82,9 +85,11 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                // RequestDto -> Model
                 var brand = _mapper.Map<Brand>(brandUpdateDto);
                 var updated = await _service.UpdateBrandAsync(id, brand);
 
+                // Model -> ResponseDto
                 var responseDto = _mapper.Map<BrandResponseDto>(updated);
                 var response = new ApiResponseDto<BrandResponseDto>(200, "Brand updated successfully", responseDto);
                 return Ok(response);
@@ -131,18 +136,10 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                // Call service to get paginated data
                 var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
-                var responseDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(pageResultDto.Items);
 
-                var paginationResponse = new PaginationResultDto<BrandResponseDto>
-                {
-                    Items = responseDtos,
-                    TotalCount = pageResultDto.TotalCount,
-                    PageNumber = pageResultDto.PageNumber,
-                    PageSize = pageResultDto.PageSize
-                };
-                
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<BrandResponseDto>>(pageResultDto);            
                 var response = new ApiResponseDto<PaginationResultDto<BrandResponseDto>>(
                     200,
                     "Brands retrieved successfully with pagination",
