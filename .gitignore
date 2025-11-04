@@ -35,8 +35,7 @@ publish/
 dist/
 
 # Ignore everything in wwwroot
-wwwroot/*
-
+wwwroot/
 
 # =========================
 # Environment and config files
