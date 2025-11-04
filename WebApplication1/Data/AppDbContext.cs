@@ -276,10 +276,16 @@ namespace WebApplication1.Data
             {
                 if (entry.State == EntityState.Added)
                 {
+                    // Set CreatedAt only when the entity is first added
                     entry.Entity.CreatedAt = now;
+                    entry.Entity.UpdatedAt = now;
                 }
-
-                entry.Entity.UpdatedAt = now;
+                else if (entry.State == EntityState.Modified)
+                {
+                    // Prevent updating CreatedAt on modifications
+                    entry.Property(e => e.CreatedAt).IsModified = false;
+                    entry.Entity.UpdatedAt = now;
+                }
             }
         }
         //-------- [End: Intercept DateTime + Auto Timestamp] -----------
