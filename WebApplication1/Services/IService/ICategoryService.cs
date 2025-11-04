@@ -13,6 +13,6 @@ namespace WebApplication1.Services.IService
         Task DeleteCategoryAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
     }
 }

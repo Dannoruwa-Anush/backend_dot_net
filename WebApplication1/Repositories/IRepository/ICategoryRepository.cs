@@ -13,7 +13,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> DeleteAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
         Task<bool> ExistsByCategoryNameAsync(string name);
         Task<bool> ExistsByCategoryNameAsync(string name, int excludeId);
 

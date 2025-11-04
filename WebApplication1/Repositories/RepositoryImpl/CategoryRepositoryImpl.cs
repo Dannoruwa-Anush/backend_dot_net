@@ -33,7 +33,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Category?> UpdateAsync(int id, Category category)
         {
             var existing = await _context.Categories.FindAsync(id);
-            if (existing == null) 
+            if (existing == null)
                 return null;
 
             existing.CategoryName = category.CategoryName;
@@ -55,11 +55,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var totalCount = await _context.Categories.CountAsync();
+            var query = _context.Categories.AsQueryable();
 
-            var items = await _context.Categories
+            // Apply filters from helper
+            query = ApplyCategoryFilters(query, searchKey);
+
+            // Get total count after filtering
+            var totalCount = await query.CountAsync();
+
+            // Get paginated data
+            var items = await query
+                .OrderBy(c => c.CategoryName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -71,6 +79,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+
+        //Helper method
+        public IQueryable<Category> ApplyCategoryFilters(IQueryable<Category> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim();
+                query = query.Where(c => EF.Functions.Like(c.CategoryName, $"%{searchKey}%"));
+            }
+
+            return query;
         }
 
         public async Task<bool> ExistsByCategoryNameAsync(string name)

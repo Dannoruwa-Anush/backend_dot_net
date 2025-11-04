@@ -25,6 +25,23 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var categories = await _service.GetAllCategoriesAsync();
+            if (categories == null || !categories.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Categories not found"));
+
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<IEnumerable<CategoryResponseDto>>(categories);
+            var response = new ApiResponseDto<IEnumerable<CategoryResponseDto>>(
+                200,
+                "All categories retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -32,8 +49,9 @@ namespace WebApplication1.Controllers
             if (category == null)
                 return NotFound(new ApiResponseDto<string>(404, "Category not found"));
 
-            var dto = _mapper.Map<CategoryResponseDto>(category);
-            var response = new ApiResponseDto<CategoryResponseDto>(200, "Categories retrieved successfully", dto);
+            // Model -> ResponseDto   
+            var responseDto = _mapper.Map<CategoryResponseDto>(category);
+            var response = new ApiResponseDto<CategoryResponseDto>(200, "Categories retrieved successfully", responseDto);
 
             return Ok(response);
         }
@@ -41,13 +59,26 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CategoryRequestDto categoryCreateDto)
         {
-            var category = _mapper.Map<Category>(categoryCreateDto);
-            var created = await _service.AddCategoryAsync(category);
-            var dto = _mapper.Map<CategoryResponseDto>(created);
+            try
+            {
+                // RequestDto -> Nodel   
+                var category = _mapper.Map<Category>(categoryCreateDto);
+                var created = await _service.AddCategoryAsync(category);
 
-            var response = new ApiResponseDto<CategoryResponseDto>(201, "Category created successfully", dto);
+                // Model -> ResponseDto   
+                var responseDto = _mapper.Map<CategoryResponseDto>(created);
+                var response = new ApiResponseDto<CategoryResponseDto>(201, "Category created successfully", responseDto);
+                return CreatedAtAction(nameof(GetById), new { id = responseDto.CategoryID }, response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.CategoryID }, response);
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new ApiResponseDto<string>(400, "Category with the given name already exists"));
+
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
         }
 
         [HttpPut("{id}")]
@@ -55,11 +86,13 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                // RequestDto -> Model   
                 var category = _mapper.Map<Category>(categoryUpdateDto);
                 var updated = await _service.UpdateCategoryAsync(id, category);
-                var dto = _mapper.Map<CategoryResponseDto>(updated);
 
-                var response = new ApiResponseDto<CategoryResponseDto>(200, "Category updated successfully", dto);
+                // Model -> ResponseDto   
+                var responseDto = _mapper.Map<CategoryResponseDto>(updated);
+                var response = new ApiResponseDto<CategoryResponseDto>(200, "Category updated successfully", responseDto);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -99,45 +132,26 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int? pageNumber, [FromQuery] int? pageSize)
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
-            if (pageNumber.HasValue && pageSize.HasValue && pageNumber > 0 && pageSize > 0)
+            try
             {
-                // Call service to get paginated data
-                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
 
-                var dtos = _mapper.Map<IEnumerable<CategoryResponseDto>>(pageResultDto.Items);
-
-                var paginationResult = new PaginationResultDto<CategoryResponseDto>
-                {
-                    Items      = dtos,
-                    TotalCount = pageResultDto.TotalCount,
-                    PageNumber = pageResultDto.PageNumber,
-                    PageSize   = pageResultDto.PageSize
-                };
-
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<CategoryResponseDto>>(pageResultDto);
                 var response = new ApiResponseDto<PaginationResultDto<CategoryResponseDto>>(
                     200,
                     "Categories retrieved successfully with pagination",
-                    paginationResult
+                    paginationResponse
                 );
 
                 return Ok(response);
             }
-            else
+            catch (Exception)
             {
-                // Return all data without pagination
-                var Categories = await _service.GetAllCategoriesAsync();
-                var dtos = _mapper.Map<IEnumerable<CategoryResponseDto>>(Categories);
-
-                var response = new ApiResponseDto<IEnumerable<CategoryResponseDto>>(
-                    200,
-                    "All categories retrieved successfully",
-                    dtos
-                );
-
-                return Ok(response);
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
     }
