@@ -21,10 +21,26 @@ namespace WebApplication1.Controllers
         {
             // Dependency injection
             _service = service;
-            _mapper = mapper;
+            _mapper  = mapper;
         }
 
         //CRUD operations
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var brands = await _service.GetAllBrandsAsync();
+            if (brands == null || !brands.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Brands not found"));
+
+            var responseDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(brands);
+            var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
+                200,
+                "All brands retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -32,9 +48,8 @@ namespace WebApplication1.Controllers
             if (brand == null)
                 return NotFound(new ApiResponseDto<string>(404, "Brand not found"));
 
-            var dto = _mapper.Map<BrandResponseDto>(brand);
-            var response = new ApiResponseDto<BrandResponseDto>(200, "Brand retrieved successfully", dto);
-
+            var responseDto = _mapper.Map<BrandResponseDto>(brand);
+            var response = new ApiResponseDto<BrandResponseDto>(200, "Brand retrieved successfully", responseDto);
             return Ok(response);
         }
 
@@ -45,18 +60,17 @@ namespace WebApplication1.Controllers
             {
                 var brand = _mapper.Map<Brand>(brandCreateDto);
                 var created = await _service.AddBrandAsync(brand);
-                var dto = _mapper.Map<BrandResponseDto>(created);
 
-                var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", dto);
-
-                return CreatedAtAction(nameof(GetById), new { id = dto.BrandID }, response);
+                var responseDto = _mapper.Map<BrandResponseDto>(created);
+                var response = new ApiResponseDto<BrandResponseDto>(201, "Brand created successfully", responseDto);
+                return CreatedAtAction(nameof(GetById), new { id = responseDto.BrandID }, response);
             }
             catch (Exception ex)
             {
                 var message = ex.Message;
 
                 if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ApiResponseDto<string>(404, "Brand name is already exists"));
+                    return NotFound(new ApiResponseDto<string>(404, "Brand with the given name already exists"));
 
                 // Generic error
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
@@ -70,9 +84,9 @@ namespace WebApplication1.Controllers
             {
                 var brand = _mapper.Map<Brand>(brandUpdateDto);
                 var updated = await _service.UpdateBrandAsync(id, brand);
-                var dto = _mapper.Map<BrandResponseDto>(updated);
 
-                var response = new ApiResponseDto<BrandResponseDto>(200, "Brand updated successfully", dto);
+                var responseDto = _mapper.Map<BrandResponseDto>(updated);
+                var response = new ApiResponseDto<BrandResponseDto>(200, "Brand updated successfully", responseDto);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -112,23 +126,32 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet]
+        [HttpGet("paged")]
         public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
             try
             {
                 // Call service to get paginated data
-                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
+                var responseDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(pageResultDto.Items);
 
-                var response = new ApiResponseDto<PaginationResultDto<Brand>>(
+                var paginationResponse = new PaginationResultDto<BrandResponseDto>
+                {
+                    Items = responseDtos,
+                    TotalCount = pageResultDto.TotalCount,
+                    PageNumber = pageResultDto.PageNumber,
+                    PageSize = pageResultDto.PageSize
+                };
+                
+                var response = new ApiResponseDto<PaginationResultDto<BrandResponseDto>>(
                     200,
                     "Brands retrieved successfully with pagination",
-                    result
+                    paginationResponse
                 );
 
                 return Ok(response);
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }

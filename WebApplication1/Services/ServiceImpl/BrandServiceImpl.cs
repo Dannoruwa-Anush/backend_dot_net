@@ -18,9 +18,9 @@ namespace WebApplication1.Services.ServiceImpl
         public BrandServiceImpl(IBrandRepository repository, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
+            _repository               = repository;
             _electronicItemRepository = electronicItemRepository;
-            _logger = logger;
+            _logger                   = logger;
         }
 
         //CRUD operations
