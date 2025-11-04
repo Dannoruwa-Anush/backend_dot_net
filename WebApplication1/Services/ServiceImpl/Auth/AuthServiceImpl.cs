@@ -29,27 +29,31 @@ namespace WebApplication1.Services.ServiceImpl.Auth
 
         public async Task<User> RegisterUserAsync(User user)
         {
-            var dupliacte = await _repository.EmailExistsAsync(user.Email);
-            if (dupliacte)
-                throw new Exception($"User with email '{user.Email} already exists.");
+            if (await _repository.EmailExistsAsync(user.Email))
+                throw new Exception($"User with email '{user.Email}' already exists.");
 
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            // Trim and hash the password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password.Trim());
+
             await _repository.AddAsync(user);
+
             _logger.LogInformation("User created: Id={Id}, Email={Email}", user.UserID, user.Email);
             return user;
         }
 
+        // LOGIN
         public async Task<(User user, string token)> LoginAsync(string email, string password)
         {
-            var user = await _repository.GetByEmailAsync(email);
-
+            var user = await _repository.GetByEmailAsync(email.Trim());
             if (user == null)
                 throw new UnauthorizedAccessException("Invalid email or password");
 
-            if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
+            // Verify the password
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password.Trim(), user.Password);
+            if (!isPasswordValid)
                 throw new UnauthorizedAccessException("Invalid email or password");
 
-            // Generate JWT
+            // Generate JWT token
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_jwtSettings.Key);
 
@@ -63,7 +67,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(2),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpireMinutes),
                 Issuer = _jwtSettings.Issuer,
                 Audience = _jwtSettings.Audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
