@@ -9,7 +9,10 @@ namespace WebApplication1.AutoMapperProfiles
     {
         public ElectronicItemAutoMapperProfiles()
         {
-            CreateMap<ElectronicItem, ElectronicItemResponseDto>();
+            CreateMap<ElectronicItem, ElectronicItemResponseDto>()
+                .ForMember(dest => dest.BrandResponseDto, opt => opt.MapFrom(src => src.Brand))
+                .ForMember(dest => dest.CategoryResponseDto, opt => opt.MapFrom(src => src.Category));
+
             CreateMap<ElectronicItemRequestDto, ElectronicItem>();
         }
     }
