@@ -43,9 +43,15 @@ namespace WebApplication1.Controllers.Auth
             {
                 return BadRequest(new ApiResponseDto<string>(400, ex.Message));
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponseDto<string>(500, "Internal server error"));
+                var message = ex.Message;
+
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "User with the given email already exists"));
+
+                // Generic error
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
 
