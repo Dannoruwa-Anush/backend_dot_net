@@ -34,10 +34,9 @@ logs/
 publish/
 dist/
 
-# Ignore everything in wwwroot except uploads/images
+# Ignore everything in wwwroot
 wwwroot/*
-!wwwroot/uploads/
-wwwroot/uploads/images/*
+
 
 # =========================
 # Environment and config files
