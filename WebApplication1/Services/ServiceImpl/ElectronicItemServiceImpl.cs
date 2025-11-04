@@ -74,9 +74,9 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
         }
 
         public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByCategoryIdAsync(int categoryId)=>

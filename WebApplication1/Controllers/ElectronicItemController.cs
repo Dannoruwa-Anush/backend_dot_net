@@ -9,7 +9,7 @@ using WebApplication1.Services.IService;
 namespace WebApplication1.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] //api/ElectronicItem 
+    [Route("api/[controller]")] //api/electronicItem 
     public class ElectronicItemController : ControllerBase
     {
         private readonly IElectronicItemService _service;
@@ -28,6 +28,23 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var electronicItems = await _service.GetAllElectronicItemsAsync();
+            if (electronicItems == null || !electronicItems.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Electronic items not found"));
+
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<IEnumerable<ElectronicItemResponseDto>>(electronicItems);
+            var response = new ApiResponseDto<IEnumerable<ElectronicItemResponseDto>>(
+                200,
+                "All brands retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -44,20 +61,32 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] ElectronicItemRequestDto electronicItemCreateDto)
         {
-            var electronicItem = _mapper.Map<ElectronicItem>(electronicItemCreateDto);
-
-            // Save image first, if exists
-            if (electronicItemCreateDto.ImageFile != null)
+            try
             {
-                electronicItem.ElectronicItemImage = await _fileService.SaveFileAsync(electronicItemCreateDto.ImageFile, "uploads/images");
+                var electronicItem = _mapper.Map<ElectronicItem>(electronicItemCreateDto);
+
+                // Save image first, if exists
+                if (electronicItemCreateDto.ImageFile != null)
+                {
+                    electronicItem.ElectronicItemImage = await _fileService.SaveFileAsync(electronicItemCreateDto.ImageFile, "uploads/images");
+                }
+
+                var created = await _service.AddElectronicItemAsync(electronicItem);
+                var dto = _mapper.Map<ElectronicItemResponseDto>(created);
+
+                var response = new ApiResponseDto<ElectronicItemResponseDto>(201, "Electronic item created successfully", dto);
+
+                return CreatedAtAction(nameof(GetById), new { id = dto.ElectronicItemID }, response);
             }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
 
-            var created = await _service.AddElectronicItemAsync(electronicItem);
-            var dto = _mapper.Map<ElectronicItemResponseDto>(created);
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new ApiResponseDto<string>(400, "Electronic item with the given name already exists"));
 
-            var response = new ApiResponseDto<ElectronicItemResponseDto>(201, "Electronic item created successfully", dto);
-
-            return CreatedAtAction(nameof(GetById), new { id = dto.ElectronicItemID }, response);
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
         }
 
         [HttpPut("{id}")]
@@ -119,7 +148,7 @@ namespace WebApplication1.Controllers
 
                 // Delete image file
                 if (!string.IsNullOrEmpty(existingItem.ElectronicItemImage))
-                    _fileService.DeleteFile(existingItem.ElectronicItemImage);    
+                    _fileService.DeleteFile(existingItem.ElectronicItemImage);
 
                 await _service.DeleteElectronicItemAsync(id);
 
@@ -139,45 +168,25 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int? pageNumber, [FromQuery] int? pageSize)
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
-            if (pageNumber.HasValue && pageSize.HasValue && pageNumber > 0 && pageSize > 0)
+            try
             {
-                // Call service to get paginated data
-                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
-
-                var dtos = _mapper.Map<IEnumerable<ElectronicItemResponseDto>>(pageResultDto.Items);
-
-                var paginationResult = new PaginationResultDto<ElectronicItemResponseDto>
-                {
-                    Items = dtos,
-                    TotalCount = pageResultDto.TotalCount,
-                    PageNumber = pageResultDto.PageNumber,
-                    PageSize = pageResultDto.PageSize
-                };
-
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<ElectronicItemResponseDto>>(pageResultDto);
                 var response = new ApiResponseDto<PaginationResultDto<ElectronicItemResponseDto>>(
                     200,
                     "Electronic items retrieved successfully with pagination",
-                    paginationResult
+                    paginationResponse
                 );
 
                 return Ok(response);
             }
-            else
+            catch (Exception)
             {
-                // Return all data without pagination
-                var electronicItems = await _service.GetAllElectronicItemsAsync();
-                var dtos = _mapper.Map<IEnumerable<ElectronicItemResponseDto>>(electronicItems);
-
-                var response = new ApiResponseDto<IEnumerable<ElectronicItemResponseDto>>(
-                    200,
-                    "All electronic items retrieved successfully",
-                    dtos
-                );
-
-                return Ok(response);
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
 

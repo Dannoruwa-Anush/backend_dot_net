@@ -67,13 +67,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var totalCount = await _context.ElectronicItems.CountAsync();
+            var query = _context.ElectronicItems.AsQueryable();
 
-            var items = await _context.ElectronicItems
+            // Apply filters from helper
+            query = ApplyElectronicItemFilters(query, searchKey);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
+                .OrderBy(i => i.ElectronicItemName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -85,6 +91,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+
+        //Helper method
+        public IQueryable<ElectronicItem> ApplyElectronicItemFilters(IQueryable<ElectronicItem> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim();
+                query = query.Where(i => EF.Functions.Like(i.ElectronicItemName, $"%{searchKey}%"));
+            }
+
+            return query;
         }
 
         public async Task<bool> ExistsByNameAsync(string name)

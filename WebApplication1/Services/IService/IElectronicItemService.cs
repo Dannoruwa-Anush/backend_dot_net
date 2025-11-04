@@ -13,7 +13,7 @@ namespace WebApplication1.Services.IService
         Task DeleteElectronicItemAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
         Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByCategoryIdAsync(int categoryId);
         Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByBrandIdAsync(int brandId);
     }
