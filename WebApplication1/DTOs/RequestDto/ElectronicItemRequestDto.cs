@@ -7,7 +7,7 @@ namespace WebApplication1.DTOs.RequestDto
     {
         [Required(ErrorMessage = "Item name is required")]
         [MaxLength(100)]
-        public string E_ItemName { get; set; } = string.Empty;
+        public string ElectronicItemName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Price is required")]
         [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative")]

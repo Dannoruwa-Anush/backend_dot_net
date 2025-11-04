@@ -5,15 +5,15 @@ using WebApplication1.Models.Base;
 
 namespace WebApplication1.Models
 {
-    [Index(nameof(E_ItemName), IsUnique = true)]
+    [Index(nameof(ElectronicItemName), IsUnique = true)]
     public class ElectronicItem : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
-        public int E_ItemID { get; set; }
+        public int ElectronicItemID { get; set; }
 
         [Required(ErrorMessage = "Item name is required")]
         [MaxLength(100)]
-        public string E_ItemName { get; set; } = string.Empty;
+        public string ElectronicItemName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Price is required")]
         [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative")]
@@ -26,7 +26,7 @@ namespace WebApplication1.Models
 
         // Store relative image path (e.g., "uploads/images/abc.jpg")
         [MaxLength(255)]
-        public string? E_ItemImage { get; set; }
+        public string? ElectronicItemImage { get; set; }
 
         // Not mapped to DB — only for file upload
         [NotMapped]

@@ -49,7 +49,7 @@ namespace WebApplication1.Controllers
             // Save image first, if exists
             if (electronicItemCreateDto.ImageFile != null)
             {
-                electronicItem.E_ItemImage = await _fileService.SaveFileAsync(electronicItemCreateDto.ImageFile, "uploads/images");
+                electronicItem.ElectronicItemImage = await _fileService.SaveFileAsync(electronicItemCreateDto.ImageFile, "uploads/images");
             }
 
             var created = await _service.AddElectronicItemAsync(electronicItem);
@@ -57,7 +57,7 @@ namespace WebApplication1.Controllers
 
             var response = new ApiResponseDto<ElectronicItemResponseDto>(201, "Electronic item created successfully", dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.E_ItemID }, response);
+            return CreatedAtAction(nameof(GetById), new { id = dto.ElectronicItemID }, response);
         }
 
         [HttpPut("{id}")]
@@ -76,16 +76,16 @@ namespace WebApplication1.Controllers
                 if (electronicItemUpdateDto.ImageFile != null)
                 {
                     // Delete old file
-                    if (!string.IsNullOrEmpty(existingItem.E_ItemImage))
-                        _fileService.DeleteFile(existingItem.E_ItemImage);
+                    if (!string.IsNullOrEmpty(existingItem.ElectronicItemImage))
+                        _fileService.DeleteFile(existingItem.ElectronicItemImage);
 
                     // Save new file
-                    electronicItem.E_ItemImage = await _fileService.SaveFileAsync(electronicItemUpdateDto.ImageFile, "uploads/images");
+                    electronicItem.ElectronicItemImage = await _fileService.SaveFileAsync(electronicItemUpdateDto.ImageFile, "uploads/images");
                 }
                 else
                 {
                     // Keep old image if no new file uploaded
-                    electronicItem.E_ItemImage = existingItem.E_ItemImage;
+                    electronicItem.ElectronicItemImage = existingItem.ElectronicItemImage;
                 }
 
                 var updated = await _service.UpdateElectronicItemAsync(id, electronicItem);
@@ -118,8 +118,8 @@ namespace WebApplication1.Controllers
                     return NotFound(new ApiResponseDto<string>(404, "Electronic item not found"));
 
                 // Delete image file
-                if (!string.IsNullOrEmpty(existingItem.E_ItemImage))
-                    _fileService.DeleteFile(existingItem.E_ItemImage);    
+                if (!string.IsNullOrEmpty(existingItem.ElectronicItemImage))
+                    _fileService.DeleteFile(existingItem.ElectronicItemImage);    
 
                 await _service.DeleteElectronicItemAsync(id);
 

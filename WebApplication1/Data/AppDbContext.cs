@@ -62,7 +62,7 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<ElectronicItem>(entity =>
             {
-                entity.HasIndex(i => i.E_ItemName).IsUnique();
+                entity.HasIndex(i => i.ElectronicItemName).IsUnique();
 
                 entity.Property(i => i.Price)
                       .HasColumnType("decimal(18,2)");

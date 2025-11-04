@@ -28,7 +28,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.ElectronicItems
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
-                .FirstOrDefaultAsync(e => e.E_ItemID == id);
+                .FirstOrDefaultAsync(e => e.ElectronicItemID == id);
 
         public async Task AddAsync(ElectronicItem electronicItem)
         {
@@ -42,7 +42,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
-            existing.E_ItemName = electronicItem.E_ItemName;
+            existing.ElectronicItemName = electronicItem.ElectronicItemName;
             existing.Price = electronicItem.Price;
             existing.QOH = electronicItem.QOH;
             existing.BrandID = electronicItem.BrandID;
@@ -89,12 +89,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<bool> ExistsByNameAsync(string name)
         {
-            return await _context.ElectronicItems.AnyAsync(i => i.E_ItemName.ToLower() == name.ToLower());
+            return await _context.ElectronicItems.AnyAsync(i => i.ElectronicItemName.ToLower() == name.ToLower());
         }
 
         public async Task<bool> ExistsByNameAsync(string name, int excludeId)
         {
-            return await _context.ElectronicItems.AnyAsync(i => i.E_ItemName.ToLower() == name.ToLower() && i.E_ItemID != excludeId);
+            return await _context.ElectronicItems.AnyAsync(i => i.ElectronicItemName.ToLower() == name.ToLower() && i.ElectronicItemID != excludeId);
         }
 
         public async Task<IEnumerable<ElectronicItem>> GetAllByCategoryAsync(int categoryId)

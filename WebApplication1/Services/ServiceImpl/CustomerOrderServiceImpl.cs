@@ -54,7 +54,7 @@ namespace WebApplication1.Services.ServiceImpl
                         throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
 
                     if (electronicItem.QOH < orderItem.Quantity)
-                        throw new InvalidOperationException($"Insufficient stock for {electronicItem.E_ItemName}");
+                        throw new InvalidOperationException($"Insufficient stock for {electronicItem.ElectronicItemName}");
 
                     // Compute subtotal
                     orderItem.SubTotal = orderItem.Quantity * orderItem.UnitPrice;
@@ -63,7 +63,7 @@ namespace WebApplication1.Services.ServiceImpl
                     // Deduct stock
                     electronicItem.QOH -= orderItem.Quantity;
                     electronicItem.UpdatedAt = DateTime.UtcNow;
-                    await _electronicItemRepository.UpdateAsync(electronicItem.E_ItemID, electronicItem);
+                    await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
 
                     // Set creation timestamp
                     orderItem.CreatedAt = DateTime.UtcNow;
@@ -199,7 +199,7 @@ namespace WebApplication1.Services.ServiceImpl
                         {
                             electronicItem.QOH += item.Quantity; // Restock
                             electronicItem.UpdatedAt = DateTime.UtcNow;
-                            await _electronicItemRepository.UpdateAsync(electronicItem.E_ItemID, electronicItem);
+                            await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
                         }
                     }
 

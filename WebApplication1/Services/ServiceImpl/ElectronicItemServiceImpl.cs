@@ -30,13 +30,13 @@ namespace WebApplication1.Services.ServiceImpl
         
         public async Task<ElectronicItem> AddElectronicItemAsync(ElectronicItem electronicItem)
         {
-            var duplicate = await _repository.ExistsByNameAsync(electronicItem.E_ItemName);
+            var duplicate = await _repository.ExistsByNameAsync(electronicItem.ElectronicItemName);
             if (duplicate)
-                throw new Exception($"Electronic item with name '{electronicItem.E_ItemName}' already exists.");
+                throw new Exception($"Electronic item with name '{electronicItem.ElectronicItemName}' already exists.");
 
             await _repository.AddAsync(electronicItem);
 
-            _logger.LogInformation("Electronic item created: Id={Id}, Name={Name}", electronicItem.E_ItemID, electronicItem.E_ItemName);
+            _logger.LogInformation("Electronic item created: Id={Id}, Name={Name}", electronicItem.ElectronicItemID, electronicItem.ElectronicItemName);
             return electronicItem;
         }
 
@@ -46,15 +46,15 @@ namespace WebApplication1.Services.ServiceImpl
             if (existing == null)
                 throw new Exception("Electronic item not found");
 
-            var duplicate = await _repository.ExistsByNameAsync(electronicItem.E_ItemName, id);
+            var duplicate = await _repository.ExistsByNameAsync(electronicItem.ElectronicItemName, id);
             if (duplicate)
-                throw new Exception($"Electronic item with name '{electronicItem.E_ItemName}' already exists.");
+                throw new Exception($"Electronic item with name '{electronicItem.ElectronicItemName}' already exists.");
 
             var updatedElectronicItem = await _repository.UpdateAsync(id, electronicItem);
 
             if (updatedElectronicItem != null)
             {
-                _logger.LogInformation("Electronic item updated: Id={Id}, Name={Name}", updatedElectronicItem.E_ItemID, updatedElectronicItem.E_ItemName);
+                _logger.LogInformation("Electronic item updated: Id={Id}, Name={Name}", updatedElectronicItem.ElectronicItemID, updatedElectronicItem.ElectronicItemName);
                 return updatedElectronicItem;
             }
 
