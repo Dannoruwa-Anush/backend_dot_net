@@ -15,8 +15,8 @@ namespace WebApplication1.AutoMapperProfiles.Auth
 
             // Entity → Response DTO
             CreateMap<User, LoginResponseDto>()
-                .ForMember(dest => dest.Token, opt => opt.Ignore()) // added later in controller
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()))
+                .ForMember(dest => dest.Token, opt => opt.Ignore()); // Token is set manually
         }
     }
 }

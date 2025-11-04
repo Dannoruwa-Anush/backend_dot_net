@@ -22,9 +22,9 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         // Constructor
         public AuthServiceImpl(IUserRepository repository, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
         {
-            _repository  = repository;
+            _repository = repository;
             _jwtSettings = jwtOptions.Value;
-            _logger      = logger;
+            _logger = logger;
         }
 
         public async Task<User> RegisterUserAsync(User user)
@@ -39,14 +39,13 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             return user;
         }
 
-         public async Task<string> LoginAsync(string email, string password)
+        public async Task<(User user, string token)> LoginAsync(string email, string password)
         {
             var user = await _repository.GetByEmailAsync(email);
 
             if (user == null)
                 throw new UnauthorizedAccessException("Invalid email or password");
 
-            // Verify password
             if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
                 throw new UnauthorizedAccessException("Invalid email or password");
 
@@ -71,7 +70,9 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var jwtToken = tokenHandler.WriteToken(token);
+
+            return (user, jwtToken);
         }
     }
 }

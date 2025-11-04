@@ -60,14 +60,12 @@ namespace WebApplication1.Controllers.Auth
         {
             try
             {
-                var token = await _service.LoginAsync(loginDto.Email, loginDto.Password);
+                // Login returns (User, JWT)
+                var (user, token) = await _service.LoginAsync(loginDto.Email, loginDto.Password);
 
-                var responseDto = new LoginResponseDto
-                {
-                    Token = token,
-                    Email = loginDto.Email,
-                    Role = "Customer" 
-                };
+                // Map User -> LoginResponseDto
+                var responseDto = _mapper.Map<LoginResponseDto>(user);
+                responseDto.Token = token; // Set JWT token separately
 
                 var response = new ApiResponseDto<LoginResponseDto>(200, "Login successful", responseDto);
                 return Ok(response);
