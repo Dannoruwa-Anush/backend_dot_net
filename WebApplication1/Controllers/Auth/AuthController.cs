@@ -1,16 +1,17 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto.Auth;
 using WebApplication1.DTOs.ResponseDto.Auth;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Services.IService.Auth;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Controllers.Auth
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous] // This controller don't require JWT
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _service;

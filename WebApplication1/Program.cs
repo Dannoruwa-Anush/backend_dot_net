@@ -100,7 +100,32 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
             RoleClaimType = "role"
         };
-    });
+
+        // Add custom behavior when token is missing or invalid
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                // Suppress the default 401 response
+                context.HandleResponse();
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                // Redirect browser users (Redirect to : frontend /login)
+                context.Response.Headers["Location"] = "/login";
+
+                // Send JSON message as well
+                await context.Response.WriteAsync(
+                    System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        message = "Unauthorized: please log in to continue."
+                    })
+                );
+            }
+        };
+    }
+);
 
 var app = builder.Build();
 
@@ -156,6 +181,7 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/uploads/images"
 });
 
-app.MapControllers(); // Map controller routes
+// Make everything require auth by default
+app.MapControllers().RequireAuthorization();
 
 app.Run();

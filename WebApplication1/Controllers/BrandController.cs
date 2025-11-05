@@ -6,6 +6,7 @@ using WebApplication1.Services.IService;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto.Common;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApplication1.Controllers
 {
@@ -26,6 +27,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GetAll()
         {
             var brands = await _service.GetAllBrandsAsync();
@@ -43,6 +45,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GetById(int id)
         {
             var brand = await _service.GetBrandByIdAsync(id);
@@ -56,6 +59,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Create([FromBody] BrandRequestDto brandCreateDto)
         {
             try
@@ -81,6 +85,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] BrandRequestDto brandUpdateDto)
         {
             try
@@ -109,6 +114,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -132,6 +138,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
             try

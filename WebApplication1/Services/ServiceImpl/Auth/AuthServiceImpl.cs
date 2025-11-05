@@ -22,11 +22,12 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         // Constructor
         public AuthServiceImpl(IUserRepository repository, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
         {
-            _repository  = repository;
+            _repository = repository;
             _jwtSettings = jwtOptions.Value;
-            _logger      = logger;
+            _logger = logger;
         }
 
+        //Register
         public async Task<User> RegisterUserAsync(User user)
         {
             if (await _repository.EmailExistsAsync(user.Email))
@@ -48,7 +49,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             return user;
         }
 
-        // LOGIN
+        //Login
         public async Task<(User user, string token)> LoginAsync(string email, string password)
         {
             var user = await _repository.GetByEmailAsync(email.Trim());
