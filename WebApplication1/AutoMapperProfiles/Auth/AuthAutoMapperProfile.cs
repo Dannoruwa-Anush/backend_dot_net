@@ -10,8 +10,7 @@ namespace WebApplication1.AutoMapperProfiles.Auth
         public AuthAutoMapperProfile()
         {
             // Request DTO → Entity (User)
-            CreateMap<RegisterRequestDto, User>()
-                .ForMember(dest => dest.Password, opt => opt.Ignore()); // hashed in service layer
+            CreateMap<RegisterRequestDto, User>();
 
             // Entity → Response DTO
             CreateMap<User, LoginResponseDto>()
