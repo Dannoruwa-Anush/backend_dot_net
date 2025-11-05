@@ -15,6 +15,7 @@ using WebApplication1.Repositories.RepositoryImpl.Auth;
 using WebApplication1.Services.IService.Auth;
 using WebApplication1.AutoMapperProfiles.Auth;
 using WebApplication1.Services.ServiceImpl.Auth;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,7 +99,7 @@ builder.Services.AddAuthentication(options =>
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
-            RoleClaimType = "role"
+            RoleClaimType = ClaimTypes.Role
         };
 
         // Add custom behavior when token is missing or invalid
@@ -122,6 +123,17 @@ builder.Services.AddAuthentication(options =>
                         message = "Unauthorized: please log in to continue."
                     })
                 );
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    status = 403,
+                    message = "You don't have access to this resource."
+                });
             }
         };
     }
