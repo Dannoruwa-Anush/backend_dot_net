@@ -10,12 +10,14 @@ namespace WebApplication1.AutoMapperProfiles.Auth
         public AuthAutoMapperProfile()
         {
             // Request DTO → Entity (User)
-            CreateMap<RegisterRequestDto, User>();
+            CreateMap<RegisterRequestDto, User>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email.Trim()))
+                .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.Password.Trim()));
 
             // Entity → Response DTO
             CreateMap<User, LoginResponseDto>()
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()))
-                .ForMember(dest => dest.Token, opt => opt.Ignore()); // Token is set manually
+                .ForMember(dest => dest.Token, opt => opt.Ignore());
         }
     }
 }

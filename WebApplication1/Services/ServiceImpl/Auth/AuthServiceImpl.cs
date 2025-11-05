@@ -22,9 +22,9 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         // Constructor
         public AuthServiceImpl(IUserRepository repository, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
         {
-            _repository = repository;
+            _repository  = repository;
             _jwtSettings = jwtOptions.Value;
-            _logger = logger;
+            _logger      = logger;
         }
 
         public async Task<User> RegisterUserAsync(User user)
@@ -32,8 +32,15 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             if (await _repository.EmailExistsAsync(user.Email))
                 throw new Exception($"User with email '{user.Email}' already exists.");
 
-            // Trim and hash the password
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password.Trim());
+            // Trim
+            user.Email = user.Email.Trim();
+            user.Password = user.Password.Trim();
+
+            // Hash only if not already hashed
+            if (!user.Password.StartsWith("$2a$") && !user.Password.StartsWith("$2b$"))
+            {
+                user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            }
 
             await _repository.AddAsync(user);
 
