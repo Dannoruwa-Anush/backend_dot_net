@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto;
@@ -26,6 +27,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GetAll()
         {
             var categories = await _service.GetAllCategoriesAsync();
@@ -43,6 +45,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GetById(int id)
         {
             var category = await _service.GetCategoryByIdAsync(id);
@@ -57,6 +60,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Create([FromBody] CategoryRequestDto categoryCreateDto)
         {
             try
@@ -82,6 +86,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] CategoryRequestDto categoryUpdateDto)
         {
             try
@@ -110,6 +115,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -133,6 +139,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
             try

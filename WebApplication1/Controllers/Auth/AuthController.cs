@@ -11,7 +11,7 @@ namespace WebApplication1.Controllers.Auth
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous] // This controller don't require JWT
+    [AllowAnonymous] // JWT is not required for this controller
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _service;
