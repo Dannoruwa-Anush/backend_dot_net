@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto;
@@ -9,6 +10,7 @@ using WebApplication1.Services.IService;
 namespace WebApplication1.Controllers
 {
     [ApiController]
+    [AllowAnonymous] // JWT is not required for this controller
     [Route("api/[controller]")] //api/employee 
     public class EmployeeController : ControllerBase
     {
@@ -25,6 +27,24 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
+        [HttpGet]
+        [AllowAnonymous] // JWT is not required
+        public async Task<IActionResult> GetAll()
+        {
+            var employees = await _service.GetAllEmployeesAsync();
+            if (employees == null || !employees.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Employee not found"));
+
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
+            var response = new ApiResponseDto<IEnumerable<EmployeeResponseDto>>(
+                200,
+                "All employees retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -77,7 +97,7 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet]
+        [HttpGet("paged")]
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? positionId = null, [FromQuery] string? searchKey = null)
         {
             try
