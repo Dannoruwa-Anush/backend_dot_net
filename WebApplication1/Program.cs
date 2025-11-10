@@ -36,7 +36,7 @@ builder.Services.AddAutoMapper(
     typeof(BNPL_InstallmentAutoMapperProfiles),
     typeof(BNPL_PlanAutoMapperProfiles),
     typeof(AuthAutoMapperProfile),
-    //employee
+    typeof(EmployeeAutoMappingProfile),
     typeof(CustomerOrderAutoMapperProfiles),
     typeof(CustomerOrderElectronicItemAutoMapperProfiles),
     typeof(ElectronicItemAutoMapperProfiles),
@@ -56,7 +56,7 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICategoryRepository, CategoryRepositoryImpl>()
                 .AddScoped<IElectronicItemRepository, ElectronicItemRepositoryImpl>()
                 .AddScoped<IUserRepository, UserRepositoryImpl>()
-                //employee
+                .AddScoped<IEmployeeRepository, EmployeeRepositoryImpl>()
                 .AddScoped<ICustomerRepository, CustomerRepositoryImpl>()
                 .AddScoped<ICustomerOrderRepository, CustomerOrderRepositoryImpl>()
                 .AddScoped<ICustomerOrderElectronicItemRepository, CustomerOrderElectronicItemRepositoryImpl>()
@@ -71,7 +71,7 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
                 .AddScoped<IAuthService, AuthServiceImpl>()
-                //employee
+                .AddScoped<IEmployeeService, EmployeeServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()
                 .AddScoped<ICashflowService, CashflowServiceImpl>()

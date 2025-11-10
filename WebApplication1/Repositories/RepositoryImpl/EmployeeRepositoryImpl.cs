@@ -55,7 +55,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int positionId, string? searchKey = null)
+        public async Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? positionId, string? searchKey = null)
         {
             var query = _context.Employees.AsQueryable();
 
