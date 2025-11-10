@@ -94,7 +94,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Helper method
-        public IQueryable<ElectronicItem> ApplyElectronicItemFilters(IQueryable<ElectronicItem> query, string? searchKey)
+        private IQueryable<ElectronicItem> ApplyElectronicItemFilters(IQueryable<ElectronicItem> query, string? searchKey)
         {
             if (!string.IsNullOrWhiteSpace(searchKey))
             {

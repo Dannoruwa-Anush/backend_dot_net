@@ -82,7 +82,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Helper method
-        public IQueryable<Category> ApplyCategoryFilters(IQueryable<Category> query, string? searchKey)
+        private IQueryable<Category> ApplyCategoryFilters(IQueryable<Category> query, string? searchKey)
         {
             if (!string.IsNullOrWhiteSpace(searchKey))
             {

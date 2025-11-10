@@ -1,0 +1,108 @@
+using Microsoft.EntityFrameworkCore;
+using WebApplication1.Data;
+using WebApplication1.DTOs.ResponseDto.Common;
+using WebApplication1.Models;
+using WebApplication1.Repositories.IRepository;
+using WebApplication1.Utils.Project_Enums;
+
+namespace WebApplication1.Repositories.RepositoryImpl
+{
+    public class EmployeeRepositoryImpl : IEmployeeRepository
+    {
+        private readonly AppDbContext _context;
+
+        // Constructor
+        public EmployeeRepositoryImpl(AppDbContext context)
+        {
+            // Dependency injection
+            _context = context;
+        }
+
+        //CRUD operations
+        public async Task<IEnumerable<Employee>> GetAllAsync() =>
+            await _context.Employees.ToListAsync();
+
+        public async Task<Employee?> GetByIdAsync(int id) =>
+            await _context.Employees.FindAsync(id);
+        public async Task AddAsync(Employee employee)
+        {
+            await _context.AddAsync(employee);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<Employee?> UpdateAsync(int id, Employee employee)
+        {
+            var existing = await _context.Employees.FindAsync(id);
+            if (existing == null)
+                return null;
+
+            _context.Employees.Update(employee);
+            await _context.SaveChangesAsync();
+
+            return existing;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var employee = await _context.Employees.FindAsync(id);
+            if (employee == null)
+                return false;
+
+            _context.Employees.Remove(employee);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        //Custom Query Operations
+        public async Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int positionId, string? searchKey = null)
+        {
+            var query = _context.Employees.AsQueryable();
+
+            // Apply filters from helper
+            query = ApplyEmployeePositionFilter(query, positionId);
+            query = ApplyEmployeeFilters(query, searchKey);
+
+            // Get total count after filtering
+            var totalCount = await query.CountAsync();
+
+            // Get paginated data
+            var items = await query
+                .OrderBy(c => c.EmployeeName)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginationResultDto<Employee>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
+        //Helper method: filter by employee position type
+        private IQueryable<Employee> ApplyEmployeePositionFilter(IQueryable<Employee> query, int? positionId)
+        {
+            if (positionId.HasValue)
+            {
+                var status = (EmployeePositionEnum)positionId.Value;
+                query = query.Where(t => t.Position == status);
+            }
+            return query;
+        }
+
+        //Helper method: filter by employee name
+        private IQueryable<Employee> ApplyEmployeeFilters(IQueryable<Employee> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim();
+                query = query.Where(e => EF.Functions.Like(e.EmployeeName, $"%{searchKey}%"));
+            }
+
+            return query;
+        }
+    }
+}
