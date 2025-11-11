@@ -10,11 +10,10 @@ using WebApplication1.Services.IService;
 namespace WebApplication1.Controllers
 {
     [ApiController]
-    [AllowAnonymous] // JWT is not required for this controller
     [Route("api/[controller]")] //api/employee 
     public class EmployeeController : ControllerBase
     {
-       private readonly IEmployeeService _service;
+        private readonly IEmployeeService _service;
 
         private readonly IMapper _mapper;
 
@@ -28,12 +27,12 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
-        [AllowAnonymous] // JWT is not required
+        [AllowAnonymous] // JWT is not required 
         public async Task<IActionResult> GetAll()
         {
             var employees = await _service.GetAllEmployeesAsync();
             if (employees == null || !employees.Any())
-                return NotFound(new ApiResponseDto<string>(404, "Employee not found"));
+                return NotFound(new ApiResponseDto<string>(404, "Employees not found"));
 
             // Model -> ResponseDto
             var responseDtos = _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
@@ -44,8 +43,9 @@ namespace WebApplication1.Controllers
             );
             return Ok(response);
         }
-        
+
         [HttpGet("{id}")]
+        [AllowAnonymous] // JWT is not required 
         public async Task<IActionResult> GetById(int id)
         {
             var employee = await _service.GetEmployeeByIdAsync(id);
@@ -59,6 +59,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Create([FromBody] EmployeeRequestDto employeeCreateDto)
         {
             var employee = _mapper.Map<Employee>(employeeCreateDto);
@@ -67,10 +68,11 @@ namespace WebApplication1.Controllers
 
             var response = new ApiResponseDto<EmployeeResponseDto>(201, "Employee created successfully", dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.EmployeeID}, response);
+            return CreatedAtAction(nameof(GetById), new { id = dto.EmployeeID }, response);
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] EmployeeRequestDto employeeUpdateDto)
         {
             try
@@ -98,6 +100,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
+        [AllowAnonymous] // JWT is not required 
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? positionId = null, [FromQuery] string? searchKey = null)
         {
             try

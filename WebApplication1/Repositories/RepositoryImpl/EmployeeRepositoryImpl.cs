@@ -20,10 +20,15 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<Employee>> GetAllAsync() =>
-            await _context.Employees.ToListAsync();
+            await _context.Employees
+                .Include(em => em.User)
+                .ToListAsync();
 
         public async Task<Employee?> GetByIdAsync(int id) =>
-            await _context.Employees.FindAsync(id);
+            await _context.Employees
+                    .Include(em => em.User)
+                    .FirstOrDefaultAsync(em => em.EmployeeID == id);
+
         public async Task AddAsync(Employee employee)
         {
             await _context.AddAsync(employee);
@@ -68,7 +73,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             // Get paginated data
             var items = await query
-                .OrderBy(c => c.EmployeeName)
+                .Include(em => em.User)
+                .OrderBy(em => em.EmployeeName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

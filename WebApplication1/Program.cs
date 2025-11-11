@@ -36,6 +36,7 @@ builder.Services.AddAutoMapper(
     typeof(BNPL_InstallmentAutoMapperProfiles),
     typeof(BNPL_PlanAutoMapperProfiles),
     typeof(AuthAutoMapperProfile),
+    typeof(UserAutoMappingProfile),
     typeof(EmployeeAutoMappingProfile),
     typeof(CustomerOrderAutoMapperProfiles),
     typeof(CustomerOrderElectronicItemAutoMapperProfiles),

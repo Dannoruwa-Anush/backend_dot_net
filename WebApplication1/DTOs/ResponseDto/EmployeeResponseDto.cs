@@ -11,6 +11,6 @@ namespace WebApplication1.DTOs.ResponseDto
         public EmployeePositionEnum Position { get; set; } = EmployeePositionEnum.Cashier;
 
         // Include simplified info about FK: User
-        public required UserResponseDto UserResponseDto;
+        public required UserResponseDto UserResponseDto { get; set; }
     }
 }
