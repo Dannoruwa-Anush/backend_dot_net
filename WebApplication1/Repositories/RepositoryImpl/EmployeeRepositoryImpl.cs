@@ -41,7 +41,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
-            _context.Employees.Update(employee);
+            existing.EmployeeName = employee.EmployeeName;
+            existing.Position = employee.Position;    
+
+            _context.Employees.Update(existing);
             await _context.SaveChangesAsync();
 
             return existing;
