@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Models.Base;
 
 namespace WebApplication1.Models
 {
     [Index(nameof(PhoneNo), IsUnique = true)]
-    public class Customer
+    public class Customer : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
         public int CustomerID { get; set; }
@@ -22,10 +23,6 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Address is required")]
         [MaxLength(255)]
         public string Address { get; set; } = string.Empty;
-
-        //for: creation/modification tracking
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
 
         //******* [Start: User (1) — Customer (1)] ****
         //FK
