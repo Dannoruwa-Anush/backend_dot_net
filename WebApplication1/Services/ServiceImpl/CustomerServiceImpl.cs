@@ -18,11 +18,12 @@ namespace WebApplication1.Services.ServiceImpl
         public CustomerServiceImpl(ICustomerRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
-            _repository              = repository;
+            _repository = repository;
             _customerOrderRepository = customerOrderRepository;
-            _logger                  = logger;
+            _logger = logger;
         }
 
+        //CRUD operations
         public async Task<IEnumerable<Customer>> GetAllCustomersAsync() =>
             await _repository.GetAllAsync();
 
@@ -84,9 +85,10 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Customer deleted successfully: Id={Id}", id);
         }
 
-        public async Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        //Custom Query Operations
+        public async Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
         }
     }
 }

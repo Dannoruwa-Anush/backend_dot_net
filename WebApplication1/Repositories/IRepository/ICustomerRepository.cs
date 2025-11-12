@@ -11,9 +11,9 @@ namespace WebApplication1.Repositories.IRepository
         Task AddAsync(Customer customer);
         Task<Customer?> UpdateAsync(int id, Customer customer);
         Task<bool> DeleteAsync(int id);
-        Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
         //Custom Query Operations
+        Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
         Task<bool> ExistsByPhoneNoAsync(string phoneNo);
         Task<bool> ExistsByPhoneNoAsync(string phoneNo, int excludeId);
     }

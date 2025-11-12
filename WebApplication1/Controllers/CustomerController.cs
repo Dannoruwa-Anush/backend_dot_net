@@ -27,6 +27,24 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
+        [HttpGet]
+        [AllowAnonymous] // JWT is not required 
+        public async Task<IActionResult> GetAll()
+        {
+            var customers = await _service.GetAllCustomersAsync();
+            if (customers == null || !customers.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Customers not found"));
+
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<IEnumerable<CustomerResponseDto>>(customers);
+            var response = new ApiResponseDto<IEnumerable<CustomerResponseDto>>(
+                200,
+                "All Customers retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -101,45 +119,24 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int? pageNumber, [FromQuery] int? pageSize)
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchKey = null)
         {
-            if (pageNumber.HasValue && pageSize.HasValue && pageNumber > 0 && pageSize > 0)
+            try
             {
-                // Call service to get paginated data
-                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber.Value, pageSize.Value);
+                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
 
-                var dtos = _mapper.Map<IEnumerable<CustomerResponseDto>>(pageResultDto.Items);
-
-                var paginationResult = new PaginationResultDto<CustomerResponseDto>
-                {
-                    Items      = dtos,
-                    TotalCount = pageResultDto.TotalCount,
-                    PageNumber = pageResultDto.PageNumber,
-                    PageSize   = pageResultDto.PageSize
-                };
-
-                var response = new ApiResponseDto<PaginationResultDto<CustomerResponseDto>>(
+                var response = new ApiResponseDto<PaginationResultDto<Customer>>(
                     200,
-                    "Customers retrieved successfully with pagination",
-                    paginationResult
+                    "Customer records retrieved successfully",
+                    result
                 );
 
                 return Ok(response);
             }
-            else
+            catch (Exception)
             {
-                // Return all data without pagination
-                var customers = await _service.GetAllCustomersAsync();
-                var dtos = _mapper.Map<IEnumerable<CustomerResponseDto>>(customers);
-
-                var response = new ApiResponseDto<IEnumerable<CustomerResponseDto>>(
-                    200,
-                    "All customers retrieved successfully",
-                    dtos
-                );
-
-                return Ok(response);
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
     }

@@ -62,12 +62,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             return true;
         }
-        
+
         //Custom Query Operations
-        public async Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
+            var query = _context.Customers.AsQueryable();
+
+            // Apply filters from helper
+            query = ApplyCustomerFilters(query, searchKey);
+
+            // Get total count after filtering
             var totalCount = await _context.Customers.CountAsync();
 
+            // Get paginated data
             var items = await _context.Customers
                 .Include(cu => cu.User)
                 .Skip((pageNumber - 1) * pageSize)
@@ -83,6 +90,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
 
+        //Helper method: filter by customer phone no
+        private IQueryable<Customer> ApplyCustomerFilters(IQueryable<Customer> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim();
+                query = query.Where(cu => EF.Functions.Like(cu.PhoneNo, $"%{searchKey}%"));
+            }
+
+            return query;
+        }
+        
         public async Task<bool> ExistsByPhoneNoAsync(string phoneNo)
         {
             return await _context.Customers.AnyAsync(cu => cu.PhoneNo == phoneNo);
