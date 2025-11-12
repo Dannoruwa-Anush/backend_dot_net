@@ -9,7 +9,9 @@ namespace WebApplication1.AutoMapperProfiles
     {
         public CustomerAutoMapperProfiles()
         {
-            CreateMap<Customer, CustomerResponseDto>();
+            CreateMap<Customer, CustomerResponseDto>()
+                    .ForMember(dest => dest.UserResponseDto, opt => opt.MapFrom(src => src.User));
+                    
             CreateMap<CustomerRequestDto, Customer>();
         }
     }

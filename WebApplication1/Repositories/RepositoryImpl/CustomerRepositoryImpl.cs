@@ -20,10 +20,14 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<Customer>> GetAllAsync() =>
-            await _context.Customers.ToListAsync();
+            await _context.Customers
+                    .Include(cu => cu.User)
+                    .ToListAsync();
 
         public async Task<Customer?> GetByIdAsync(int id) =>
-            await _context.Customers.FindAsync(id);
+            await _context.Customers
+                    .Include(cu => cu.User)
+                    .FirstOrDefaultAsync(cu => cu.CustomerID == id);
 
         public async Task AddAsync(Customer customer)
         {
@@ -65,6 +69,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             var totalCount = await _context.Customers.CountAsync();
 
             var items = await _context.Customers
+                .Include(cu => cu.User)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
