@@ -28,7 +28,7 @@ builder.Services.AddControllers();
 
 //--------------------[AutoMapper]-----------------
 builder.Services.AddAutoMapper(
-    typeof(PaginationAutoMappingProfiles),
+    typeof(PaginationAutoMappingProfiles), //This is a generic AutoMapper
 
     typeof(BrandAutoMapperProfile),
     typeof(CategoryAutoMapperProfiles),
