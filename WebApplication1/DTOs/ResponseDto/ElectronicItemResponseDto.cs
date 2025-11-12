@@ -1,6 +1,8 @@
+using WebApplication1.DTOs.ResponseDto.Base;
+
 namespace WebApplication1.DTOs.ResponseDto
 {
-    public class ElectronicItemResponseDto
+    public class ElectronicItemResponseDto : BaseResponseDto
     {
         public int ElectronicItemID { get; set; }
 

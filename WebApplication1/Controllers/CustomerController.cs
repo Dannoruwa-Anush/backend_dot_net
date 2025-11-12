@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto;
@@ -10,6 +11,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")] //api/customer 
+    [AllowAnonymous] // JWT is not required for this controller
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _service;

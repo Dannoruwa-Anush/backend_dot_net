@@ -21,5 +21,8 @@ namespace WebApplication1.DTOs.RequestDto
         [Required(ErrorMessage = "Address is required")]
         [MaxLength(255)]
         public string Address { get; set; } = string.Empty;
+
+        //FK
+        public int UserID { get; set; }
     }
 }

@@ -1,6 +1,8 @@
+using WebApplication1.DTOs.ResponseDto.Base;
+
 namespace WebApplication1.DTOs.ResponseDto
 {
-    public class CustomerResponseDto
+    public class CustomerResponseDto : BaseResponseDto
     {
         public int CustomerID { get; set; }
         public string CustomerName { get; set; } = string.Empty;

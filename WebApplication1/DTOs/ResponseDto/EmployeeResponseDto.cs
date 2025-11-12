@@ -1,8 +1,9 @@
+using WebApplication1.DTOs.ResponseDto.Base;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.DTOs.ResponseDto
 {
-    public class EmployeeResponseDto
+    public class EmployeeResponseDto : BaseResponseDto
     {
         public int EmployeeID { get; set; }
 
