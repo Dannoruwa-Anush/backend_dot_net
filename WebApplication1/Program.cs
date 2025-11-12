@@ -28,6 +28,8 @@ builder.Services.AddControllers();
 
 //--------------------[AutoMapper]-----------------
 builder.Services.AddAutoMapper(
+    typeof(PaginationAutoMappingProfiles),
+
     typeof(BrandAutoMapperProfile),
     typeof(CategoryAutoMapperProfiles),
     typeof(CustomerAutoMapperProfiles),

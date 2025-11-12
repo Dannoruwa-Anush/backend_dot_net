@@ -52,8 +52,9 @@ namespace WebApplication1.Controllers
             if (employee == null)
                 return NotFound(new ApiResponseDto<string>(404, "Employee not found"));
 
-            var dto = _mapper.Map<EmployeeResponseDto>(employee);
-            var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee retrieved successfully", dto);
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<EmployeeResponseDto>(employee);
+            var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee retrieved successfully", responseDtos);
 
             return Ok(response);
         }
@@ -62,13 +63,14 @@ namespace WebApplication1.Controllers
         [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Create([FromBody] EmployeeRequestDto employeeCreateDto)
         {
+            // RequestDto -> Model
             var employee = _mapper.Map<Employee>(employeeCreateDto);
             var created = await _service.AddEmployeeAsync(employee);
-            var dto = _mapper.Map<EmployeeResponseDto>(created);
 
-            var response = new ApiResponseDto<EmployeeResponseDto>(201, "Employee created successfully", dto);
+            var responseDto = _mapper.Map<EmployeeResponseDto>(created);
+            var response = new ApiResponseDto<EmployeeResponseDto>(201, "Employee created successfully", responseDto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.EmployeeID }, response);
+            return CreatedAtAction(nameof(GetById), new { id = responseDto.EmployeeID }, response);
         }
 
         [HttpPut("{id}")]
@@ -77,11 +79,12 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                // RequestDto -> Model
                 var employee = _mapper.Map<Employee>(employeeUpdateDto);
                 var updated = await _service.UpdateEmployeeAsync(id, employee);
-                var dto = _mapper.Map<EmployeeResponseDto>(updated);
-
-                var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee updated successfully", dto);
+                
+                var responseDto = _mapper.Map<EmployeeResponseDto>(updated);
+                var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee updated successfully", responseDto);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -105,12 +108,13 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, positionId, searchKey);
-
-                var response = new ApiResponseDto<PaginationResultDto<Employee>>(
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, positionId, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<EmployeeResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<EmployeeResponseDto>>(
                     200,
                     "Employee records retrieved successfully",
-                    result
+                    paginationResponse
                 );
 
                 return Ok(response);

@@ -51,9 +51,10 @@ namespace WebApplication1.Controllers
             var customer = await _service.GetCustomerByIdAsync(id);
             if (customer == null)
                 return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
-
-            var dto = _mapper.Map<CustomerResponseDto>(customer);
-            var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", dto);
+            
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<CustomerResponseDto>(customer);
+            var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", responseDtos);
 
             return Ok(response);
         }
@@ -61,13 +62,15 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CustomerRequestDto customerCreateDto)
         {
+            // RequestDto -> Model
             var customer = _mapper.Map<Customer>(customerCreateDto);
             var created = await _service.AddCustomerAsync(customer);
-            var dto = _mapper.Map<CustomerResponseDto>(created);
 
-            var response = new ApiResponseDto<CustomerResponseDto>(201, "Customer created successfully", dto);
+            // Model -> ResponseDto
+            var responseDto = _mapper.Map<CustomerResponseDto>(created);
+            var response = new ApiResponseDto<CustomerResponseDto>(201, "Customer created successfully", responseDto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.CustomerID}, response);
+            return CreatedAtAction(nameof(GetById), new { id = responseDto.CustomerID}, response);
         }
 
         [HttpPut("{id}")]
@@ -75,11 +78,13 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                // RequestDto -> Model
                 var customer = _mapper.Map<Customer>(customerUpdateDto);
                 var updated = await _service.UpdateCustomerAsync(id, customer);
-                var dto = _mapper.Map<CustomerResponseDto>(updated);
 
-                var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer updated successfully", dto);
+                // Model -> ResponseDto
+                var responseDto = _mapper.Map<CustomerResponseDto>(updated);
+                var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer updated successfully", responseDto);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -96,40 +101,19 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                await _service.DeleteCustomerAsync(id);
-
-                var response = new ApiResponseDto<string>(204, "Customer deleted successfully");
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                var message = ex.Message;
-
-                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
-
-                // Generic error
-                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
-            }
-        }
-
         //Custom Query Operations
         [HttpGet("paged")]
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchKey = null)
         {
             try
             {
-                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
-
-                var response = new ApiResponseDto<PaginationResultDto<Customer>>(
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<CustomerResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<CustomerResponseDto>>(
                     200,
                     "Customer records retrieved successfully",
-                    result
+                    paginationResponse
                 );
 
                 return Ok(response);
