@@ -27,7 +27,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
-        [AllowAnonymous] // JWT is not required 
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> GetAll()
         {
             var employees = await _service.GetAllEmployeesAsync();
@@ -45,7 +45,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
-        [AllowAnonymous] // JWT is not required 
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
             var employee = await _service.GetEmployeeByIdAsync(id);
@@ -103,7 +103,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
-        [AllowAnonymous] // JWT is not required 
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? positionId = null, [FromQuery] string? searchKey = null)
         {
             try
