@@ -57,17 +57,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
         //Custom Query Operations
         public async Task<PaginationResultDto<Category>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var query = _context.Categories.AsQueryable();
+            var query = _context.Categories.AsNoTracking().AsQueryable();
 
             // Apply filters from helper
-            query = ApplyCategoryFilters(query, searchKey);
+            query = ApplyCategoryFilters(query, searchKey).OrderByDescending(c => c.CreatedAt);
 
             // Get total count after filtering
             var totalCount = await query.CountAsync();
 
             // Get paginated data
             var items = await query
-                .OrderBy(c => c.CategoryName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

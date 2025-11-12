@@ -65,11 +65,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
         //Custom Query Operations
         public async Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? positionId, string? searchKey = null)
         {
-            var query = _context.Employees.AsQueryable();
+            var query = _context.Employees.AsNoTracking().AsQueryable();
 
             // Apply filters from helper
             query = ApplyEmployeePositionFilter(query, positionId);
             query = ApplyEmployeeFilters(query, searchKey);
+
+            query = query.OrderByDescending(c => c.CreatedAt);
 
             // Get total count after filtering
             var totalCount = await query.CountAsync();
@@ -77,7 +79,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Get paginated data
             var items = await query
                 .Include(em => em.User)
-                .OrderBy(em => em.EmployeeName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

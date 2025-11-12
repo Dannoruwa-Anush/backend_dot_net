@@ -57,17 +57,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
         //Custom Query Operations
         public async Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var query = _context.Brands.AsQueryable();
+            var query = _context.Brands.AsNoTracking().AsQueryable();
 
             // Apply filters from helper
-            query = ApplyBrandFilters(query, searchKey);
+            query = ApplyBrandFilters(query, searchKey).OrderByDescending(c => c.CreatedAt);
 
             // Get total count after filtering
             var totalCount = await query.CountAsync();
 
             // Get paginated data
             var items = await query
-                .OrderBy(b => b.BrandName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

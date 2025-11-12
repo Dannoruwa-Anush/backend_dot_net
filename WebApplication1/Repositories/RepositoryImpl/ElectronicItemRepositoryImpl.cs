@@ -69,17 +69,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
         //Custom Query Operations
         public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var query = _context.ElectronicItems.AsQueryable();
+            var query = _context.ElectronicItems.AsNoTracking().AsQueryable();
 
             // Apply filters from helper
-            query = ApplyElectronicItemFilters(query, searchKey);
+            query = ApplyElectronicItemFilters(query, searchKey).OrderByDescending(c => c.CreatedAt);
 
             var totalCount = await query.CountAsync();
 
             var items = await query
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
-                .OrderBy(i => i.ElectronicItemName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
