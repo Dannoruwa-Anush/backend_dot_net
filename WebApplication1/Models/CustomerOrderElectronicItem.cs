@@ -8,8 +8,7 @@ namespace WebApplication1.Models
     {
         //This is joint table (CustomerOrder(M) - ElectronicItem(M))
 
-        [Key]
-        public int OrderItemID { get; set; }
+        //Composite Key : order_id + E_ItemID  (will be handled in AppDbContext.cs)
 
         [Required(ErrorMessage = "Quantity is required")]
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]

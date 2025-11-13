@@ -29,7 +29,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(CustomerOrder customerOrder)
         {
             await _context.CustomerOrders.AddAsync(customerOrder);
-            await _context.SaveChangesAsync();
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
         }
 
         public async Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder)
@@ -42,7 +42,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.OrderStatus = customerOrder.OrderStatus;
 
             _context.CustomerOrders.Update(existing);
-            await _context.SaveChangesAsync();
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
 
             return existing;
         }

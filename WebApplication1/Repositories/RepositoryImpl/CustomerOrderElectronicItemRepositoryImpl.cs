@@ -16,7 +16,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //CRUD operations
-        public async Task AddAsync(CustomerOrderElectronicItem orderItem) =>
-            await _context.CustomerOrderElectronicItems.AddAsync(orderItem);
+        public async Task AddAsync(CustomerOrderElectronicItem orderItem)
+        {
+            await _context.CustomerOrderElectronicItems.AddAsync(orderItem); 
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
+        }
     }
 }

@@ -37,6 +37,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
         {
+            // Begin EF Core transaction
             await using var transaction = await _repository.BeginTransactionAsync();
             try
             {
@@ -48,8 +49,13 @@ namespace WebApplication1.Services.ServiceImpl
                 decimal totalAmount = 0;
 
                 // Validate stock & calculate subtotal for each order item
+                // Make sure there are no duplicate E_ItemID in the order
+                var itemIds = new HashSet<int>();
                 foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
                 {
+                    if (!itemIds.Add(orderItem.E_ItemID))
+                        throw new InvalidOperationException($"Duplicate item in order: {orderItem.E_ItemID}");
+
                     var electronicItem = await _electronicItemRepository.GetByIdAsync(orderItem.E_ItemID);
                     if (electronicItem == null)
                         throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
@@ -63,40 +69,31 @@ namespace WebApplication1.Services.ServiceImpl
 
                     // Deduct stock
                     electronicItem.QOH -= orderItem.Quantity;
-                    electronicItem.UpdatedAt = DateTime.UtcNow;
                     await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
-
-                    // Set creation timestamp
-                    orderItem.CreatedAt = DateTime.UtcNow;
                 }
 
                 // Set order total & default statuses
                 customerOrder.TotalAmount = totalAmount;
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
                 customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
-                customerOrder.CreatedAt = DateTime.UtcNow;
 
-                // Save order
+                // Save order along with its child items in one go
+                // EF Core will automatically insert CustomerOrderElectronicItems via navigation property
                 await _repository.AddAsync(customerOrder);
                 await _repository.SaveChangesAsync();
 
-                // Save order items separately if repository requires it
-                foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
-                {
-                    orderItem.OrderID = customerOrder.OrderID; // FK linking
-                    await _customerOrderElectronicItemRepository.AddAsync(orderItem);
-                }
-
-                await _repository.SaveChangesAsync();
-
+                // Commit transaction
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("Customer order created: Id={Id}, TotalAmount={Total}", customerOrder.OrderID, totalAmount);
+
                 return customerOrder;
             }
             catch (Exception ex)
             {
+                // Rollback transaction if anything fails
                 await transaction.RollbackAsync();
+
                 _logger.LogError(ex, "Failed to create customer order.");
                 throw;
             }
@@ -156,7 +153,6 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             existing.OrderPaymentStatus = newOrderPaymentStatus;
-            existing.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(id, existing);
             _logger.LogInformation("Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}", existing.OrderID, existing.OrderPaymentStatus);
@@ -220,7 +216,6 @@ namespace WebApplication1.Services.ServiceImpl
                         if (electronicItem != null)
                         {
                             electronicItem.QOH += item.Quantity; // Restock
-                            electronicItem.UpdatedAt = DateTime.UtcNow;
                             await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
                         }
                     }
@@ -237,7 +232,6 @@ namespace WebApplication1.Services.ServiceImpl
                 }
 
                 existing.OrderStatus = newOrderStatus;
-                existing.UpdatedAt = DateTime.UtcNow;
 
                 await _repository.UpdateAsync(id, existing);
                 await _repository.SaveChangesAsync();
