@@ -86,7 +86,6 @@ namespace WebApplication1.Controllers
                     "An internal server error occurred. Please try again later."
                 ));
             }
-
         }
 
         [HttpPut("{id}")]
