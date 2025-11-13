@@ -15,14 +15,18 @@ namespace WebApplication1.Controllers
     public class CustomerOrderController : ControllerBase
     {
         private readonly ICustomerOrderService _service;
+        private readonly IInvoiceService _invoiceService;
+        private readonly IWebHostEnvironment _env;
 
         private readonly IMapper _mapper;
 
         // Constructor
-        public CustomerOrderController(ICustomerOrderService service, IMapper mapper)
+        public CustomerOrderController(ICustomerOrderService service, IInvoiceService invoiceService, IWebHostEnvironment env, IMapper mapper)
         {
             // Dependency injection
             _service = service;
+            _invoiceService = invoiceService;
+            _env = env;
             _mapper = mapper;
         }
 
@@ -147,7 +151,7 @@ namespace WebApplication1.Controllers
 
         [HttpGet("paged/customer")]
         [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
-        public async Task<IActionResult> GetAllByCustomer([FromQuery]int customerId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? orderStatusId = null, string? searchKey = null)
+        public async Task<IActionResult> GetAllByCustomer([FromQuery] int customerId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? orderStatusId = null, string? searchKey = null)
         {
             try
             {
@@ -168,6 +172,31 @@ namespace WebApplication1.Controllers
             }
         }
 
-        //get invoice
+        [HttpGet("invoice/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetOrderInvoiceByOrderId(int id)
+        {
+            var customerOrder = await _service.GetCustomerOrderByIdAsync(id);
+
+            if (customerOrder == null)
+                return NotFound(new ApiResponseDto<string>(404, "Customer order not found"));
+
+            var orderDto = _mapper.Map<CustomerOrderResponseDto>(customerOrder);
+
+            // Generate invoice PDF using service
+            var relativePath = await _invoiceService.GenerateInvoicePdfAsync(orderDto);
+            var fullPath = Path.Combine(_env.WebRootPath, relativePath);
+
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound(new ApiResponseDto<string>(404, "Failed to generate invoice file"));
+
+            // Return file for download
+            //var fileBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+            //var fileName = Path.GetFileName(fullPath);
+            //return File(fileBytes, "application/pdf", fileName);
+
+            var fileUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
+            return Ok(new ApiResponseDto<string>(200, "Invoice generated successfully", fileUrl));
+        }
     }
 }

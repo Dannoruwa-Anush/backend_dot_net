@@ -71,7 +71,10 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
 //--------------------[Services DI]-----------------
 builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICategoryService, CategoryServiceImpl>()
+
                 .AddScoped<IFileService, FileServiceImpl>()
+                .AddScoped<IInvoiceService, InvoiceServiceImpl>()
+
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
                 .AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<IEmployeeService, EmployeeServiceImpl>()
