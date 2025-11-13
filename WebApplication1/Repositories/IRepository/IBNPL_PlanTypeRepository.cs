@@ -11,9 +11,9 @@ namespace WebApplication1.Repositories.IRepository
         Task AddAsync(BNPL_PlanType bNPL_PlanType);
         Task<BNPL_PlanType?> UpdateAsync(int id, BNPL_PlanType bNPL_PlanType);
         Task<bool> DeleteAsync(int id);
-        Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
 
         //Custom Query Operations
+        Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
         Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name);
         Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name, int excludeId);
     }

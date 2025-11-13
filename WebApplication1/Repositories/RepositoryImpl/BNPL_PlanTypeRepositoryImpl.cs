@@ -59,11 +59,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return true;
         }
 
-        public async Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        //Custom Query Operations
+        public async Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            var totalCount = await _context.BNPL_PlanTypes.CountAsync();
+            var query = _context.BNPL_PlanTypes.AsNoTracking().AsQueryable();
 
-            var items = await _context.BNPL_PlanTypes
+            // Apply filters from helper
+            query = ApplyBrandFilters(query, searchKey).OrderByDescending(c => c.CreatedAt);
+
+            // Get total count after filtering
+            var totalCount = await query.CountAsync();
+
+            // Get paginated data
+            var items = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -76,8 +84,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageSize = pageSize
             };
         }
+
+        //Helper method
+        private IQueryable<BNPL_PlanType> ApplyBrandFilters(IQueryable<BNPL_PlanType> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim();
+                query = query.Where(b => EF.Functions.Like(b.Bnpl_PlanTypeName, $"%{searchKey}%"));
+            }
+
+            return query;
+        }
         
-        //Custom Query Operations
         public async Task<bool> ExistsByBNPL_PlanTypeNameAsync(string name)
         {
             return await _context.BNPL_PlanTypes.AnyAsync(bnpTy => bnpTy.Bnpl_PlanTypeName.ToLower() == name.ToLower());

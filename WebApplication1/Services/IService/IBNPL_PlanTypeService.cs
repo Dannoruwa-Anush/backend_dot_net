@@ -12,7 +12,7 @@ namespace WebApplication1.Services.IService
         Task<BNPL_PlanType> UpdateBNPL_PlanTypeAsync(int id, BNPL_PlanType bNPL_PlanType);
         Task DeleteBNPL_PlanTypeAsync(int id);
 
-        //CRUD operations
-        Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize);
+        //Custom Query Operations
+        Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
     }
 }

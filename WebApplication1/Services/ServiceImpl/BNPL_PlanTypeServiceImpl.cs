@@ -85,9 +85,9 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //CRUD operations
-        public async Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize)
+        public async Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize);
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
         }
     }
 }
