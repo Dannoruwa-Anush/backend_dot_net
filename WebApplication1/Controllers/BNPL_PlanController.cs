@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.RequestDto.BnplCal;
@@ -12,6 +13,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class BNPL_PlanController : ControllerBase
     {
         private readonly IBNPL_PlanService _service;

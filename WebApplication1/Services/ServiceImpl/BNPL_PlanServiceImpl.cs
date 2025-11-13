@@ -14,18 +14,20 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanRepository _repository;
         private readonly IBNPL_PlanTypeRepository _bnpl_PlanTypeRepository;
         private readonly IBNPL_InstallmentRepository _bnpl_installmentRepository;
+        private readonly ICustomerOrderRepository _customerOrderRepository;
 
         //logger: for auditing
         private readonly ILogger<BNPL_PlanServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ILogger<BNPL_PlanServiceImpl> logger)
+        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _bnpl_PlanTypeRepository = bnpl_PlanTypeRepository;
+            _repository                 = repository;
+            _bnpl_PlanTypeRepository    = bnpl_PlanTypeRepository;
             _bnpl_installmentRepository = bnpl_installmentRepository;
-            _logger = logger;
+            _customerOrderRepository    = customerOrderRepository;
+            _logger                     = logger;
         }
 
         //CRUD operations
@@ -134,6 +136,12 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Custom Query Operations
+        public async Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null)
+        {
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, planStatusId, searchKey);
+        }
+
+        //calculator
         public async Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
             var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(request.Bnpl_PlanTypeID);
@@ -143,11 +151,15 @@ namespace WebApplication1.Services.ServiceImpl
             if (request.InstallmentCount <= 0)
                 throw new Exception("Installment count must be greater than zero.");
 
-            if (request.OrderAmount <= request.InitialPayment)
+            var customerOrder = await _customerOrderRepository.GetByIdAsync(request.OrderID);   
+             if (customerOrder == null)
+                throw new Exception("Customer order not found"); 
+
+            if (customerOrder.TotalAmount <= request.InitialPayment)
                 throw new Exception("Initial payment must be less than total order amount.");
 
             // Core calculation
-            var principal = request.OrderAmount - request.InitialPayment;
+            var principal = customerOrder.TotalAmount - request.InitialPayment;
             var interestAmount = principal * (planType.InterestRate / 100);
             var totalPayable = principal + interestAmount;
             var perInstallment = totalPayable / request.InstallmentCount;
@@ -164,11 +176,6 @@ namespace WebApplication1.Services.ServiceImpl
                 PlanTypeName = planType.Bnpl_PlanTypeName,
                 Description = planType.Bnpl_Description
             };
-        }
-
-        public async Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null)
-        {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, planStatusId, searchKey);
         }
     }
 }
