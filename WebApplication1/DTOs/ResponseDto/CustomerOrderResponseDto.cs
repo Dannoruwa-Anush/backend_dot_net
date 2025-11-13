@@ -24,5 +24,8 @@ namespace WebApplication1.DTOs.ResponseDto
 
         // Include simplified info about FK: Customer 
         public required CustomerResponseDto CustomerResponseDto { get; set; }
+
+        // Include simplified info about child items: CustomerOrderElectronicItem 
+        public ICollection<CustomerOrderElectronicItemResponseDto> CustomerOrderElectronicItemResponseDto { get; set; } = new List<CustomerOrderElectronicItemResponseDto>();
     }
 }
