@@ -41,7 +41,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.Bnpl_DurationDays = bNPL_PlanType.Bnpl_DurationDays;
             existing.Bnpl_Description = bNPL_PlanType.Bnpl_Description;
 
-            _context.BNPL_PlanTypes.Update(bNPL_PlanType);
+            _context.BNPL_PlanTypes.Update(existing);
             await _context.SaveChangesAsync();
 
             return existing;

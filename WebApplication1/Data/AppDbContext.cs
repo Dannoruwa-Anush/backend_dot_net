@@ -175,6 +175,8 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<BNPL_PlanType>(entity =>
             {
+                entity.HasIndex(p => p.Bnpl_PlanTypeName).IsUnique();
+
                 entity.Property(p => p.InterestRate)
                       .HasColumnType("decimal(5,2)");
 

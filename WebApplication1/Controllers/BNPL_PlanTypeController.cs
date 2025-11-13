@@ -62,15 +62,30 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BNPL_PlanTypeRequestDto bNPL_PlanTypeCreateDto)
         {
-            // RequestDto -> Model
-            var bNPL_PlanType = _mapper.Map<BNPL_PlanType>(bNPL_PlanTypeCreateDto);
-            var created = await _service.AddBNPL_PlanTypeAsync(bNPL_PlanType);
+            try
+            {
+                // RequestDto -> Model
+                var bNPL_PlanType = _mapper.Map<BNPL_PlanType>(bNPL_PlanTypeCreateDto);
+                var created = await _service.AddBNPL_PlanTypeAsync(bNPL_PlanType);
 
-            // Model -> ResponseDto
-            var responseDtos = _mapper.Map<BNPL_PlanTypeResponseDto>(created);
-            var response = new ApiResponseDto<BNPL_PlanTypeResponseDto>(201, "BNPL Plan Type created successfully", responseDtos);
+                // Model -> ResponseDto
+                var responseDtos = _mapper.Map<BNPL_PlanTypeResponseDto>(created);
+                var response = new ApiResponseDto<BNPL_PlanTypeResponseDto>(201, "BNPL Plan Type created successfully", responseDtos);
 
-            return CreatedAtAction(nameof(GetById), new { id = responseDtos.Bnpl_PlanTypeID }, response);
+                return CreatedAtAction(nameof(GetById), new { id = responseDtos.Bnpl_PlanTypeID }, response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "BNPL Plan Type not found"));
+
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new ApiResponseDto<string>(400, "BNPL Plan Type with the given name already exists"));
+
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
         }
 
         [HttpPut("{id}")]
