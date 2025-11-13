@@ -28,7 +28,7 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
-         [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var orders = await _service.GetAllCustomerOrdersAsync();
@@ -62,15 +62,34 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CustomerOrderRequestDto customerCreateDto)
         {
-            // RequestDto -> Model
-            var customerOrder = _mapper.Map<CustomerOrder>(customerCreateDto);
-            var created = await _service.AddCustomerOrderAsync(customerOrder);
+            try
+            {
+                // RequestDto -> Model
+                var customerOrder = _mapper.Map<CustomerOrder>(customerCreateDto);
+                var created = await _service.AddCustomerOrderAsync(customerOrder);
 
-            // Model -> ResponseDto
-            var responseDto = _mapper.Map<CustomerOrderResponseDto>(created);
-            var response = new ApiResponseDto<CustomerOrderResponseDto>(201, "Customer order created successfully", responseDto);
+                // Model -> ResponseDto
+                var responseDto = _mapper.Map<CustomerOrderResponseDto>(created);
+                var response = new ApiResponseDto<CustomerOrderResponseDto>(201, "Customer order created successfully", responseDto);
 
-            return CreatedAtAction(nameof(GetById), new { id = responseDto.OrderID }, response);
+                return CreatedAtAction(nameof(GetById), new { id = responseDto.OrderID }, response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Order not found"));
+
+                if (message.Contains("Insufficient stock", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new ApiResponseDto<string>(400, "Insufficient stock"));
+
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
+
         }
 
         [HttpPut("{id}")]

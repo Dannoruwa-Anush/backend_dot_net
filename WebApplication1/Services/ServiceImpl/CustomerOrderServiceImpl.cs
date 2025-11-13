@@ -3,6 +3,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
@@ -12,20 +13,18 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICustomerOrderRepository _repository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
-        private readonly ICustomerOrderElectronicItemRepository _customerOrderElectronicItemRepository;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ICustomerOrderElectronicItemRepository customerOrderElectronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _customerRepository = customerRepository;
+            _repository               = repository;
+            _customerRepository       = customerRepository;
             _electronicItemRepository = electronicItemRepository;
-            _customerOrderElectronicItemRepository = customerOrderElectronicItemRepository;
-            _logger = logger;
+            _logger                   = logger;
         }
 
         //CRUD operations
@@ -53,13 +52,16 @@ namespace WebApplication1.Services.ServiceImpl
                 var itemIds = new HashSet<int>();
                 foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
                 {
+                    if (orderItem.Quantity <= 0)
+                        throw new InvalidOperationException($"Invalid quantity for item {orderItem.E_ItemID}. Quantity must be greater than zero.");
+                        
                     if (!itemIds.Add(orderItem.E_ItemID))
                         throw new InvalidOperationException($"Duplicate item in order: {orderItem.E_ItemID}");
 
                     var electronicItem = await _electronicItemRepository.GetByIdAsync(orderItem.E_ItemID);
                     if (electronicItem == null)
                         throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
-
+                    
                     if (electronicItem.QOH < orderItem.Quantity)
                         throw new InvalidOperationException($"Insufficient stock for {electronicItem.ElectronicItemName}");
 
@@ -75,6 +77,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Set order total & default statuses
                 customerOrder.TotalAmount = totalAmount;
+                customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
                 customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
 
@@ -172,7 +175,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             if (oldStatus == newOrderStatus)
                 return existing; // No change
-
+            
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
             // Validation: allowed transitions
             switch (oldStatus)
             {
@@ -190,7 +194,8 @@ namespace WebApplication1.Services.ServiceImpl
                     if (newOrderStatus == OrderStatusEnum.Cancelled)
                     {
                         // 14-day cancellation window
-                        var daysSinceDelivery = (DateTime.UtcNow - (existing.DeliveredDate ?? DateTime.UtcNow)).TotalDays;
+                        var deliveredDate = existing.DeliveredDate ?? now;
+                        var daysSinceDelivery = (now - deliveredDate).TotalDays;
                         if (daysSinceDelivery > 14)
                             throw new InvalidOperationException("Cannot cancel delivered orders after 14 days.");
                     }
@@ -221,15 +226,15 @@ namespace WebApplication1.Services.ServiceImpl
                         }
                     }
 
-                    existing.CancelledDate = DateTime.UtcNow;
+                    existing.CancelledDate = now;
                 }
                 else if (newOrderStatus == OrderStatusEnum.Shipped)
                 {
-                    existing.ShippedDate = DateTime.UtcNow;
+                    existing.ShippedDate = now;
                 }
                 else if (newOrderStatus == OrderStatusEnum.Delivered)
                 {
-                    existing.DeliveredDate = DateTime.UtcNow;
+                    existing.DeliveredDate = now;
                 }
 
                 existing.OrderStatus = newOrderStatus;
