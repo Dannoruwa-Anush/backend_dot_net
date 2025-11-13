@@ -145,7 +145,7 @@ namespace WebApplication1.Controllers
         //Custom Query Operations
         [HttpGet("paged")]
         [Authorize(Roles = "Admin, Employee")] // JWT is required
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
+        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
             try
             {

@@ -27,15 +27,33 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var bnpl_Plans = await _service.GetAllBNPL_PlansAsync();
+            if (bnpl_Plans == null || !bnpl_Plans.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Bnpl Plans not found"));
+            
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<IEnumerable<BNPL_PlanResponseDto>>(bnpl_Plans);
+            var response = new ApiResponseDto<IEnumerable<BNPL_PlanResponseDto>>(
+                200,
+                "All Bnpl Plans retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var bnpl_Plan = await _service.GetBNPL_PlanByIdAsync(id);
             if (bnpl_Plan == null)
-                return NotFound(new ApiResponseDto<String>(404, "BNPL plan not found"));
+                return NotFound(new ApiResponseDto<string>(404, "BNPL plan not found"));
 
-            var dto = _mapper.Map<BNPL_PlanResponseDto>(bnpl_Plan);
-            var response = new ApiResponseDto<BNPL_PlanResponseDto>(200, "BNPL Plans retrieved successfully", dto);
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<BNPL_PlanResponseDto>(bnpl_Plan);
+            var response = new ApiResponseDto<BNPL_PlanResponseDto>(200, "BNPL Plans retrieved successfully", responseDtos);
 
             return Ok(response);
         }
@@ -43,16 +61,41 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BNPL_PlanRequestDto bNPL_PlanCreateDto)
         {
+            // RequestDto -> Model
             var bNPL_Plan = _mapper.Map<BNPL_PLAN>(bNPL_PlanCreateDto);
             var created = await _service.AddBNPL_PlanAsync(bNPL_Plan);
-            var dto = _mapper.Map<BNPL_PlanResponseDto>(created);
 
-            var response = new ApiResponseDto<BNPL_PlanResponseDto>(201, "BNPL Plan created successfully", dto);
+            // Model -> ResponseDto
+            var responseDto = _mapper.Map<BNPL_PlanResponseDto>(created);
+            var response = new ApiResponseDto<BNPL_PlanResponseDto>(201, "BNPL Plan created successfully", responseDto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.Bnpl_PlanID}, response);
+            return CreatedAtAction(nameof(GetById), new { id = responseDto.Bnpl_PlanID}, response);
         }
    
         //Custom Query Operations
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? planStatusId = null,  string? searchKey = null)
+        {
+            try
+            {
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, planStatusId, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<BNPL_PlanResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<BNPL_PlanResponseDto>>(
+                    200,
+                    "Bnpl Plans retrieved successfully with pagination",
+                    paginationResponse
+                );
+
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
+        }
+
+        //calculator
         [HttpPost("calculateInstallment")]
         public async Task<IActionResult> CalculateInstallment([FromBody] BNPLInstallmentCalculatorRequestDto request)
         {
