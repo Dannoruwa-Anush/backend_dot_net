@@ -13,10 +13,11 @@ namespace WebApplication1.Repositories.IRepository
         Task AddAsync(CustomerOrder customerOrder);
         Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder);
 
-        //Custom Query Operations        
+        //Custom Query Operations 
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<bool> ExistsByCustomerAsync(int customerId);
-
+        Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
+        
         // EF transaction support
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task SaveChangesAsync();

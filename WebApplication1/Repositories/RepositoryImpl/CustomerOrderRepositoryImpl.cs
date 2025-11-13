@@ -128,6 +128,41 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.CustomerOrders.AnyAsync(o => o.CustomerID == customerId);
         }
 
+        public async Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null)
+        {
+             // Start query
+            var query = _context.CustomerOrders
+                .Include(o => o.Customer) // Include customer for email/phone search
+                .AsQueryable();
+
+            //filter by customer Id
+            query = query.Where(o => o.CustomerID == customerId);    
+
+            // Apply filters
+            query = ApplyOrderStatusFilter(query, orderStatusId);
+            query = ApplySearch(query, searchKey);
+
+            query = query.OrderByDescending(c => c.CreatedAt);
+
+            // Total count after filters
+            var totalCount = await query.CountAsync();
+
+            // Pagination
+            var items = await query
+                .OrderByDescending(o => o.OrderDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginationResultDto<CustomerOrder>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
         // EF transaction support
         public async Task<IDbContextTransaction> BeginTransactionAsync() =>
             await _context.Database.BeginTransactionAsync();

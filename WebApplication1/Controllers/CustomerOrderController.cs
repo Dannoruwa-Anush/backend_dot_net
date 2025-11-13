@@ -144,5 +144,30 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
+
+        [HttpGet("paged/customer")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
+        public async Task<IActionResult> GetAllByCustomer([FromQuery]int customerId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? orderStatusId = null, string? searchKey = null)
+        {
+            try
+            {
+                var pageResultDto = await _service.GetAllByCustomerWithPaginationAsync(customerId, pageNumber, pageSize, orderStatusId, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<CustomerOrderResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<CustomerOrderResponseDto>>(
+                    200,
+                    "Orders of customer retrieved successfully with pagination",
+                    paginationResponse
+                );
+
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
+        }
+
+        //get invoice
     }
 }
