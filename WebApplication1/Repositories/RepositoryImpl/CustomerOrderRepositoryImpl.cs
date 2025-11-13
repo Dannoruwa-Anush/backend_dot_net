@@ -65,6 +65,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             query = ApplyOrderStatusFilter(query, orderStatusId);
             query = ApplySearch(query, searchKey);
 
+            query = query.OrderByDescending(c => c.CreatedAt);
+
             // Total count after filters
             var totalCount = await query.CountAsync();
 
