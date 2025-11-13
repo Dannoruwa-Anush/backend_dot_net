@@ -12,7 +12,6 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous] // JWT is not required
     public class CustomerOrderController : ControllerBase
     {
         private readonly ICustomerOrderService _service;
@@ -29,6 +28,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetAll()
         {
             var orders = await _service.GetAllCustomerOrdersAsync();
@@ -46,6 +46,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
             var customerOrder = await _service.GetCustomerOrderByIdAsync(id);
@@ -60,6 +61,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Employee, Customer")] // JWT is required
         public async Task<IActionResult> Create([FromBody] CustomerOrderRequestDto customerCreateDto)
         {
             try
@@ -89,6 +91,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Employee, Customer")] // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] CustomerOrderUpdateDto orderUpdateDto)
         {
             try
@@ -120,6 +123,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
         public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null)
         {
             try
