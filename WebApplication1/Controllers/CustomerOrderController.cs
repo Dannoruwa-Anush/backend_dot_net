@@ -78,11 +78,8 @@ namespace WebApplication1.Controllers
             {
                 var message = ex.Message;
 
-                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ApiResponseDto<string>(404, "Order not found"));
-
                 if (message.Contains("Insufficient stock", StringComparison.OrdinalIgnoreCase))
-                    return BadRequest(new ApiResponseDto<string>(400, "Insufficient stock"));
+                    return BadRequest(new ApiResponseDto<string>(400, "Insufficient stock. Please try again later."));
 
                 return StatusCode(500, new ApiResponseDto<string>(
                     500,
