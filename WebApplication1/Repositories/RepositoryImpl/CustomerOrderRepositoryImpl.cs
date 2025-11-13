@@ -24,7 +24,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.CustomerOrders.ToListAsync();
 
         public async Task<CustomerOrder?> GetByIdAsync(int id) =>
-            await _context.CustomerOrders.FindAsync(id);
+            await _context.CustomerOrders
+                .Include(o => o.Customer)
+                    .ThenInclude(ou => ou.User)
+                .Include(o => o.CustomerOrderElectronicItems)
+                    .ThenInclude(oi => oi.ElectronicItem)
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
         public async Task AddAsync(CustomerOrder customerOrder)
         {
