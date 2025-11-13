@@ -64,7 +64,8 @@ namespace WebApplication1.Services.ServiceImpl
                         throw new InvalidOperationException($"Insufficient stock for {electronicItem.ElectronicItemName}");
 
                     // Compute subtotal
-                    orderItem.SubTotal = orderItem.Quantity * orderItem.UnitPrice;
+                    orderItem.UnitPrice = electronicItem.Price;
+                    orderItem.SubTotal = orderItem.Quantity * electronicItem.Price;
                     totalAmount += orderItem.SubTotal;
 
                     // Deduct stock
