@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -101,7 +102,27 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, OrderPaymentStatusEnum newOrderPaymentStatus)
+        public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrderUpdateDto updateDto)
+        {
+            if (updateDto == null)
+                throw new ArgumentNullException(nameof(updateDto));
+
+            if (updateDto.OrderStatus.HasValue)
+            {
+                return await UpdateCustomerOrderStatusAsync(id, updateDto.OrderStatus.Value);
+            }
+            else if (updateDto.PaymentStatus.HasValue)
+            {
+                return await UpdateCustomerOrderPaymentStatusAsync(id, updateDto.PaymentStatus.Value);
+            }
+            else
+            {
+                throw new Exception("No valid update fields provided");
+            }
+        }
+
+        //Helper method : to Update PaymentStatus
+        private async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, OrderPaymentStatusEnum newOrderPaymentStatus)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -143,7 +164,8 @@ namespace WebApplication1.Services.ServiceImpl
             return existing;
         }
 
-        public async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(int id, OrderStatusEnum newOrderStatus)
+        //Helper method : to update OrderStatus
+        private async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(int id, OrderStatusEnum newOrderStatus)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
