@@ -164,7 +164,14 @@ namespace WebApplication1.Services.ServiceImpl
             int installmentCount        = request.InstallmentCount;
 
             // Amortized monthly payment formula
+            /*
+            Note :
+                Monthly payment is fixed : makes budgeting predictable
+                Interest portion decreases over time : because it’s always calculated on the remaining balance
+                Principal portion increases over time : so by the last installment, almost the entire payment goes to principal
+            */
             decimal monthlyInstallment   = (monthlyInterestRate * principalAmount) / (1 - (decimal)Math.Pow((double)(1 + monthlyInterestRate), - installmentCount));
+            
             decimal totalRepaymentAmount = monthlyInstallment * installmentCount;
             decimal totalInterestAmount  = totalRepaymentAmount - principalAmount;
 
