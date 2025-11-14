@@ -75,37 +75,21 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null)
         {
             var query = _context.BNPL_PLANs
-                .Include(p => p.CustomerOrder)
-                    .ThenInclude(o => o.Customer)
-                .Include(p => p.BNPL_PlanType)
-                .AsQueryable();
+                        .Include(bpl => bpl.BNPL_PlanType)
+                        .AsNoTracking()
+                        .AsQueryable();
 
-            // Filter by Plan Status (if provided)
-            if (planStatusId.HasValue)
-            {
-                var statusEnum = (BnplStatusEnum)planStatusId.Value;
-                query = query.Where(p => p.Bnpl_Status == statusEnum);
-            }
+            // Apply filters from helper
+            query = ApplyPlanStatusFilter(query, planStatusId);
+            query = ApplySearch(query, searchKey);
 
-            // Apply search filter (Order ID, PlanType ID, Customer email, phone)
-            if (!string.IsNullOrWhiteSpace(searchKey))
-            {
-                searchKey = searchKey.Trim().ToLower();
+            query = query.OrderByDescending(c => c.CreatedAt);
 
-                query = query.Where(p =>
-                    p.OrderID.ToString().Contains(searchKey) ||
-                    p.Bnpl_PlanTypeID.ToString().Contains(searchKey) ||
-                    (p.CustomerOrder.Customer.User.Email != null && p.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey)) ||
-                    (p.CustomerOrder.Customer.PhoneNo != null && p.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey))
-                );
-            }
-
-            // Get total count before pagination
+            // Total count after filters
             var totalCount = await query.CountAsync();
 
-            // Apply pagination
+            // Pagination
             var items = await query
-                .OrderByDescending(p => p.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -118,6 +102,35 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+
+        // Helper method: plan status filter
+        private IQueryable<BNPL_PLAN> ApplyPlanStatusFilter(IQueryable<BNPL_PLAN> query, int? planStatusId)
+        {
+            if (planStatusId.HasValue)
+            {
+                var statusEnum = (BnplStatusEnum)planStatusId.Value;
+                query = query.Where(p => p.Bnpl_Status == statusEnum);
+            }
+
+            return query;
+        }
+
+        // Helper method: Search filter (email, phone, order date)
+        private IQueryable<BNPL_PLAN> ApplySearch(IQueryable<BNPL_PLAN> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim().ToLower();
+
+                query = query.Where(p =>
+                    p.OrderID.ToString().Contains(searchKey) ||
+                    p.Bnpl_PlanTypeID.ToString().Contains(searchKey) ||
+                    (p.CustomerOrder.Customer.User.Email != null && p.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey)) ||
+                    (p.CustomerOrder.Customer.PhoneNo != null && p.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey))
+                );
+            }
+            return query;
         }
 
         // EF transaction support

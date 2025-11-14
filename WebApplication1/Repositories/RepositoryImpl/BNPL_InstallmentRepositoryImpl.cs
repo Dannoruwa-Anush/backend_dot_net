@@ -50,7 +50,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             // Start base query — include related data for searching and display
             var query = _context.BNPL_Installments
-                .Include(i => i.BNPL_PLAN)
+                .Include(i => i.BNPL_PLAN!)
                     .ThenInclude(p => p.CustomerOrder)
                         .ThenInclude(o => o.Customer)
                 .AsQueryable();
@@ -68,7 +68,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 searchKey = searchKey.Trim().ToLower();
 
                 query = query.Where(i =>
-                    i.BNPL_PLAN.OrderID.ToString().Contains(searchKey) ||
+                    i.BNPL_PLAN!.OrderID.ToString().Contains(searchKey) ||
                     i.BNPL_PLAN.Bnpl_PlanID.ToString().Contains(searchKey) ||
                     i.BNPL_PLAN.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey) ||
                     i.BNPL_PLAN.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey)
@@ -98,7 +98,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId)
         {
             return await _context.BNPL_Installments
-                .Include(i => i.BNPL_PLAN)
+                .Include(i => i.BNPL_PLAN!)
                     .ThenInclude(p => p.CustomerOrder)
                 .Where(i => i.Bnpl_PlanID == planId)
                 .OrderBy(i => i.InstallmentNo)

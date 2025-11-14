@@ -65,14 +65,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
             query = ApplyOrderStatusFilter(query, orderStatusId);
             query = ApplySearch(query, searchKey);
 
-            query = query.OrderByDescending(c => c.CreatedAt);
+            query = query.OrderByDescending(c => c.OrderDate);
 
             // Total count after filters
             var totalCount = await query.CountAsync();
 
             // Pagination
             var items = await query
-                .OrderByDescending(o => o.OrderDate)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

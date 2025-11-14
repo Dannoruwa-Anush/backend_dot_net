@@ -24,11 +24,11 @@ namespace WebApplication1.Services.ServiceImpl
         public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _bnpl_PlanTypeRepository = bnpl_PlanTypeRepository;
+            _repository                 = repository;
+            _bnpl_PlanTypeRepository    = bnpl_PlanTypeRepository;
             _bnpl_installmentRepository = bnpl_installmentRepository;
-            _customerOrderRepository = customerOrderRepository;
-            _logger = logger;
+            _customerOrderRepository    = customerOrderRepository;
+            _logger                     = logger;
         }
 
         //CRUD operations
