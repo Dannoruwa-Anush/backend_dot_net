@@ -9,7 +9,10 @@ namespace WebApplication1.AutoMapperProfiles
     {
         public BNPL_PlanAutoMapperProfiles()
         {
-            CreateMap<BNPL_PLAN, BNPL_PlanResponseDto>();
+            CreateMap<BNPL_PLAN, BNPL_PlanResponseDto>()
+                .ForMember(dest => dest.BNPL_PlanTypeResponseDto, opt => opt.MapFrom(src => src.BNPL_PlanType))
+                .ForMember(dest => dest.CustomerOrderResponseDto, opt => opt.MapFrom(src => src.CustomerOrder));
+
             CreateMap<BNPL_PlanRequestDto, BNPL_PLAN>();
         }
     }

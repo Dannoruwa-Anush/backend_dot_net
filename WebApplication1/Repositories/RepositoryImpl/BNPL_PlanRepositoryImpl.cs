@@ -21,10 +21,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_PLAN>> GetAllAsync() =>
-            await _context.BNPL_PLANs.ToListAsync();
+            await _context.BNPL_PLANs
+                    .Include(bpl => bpl.BNPL_PlanType)
+                    .ToListAsync();
 
         public async Task<BNPL_PLAN?> GetByIdAsync(int id) =>
-            await _context.BNPL_PLANs.FindAsync(id);
+            await _context.BNPL_PLANs
+                    .Include(bpl => bpl.BNPL_PlanType)
+                    .Include(bpl => bpl.CustomerOrder)
+                        .ThenInclude(bplC => bplC.Customer)
+                    .FirstOrDefaultAsync(bpl => bpl.Bnpl_PlanID == id);
 
         public async Task AddAsync(BNPL_PLAN bNPL_Plan)
         {
