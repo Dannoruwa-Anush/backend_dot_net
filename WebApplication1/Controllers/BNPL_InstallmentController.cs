@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto.BnplPaymentSimulation;
 using WebApplication1.DTOs.ResponseDto;
@@ -10,6 +11,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class BNPL_InstallmentController : ControllerBase
     {
         //Note: All installment payment/ installment payment refund will be handled by PaymentController
@@ -27,21 +29,39 @@ namespace WebApplication1.Controllers
         }
 
         //CRUD operations
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var bnpl_installments = await _service.GetAllBNPL_InstallmentsAsync();
+            if (bnpl_installments == null || !bnpl_installments.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Bnpl installments not found"));
+            
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<IEnumerable<BNPL_InstallmentResponseDto>>(bnpl_installments);
+            var response = new ApiResponseDto<IEnumerable<BNPL_InstallmentResponseDto>>(
+                200,
+                "All Bnpl installments retrieved successfully",
+                responseDtos
+            );
+            return Ok(response);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var cashflow = await _service.GetBNPL_InstallmentByIdAsync(id);
-            if (cashflow == null)
+            var bnpl_installment = await _service.GetBNPL_InstallmentByIdAsync(id);
+            if (bnpl_installment == null)
                 return NotFound(new ApiResponseDto<string>(404, "Bnpl installment not found"));
 
-            var dto = _mapper.Map<BNPL_InstallmentResponseDto>(cashflow);
-            var response = new ApiResponseDto<BNPL_InstallmentResponseDto>(200, "Bnpl installment retrieved successfully", dto);
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<BNPL_InstallmentResponseDto>(bnpl_installment);
+            var response = new ApiResponseDto<BNPL_InstallmentResponseDto>(200, "Bnpl installment retrieved successfully", responseDtos);
 
             return Ok(response);
         }
 
         //Custom Query Operations
-        [HttpGet]
+        [HttpGet("paged")]
         public async
         Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? bnpl_Installment_StatusId = null, [FromQuery] string? searchKey = null)
         {
@@ -84,7 +104,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        //
+        //Simulator
         [HttpPost("bnpl-installmant-payment-simulate")]
         public async Task<IActionResult> SimulateBnplInstallmentPayment([FromBody] BnplInstallmentPaymentSimulationRequestDto request)
         {
