@@ -23,11 +23,11 @@ namespace WebApplication1.Services.ServiceImpl
         public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanServiceImpl> logger)
         {
             // Dependency injection
-            _repository                 = repository;
-            _bnpl_PlanTypeRepository    = bnpl_PlanTypeRepository;
+            _repository = repository;
+            _bnpl_PlanTypeRepository = bnpl_PlanTypeRepository;
             _bnpl_installmentRepository = bnpl_installmentRepository;
-            _customerOrderRepository    = customerOrderRepository;
-            _logger                     = logger;
+            _customerOrderRepository = customerOrderRepository;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -151,30 +151,35 @@ namespace WebApplication1.Services.ServiceImpl
             if (request.InstallmentCount <= 0)
                 throw new Exception("Installment count must be greater than zero.");
 
-            var customerOrder = await _customerOrderRepository.GetByIdAsync(request.OrderID);   
-             if (customerOrder == null)
-                throw new Exception("Customer order not found"); 
+            var customerOrder = await _customerOrderRepository.GetByIdAsync(request.OrderID);
+            if (customerOrder == null)
+                throw new Exception("Customer order not found");
 
             if (customerOrder.TotalAmount <= request.InitialPayment)
                 throw new Exception("Initial payment must be less than total order amount.");
 
             // Core calculation
-            var principal = customerOrder.TotalAmount - request.InitialPayment;
-            var interestAmount = principal * (planType.InterestRate / 100);
-            var totalPayable = principal + interestAmount;
-            var perInstallment = totalPayable / request.InstallmentCount;
+            decimal principalAmount     = customerOrder.TotalAmount - request.InitialPayment;
+            decimal monthlyInterestRate = planType.InterestRate / 100m;
+            int installmentCount        = request.InstallmentCount;
 
-            _logger.LogInformation("BNPL Calculation done for PlanType={Plan}, Principal={Principal}, Installments={Count}, Rate={Rate}", planType.Bnpl_PlanTypeName, principal, request.InstallmentCount, planType.InterestRate
+            // Amortized monthly payment formula
+            decimal monthlyInstallment   = (monthlyInterestRate * principalAmount) / (1 - (decimal)Math.Pow((double)(1 + monthlyInterestRate), - installmentCount));
+            decimal totalRepaymentAmount = monthlyInstallment * installmentCount;
+            decimal totalInterestAmount  = totalRepaymentAmount - principalAmount;
+
+            _logger.LogInformation("BNPL Calculation done for PlanType={Plan}, PrincipalAmount ={PrincipalAmount}, Installments={Count}, Rate={Rate}", planType.Bnpl_PlanTypeName, principalAmount, request.InstallmentCount, planType.InterestRate
             );
 
             return new BNPLInstallmentCalculatorResponseDto
             {
-                AmountPerInstallment = Math.Round(perInstallment, 2),
-                TotalPayable = Math.Round(totalPayable, 2),
                 InterestRate = planType.InterestRate,
                 LatePayInterestRate = planType.LatePayInterestRate,
                 PlanTypeName = planType.Bnpl_PlanTypeName,
-                Description = planType.Bnpl_Description
+                Description = planType.Bnpl_Description,
+                AmountPerInstallment = Math.Round(monthlyInstallment, 2),
+                TotalPayable = Math.Round(totalRepaymentAmount, 2),
+                TotalInterestAmount = Math.Round(totalInterestAmount, 2)
             };
         }
     }
