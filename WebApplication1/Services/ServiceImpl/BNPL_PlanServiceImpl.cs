@@ -56,11 +56,8 @@ namespace WebApplication1.Services.ServiceImpl
                 var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
 
-                int totalDays = planType.Bnpl_DurationDays;
                 int installmentCount = bNPL_Plan.Bnpl_TotalInstallmentCount;
-
-                // Calculate days per installment
-                double daysPerInstallment = (double)totalDays / installmentCount;
+                int daysPerInstallment = planType.Bnpl_DurationDays;
 
                 // Prepare BNPL Plan
                 bNPL_Plan.Bnpl_RemainingInstallmentCount = installmentCount;

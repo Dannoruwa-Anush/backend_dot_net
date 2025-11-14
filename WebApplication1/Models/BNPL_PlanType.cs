@@ -16,7 +16,7 @@ namespace WebApplication1.Models
         public string Bnpl_PlanTypeName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Bnpl duration is required")]
-        public int Bnpl_DurationDays { get; set; }
+        public int Bnpl_DurationDays { get; set; } //weekly plan : 7 days, Monthly plan : 30 days
 
         [Required(ErrorMessage = "Interest rate is required")]
         [Column(TypeName = "decimal(5,2)")]
