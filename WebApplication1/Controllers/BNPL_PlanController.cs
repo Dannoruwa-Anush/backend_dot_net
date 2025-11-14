@@ -13,7 +13,6 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class BNPL_PlanController : ControllerBase
     {
         private readonly IBNPL_PlanService _service;
@@ -30,6 +29,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetAll()
         {
             var bnpl_Plans = await _service.GetAllBNPL_PlansAsync();
@@ -47,6 +47,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
             var bnpl_Plan = await _service.GetBNPL_PlanByIdAsync(id);
@@ -61,6 +62,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Create([FromBody] BNPL_PlanRequestDto bNPL_PlanCreateDto)
         {
             // RequestDto -> Model
@@ -73,9 +75,12 @@ namespace WebApplication1.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = responseDto.Bnpl_PlanID}, response);
         }
-   
+
+        //Note : Put request will be handled by payment or order cancel
+
         //Custom Query Operations
         [HttpGet("paged")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? planStatusId = null,  string? searchKey = null)
         {
             try
@@ -99,6 +104,7 @@ namespace WebApplication1.Controllers
 
         //calculator
         [HttpPost("calculateInstallment")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> CalculateInstallment([FromBody] BNPLInstallmentCalculatorRequestDto request)
         {
             try
