@@ -56,7 +56,7 @@ namespace WebApplication1.Models
         // Many Side: Navigation property
         [ForeignKey(nameof(Bnpl_PlanID))]
         [InverseProperty(nameof(BNPL_PLAN.BNPL_Installments))]
-        public required BNPL_PLAN BNPL_PLAN { get; set; }
+        public BNPL_PLAN? BNPL_PLAN { get; set; }
         //******* [End: BNPL_PLAN (1) — BNPL_Installment (M)] ******
     }
 }

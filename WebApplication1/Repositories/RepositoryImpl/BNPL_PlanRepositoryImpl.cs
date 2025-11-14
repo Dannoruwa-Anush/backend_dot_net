@@ -29,7 +29,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(BNPL_PLAN bNPL_Plan)
         {
             await _context.BNPL_PLANs.AddAsync(bNPL_Plan);
-            await _context.SaveChangesAsync();
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
         }
 
         public async Task<BNPL_PLAN?> UpdateAsync(int id, BNPL_PLAN updatedPlan)

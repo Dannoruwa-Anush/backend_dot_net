@@ -11,9 +11,6 @@ namespace WebApplication1.DTOs.RequestDto
 
         [Required(ErrorMessage = "Total installment count is required")]
         public int Bnpl_TotalInstallmentCount { get; set; }
-
-        [Required(ErrorMessage = "Remaining installment count is required")]
-        public int Bnpl_RemainingInstallmentCount { get; set; }
            
         //FK
         public int Bnpl_PlanTypeID { get; set; }

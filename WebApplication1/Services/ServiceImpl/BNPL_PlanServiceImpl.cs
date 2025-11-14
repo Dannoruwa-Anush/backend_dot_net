@@ -4,6 +4,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 using WebApplication1.Utils.SystemConstants;
 
@@ -39,60 +40,65 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<BNPL_PLAN> AddBNPL_PlanAsync(BNPL_PLAN bNPL_Plan)
         {
-            using var transaction = await _repository.BeginTransactionAsync();
+            await using var transaction = await _repository.BeginTransactionAsync();
 
             try
             {
+                // Validate installment count
                 if (bNPL_Plan.Bnpl_TotalInstallmentCount <= 0)
                     throw new Exception("BNPL plan must have at least one installment.");
 
+                // Validate BNPL plan type
                 var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(bNPL_Plan.Bnpl_PlanTypeID);
                 if (planType == null)
                     throw new Exception("Invalid BNPL plan type.");
 
-                await _repository.AddAsync(bNPL_Plan);
-                await _repository.SaveChangesAsync();
+                var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+                int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
 
                 int totalDays = planType.Bnpl_DurationDays;
                 int installmentCount = bNPL_Plan.Bnpl_TotalInstallmentCount;
+
+                // Calculate days per installment
                 double daysPerInstallment = (double)totalDays / installmentCount;
 
-                //system const
-                int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
+                // Prepare BNPL Plan
+                bNPL_Plan.Bnpl_RemainingInstallmentCount = installmentCount;
+                bNPL_Plan.Bnpl_StartDate = now;
+                bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
+                bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
 
-                var installments = new List<BNPL_Installment>();
-                var startDate = bNPL_Plan.Bnpl_StartDate;
+                // Save plan
+                await _repository.AddAsync(bNPL_Plan);
+                await _repository.SaveChangesAsync();
+
+                // Create installment list
+                var installments = new List<BNPL_Installment>(installmentCount);
 
                 for (int i = 1; i <= installmentCount; i++)
                 {
-                    //First installment should be due after a trial period
-                    //Then subsequent installments follow the normal interval.
-                    var dueDate = startDate.AddDays(freeTrialDays + (daysPerInstallment * (i - 1)));
+                    var dueDate = now.AddDays(freeTrialDays + (daysPerInstallment * (i - 1)));
 
                     installments.Add(new BNPL_Installment
                     {
                         Bnpl_PlanID = bNPL_Plan.Bnpl_PlanID,
-                        BNPL_PLAN = bNPL_Plan,
                         InstallmentNo = i,
                         Installment_BaseAmount = bNPL_Plan.Bnpl_AmountPerInstallment,
                         Installment_DueDate = dueDate,
                         TotalDueAmount = bNPL_Plan.Bnpl_AmountPerInstallment,
-                        CreatedAt = DateTime.UtcNow,
+                        CreatedAt = now,
                         Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
                     });
                 }
 
+                // Add installments in a single batch
                 await _bnpl_installmentRepository.AddRangeAsync(installments);
-                await _repository.SaveChangesAsync();
-
-                bNPL_Plan.Bnpl_NextDueDate = installments.First().Installment_DueDate;
-                await _repository.UpdateAsync(bNPL_Plan.Bnpl_PlanID, bNPL_Plan);
                 await _repository.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
                 _logger.LogInformation(
-                    "BNPL plan created: Id={Id}, {Count} installments scheduled, trial={Trial} days before first installment.",
+                    "BNPL Plan Created: ID={Id}, {Count} installments, FreeTrial={TrialDays} days",
                     bNPL_Plan.Bnpl_PlanID,
                     installments.Count,
                     freeTrialDays
@@ -103,7 +109,7 @@ namespace WebApplication1.Services.ServiceImpl
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Failed to create BNPL plan with installments.");
+                _logger.LogError(ex, "Failed to create BNPL plan.");
                 throw;
             }
         }
@@ -159,9 +165,9 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception("Initial payment must be less than total order amount.");
 
             // Core calculation
-            decimal principalAmount     = customerOrder.TotalAmount - request.InitialPayment;
+            decimal principalAmount = customerOrder.TotalAmount - request.InitialPayment;
             decimal monthlyInterestRate = planType.InterestRate / 100m;
-            int installmentCount        = request.InstallmentCount;
+            int installmentCount = request.InstallmentCount;
 
             // Amortized monthly payment formula
             /*
@@ -170,10 +176,10 @@ namespace WebApplication1.Services.ServiceImpl
                 Interest portion decreases over time : because it’s always calculated on the remaining balance
                 Principal portion increases over time : so by the last installment, almost the entire payment goes to principal
             */
-            decimal monthlyInstallment   = (monthlyInterestRate * principalAmount) / (1 - (decimal)Math.Pow((double)(1 + monthlyInterestRate), - installmentCount));
-            
+            decimal monthlyInstallment = (monthlyInterestRate * principalAmount) / (1 - (decimal)Math.Pow((double)(1 + monthlyInterestRate), -installmentCount));
+
             decimal totalRepaymentAmount = monthlyInstallment * installmentCount;
-            decimal totalInterestAmount  = totalRepaymentAmount - principalAmount;
+            decimal totalInterestAmount = totalRepaymentAmount - principalAmount;
 
             _logger.LogInformation("BNPL Calculation done for PlanType={Plan}, PrincipalAmount ={PrincipalAmount}, Installments={Count}, Rate={Rate}", planType.Bnpl_PlanTypeName, principalAmount, request.InstallmentCount, planType.InterestRate
             );
