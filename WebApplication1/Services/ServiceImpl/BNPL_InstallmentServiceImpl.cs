@@ -106,7 +106,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper method : simulator per installment
-        private async Task<BnplInstallmentPaymentSimulationResultDto> SimulatePerInstallmentInternalAsync(BNPL_Installment installment, decimal paymentAmount)
+        private async Task<BnplPerInstallmentSimulationBreakdownResultDto> SimulatePerInstallmentInternalAsync(BNPL_Installment installment, decimal paymentAmount)
         {
             return await Task.Run(() =>
             {
@@ -142,10 +142,9 @@ namespace WebApplication1.Services.ServiceImpl
                 decimal applied = paidToArrears + paidToInterest + paidToBase;
                 decimal due = installment.TotalDueAmount;
 
-                return new BnplInstallmentPaymentSimulationResultDto
+                return new BnplPerInstallmentSimulationBreakdownResultDto
                 {
                     InstallmentId = installment.InstallmentID,
-                    InputPayment = paymentAmount,
                     PaidToArrears = paidToArrears,
                     PaidToInterest = paidToInterest,
                     PaidToBase = paidToBase,
