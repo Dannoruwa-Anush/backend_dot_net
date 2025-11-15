@@ -191,6 +191,26 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<BNPL_Installment>> GetAllUnsettledInstallmentUpToDateAsync(int planId, DateTime asOfDate)
+        {
+            var excludedStatuses = new[]
+            {
+                BNPL_Installment_StatusEnum.Refunded,
+                BNPL_Installment_StatusEnum.Cancelled,
+                BNPL_Installment_StatusEnum.Paid_OnTime,
+                BNPL_Installment_StatusEnum.Paid_Late
+            };
+
+            return await _context.BNPL_Installments
+                .Where(i =>
+                    i.Bnpl_PlanID == planId &&
+                    i.Installment_DueDate <= asOfDate &&
+                    !excludedStatuses.Contains(i.Bnpl_Installment_Status)
+                )
+                .OrderBy(i => i.Installment_DueDate)
+                .ToListAsync();
+        }
+
         //Bulk insert
         public async Task AddRangeAsync(IEnumerable<BNPL_Installment> installments)
         {

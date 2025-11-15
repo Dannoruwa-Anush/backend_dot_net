@@ -8,9 +8,13 @@ namespace WebApplication1.DTOs.ResponseDto.BnplPaymentSimulation
         public decimal PaidToArrears { get; set; }
         public decimal PaidToInterest { get; set; }
         public decimal PaidToBase { get; set; }
-        public decimal RemainingBalance { get; set; }
 
+        public decimal RemainingBalance { get; set; }
         public decimal OverPaymentCarried { get; set; }
-        public string ResultStatus { get; set; } = string.Empty; // e.g., "Partially Paid", "Fully Settled", etc.
+
+        public string ResultStatus { get; set; } = "";
+
+        public List<BnplInstallmentPaymentSimulationResultDto> PerInstallmentBreakdown { get; set; } = new List<BnplInstallmentPaymentSimulationResultDto>();
     }
+
 }

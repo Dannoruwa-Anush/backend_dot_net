@@ -17,6 +17,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId);
         Task<BNPL_Installment?> GetLatestInstallmentUpToDateAsync(int planId, DateTime asOfDate);
         Task<BNPL_Installment?> GetFirstUpcomingInstallmentAsync(int planId);
+        Task<List<BNPL_Installment>> GetAllUnsettledInstallmentUpToDateAsync(int planId, DateTime asOfDate);
         
         //Bulk insert
         Task AddRangeAsync(IEnumerable<BNPL_Installment> installments);
