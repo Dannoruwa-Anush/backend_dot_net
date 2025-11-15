@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
+    [Index(nameof(Bnpl_PlanID), nameof(InstallmentNo), IsUnique = true)]
     public class BNPL_Installment : BaseModel //(In base model: CreatedAt, UpdatedAt)
     {
         [Key]
@@ -22,9 +24,6 @@ namespace WebApplication1.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal OverPaymentCarried { get; set; } = 0m;
-
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal ArrearsCarried { get; set; } = 0m;
         
         [Column(TypeName = "decimal(18,2)")]
         public decimal LateInterest { get; set; } = 0m;

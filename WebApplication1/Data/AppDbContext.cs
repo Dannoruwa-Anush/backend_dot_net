@@ -22,6 +22,7 @@ namespace WebApplication1.Data
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
+        public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummary{ get; set; }
         //---
 
         //-------- [Start: configure model] -----------
@@ -194,8 +195,17 @@ namespace WebApplication1.Data
                 entity.Property(p => p.Bnpl_AmountPerInstallment)
                       .HasColumnType("decimal(18,2)");
 
+                entity.Property(p => p.RemainingTotalOverpayment)
+                      .HasColumnType("decimal(18,2)");
+
                 // (1) — (M) BNPL_Installment
                 entity.HasMany(p => p.BNPL_Installments)
+                      .WithOne(i => i.BNPL_PLAN)
+                      .HasForeignKey(i => i.Bnpl_PlanID)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_Installments exist
+
+                //(1) — BNPL_PlanSettlementSummary(M)
+                entity.HasMany(p => p.BNPL_PlanSettlementSummaries)
                       .WithOne(i => i.BNPL_PLAN)
                       .HasForeignKey(i => i.Bnpl_PlanID)
                       .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_Installments exist
@@ -218,9 +228,6 @@ namespace WebApplication1.Data
                 entity.Property(i => i.OverPaymentCarried)
                       .HasColumnType("decimal(18,2)");
 
-                entity.Property(i => i.ArrearsCarried)
-                      .HasColumnType("decimal(18,2)");
-
                 entity.Property(i => i.LateInterest)
                       .HasColumnType("decimal(18,2)");
 
@@ -229,6 +236,30 @@ namespace WebApplication1.Data
 
                 entity.Property(i => i.AmountPaid)
                       .HasColumnType("decimal(18,2)");
+            });
+
+            // -------------------------------------------------------------
+            // BNPL_PlanSettlementSummary
+            // -------------------------------------------------------------
+            modelBuilder.Entity<BNPL_PlanSettlementSummary>(entity =>
+            {
+                entity.Property(i => i.Installment_BaseAmount)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.TotalCurrentArrears)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.TotalCurrentInterest)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.TotalCurrentOverPayment)
+                    .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.TotalPayableSettlement)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.TotalPaidSettlement)
+                      .HasColumnType("decimal(18,2)");      
             });
         }
         //-------- [End: configure model] -------------

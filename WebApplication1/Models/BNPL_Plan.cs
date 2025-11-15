@@ -20,11 +20,14 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Remaining installment count is required")]
         public int Bnpl_RemainingInstallmentCount { get; set; }
 
+        [Required(ErrorMessage = "Remaining total overpayment is required")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal RemainingTotalOverpayment { get; set; }
+
         [Required(ErrorMessage = "Bnpl Start date is required")]
         public DateTime Bnpl_StartDate { get; set; }
 
-        [Required(ErrorMessage = "Bnpl next due date is required")]
-        public DateTime Bnpl_NextDueDate { get; set; }
+        public DateTime? Bnpl_NextDueDate { get; set; }
 
         public DateTime? CompletedAt { get; set; }
 
@@ -61,5 +64,11 @@ namespace WebApplication1.Models
         [InverseProperty(nameof(BNPL_Installment.BNPL_PLAN))]
         public ICollection<BNPL_Installment> BNPL_Installments { get; set; } = new List<BNPL_Installment>();
         //******* [End: BNPL_PLAN (1) — BNPL_Installment (M)] ******
+
+        //******* [Start: BNPL_PLAN (1) — BNPL_PlanSettlementSummary (M)] ****
+        // One Side: Navigation property
+        [InverseProperty(nameof(BNPL_PlanSettlementSummary.BNPL_PLAN))]
+        public ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries { get; set; } = new List<BNPL_PlanSettlementSummary>();
+        //******* [End: BNPL_PLAN (1) — BNPL_PlanSettlementSummary (M)] ******
     }
 }

@@ -127,11 +127,11 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // ---- Apply Payment Order ----
                 // 1. Arrears
-                if (installment.ArrearsCarried > 0 && remaining > 0)
-                {
-                    paidToArrears = Math.Min(installment.ArrearsCarried, remaining);
-                    remaining -= paidToArrears;
-                }
+                //if (installment.ArrearsCarried > 0 && remaining > 0)
+                //{
+                    //paidToArrears = Math.Min(installment.ArrearsCarried, remaining);
+                    //remaining -= paidToArrears;
+                //}
 
                 // 2. Late Interest
                 if (installment.LateInterest > 0 && remaining > 0)
@@ -249,12 +249,12 @@ namespace WebApplication1.Services.ServiceImpl
             bool withinGrace = now <= installment.Installment_DueDate.AddDays(BnplSystemConstants.FreeTrialPeriodDays);
 
             // Arrears
-            if (installment.ArrearsCarried > 0 && remaining > 0)
-            {
-                decimal pay = Math.Min(installment.ArrearsCarried, remaining);
-                installment.ArrearsCarried -= pay;
-                remaining -= pay;
-            }
+            //if (installment.ArrearsCarried > 0 && remaining > 0)
+            //{
+                //decimal pay = Math.Min(installment.ArrearsCarried, remaining);
+                //installment.ArrearsCarried -= pay;
+                //remaining -= pay;
+            //}
 
             // Late Interest
             if (installment.LateInterest > 0 && remaining > 0)
@@ -275,7 +275,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Determine status
             if (installment.AmountPaid >= installment.TotalDueAmount &&
-                installment.ArrearsCarried == 0 &&
+                /*installment.ArrearsCarried == 0 &&*/
                 installment.LateInterest == 0)
             {
                 installment.Bnpl_Installment_Status = withinGrace
@@ -326,12 +326,12 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Calculate late interest
                 decimal lateRate = planType.LatePayInterestRate / 100m; // convert from percent to decimal
-                decimal basePlusArrears = inst.Installment_BaseAmount + inst.ArrearsCarried;
+                decimal basePlusArrears = inst.Installment_BaseAmount /*+ inst.ArrearsCarried*/;
                 decimal interestAmount = basePlusArrears * lateRate;
 
                 // Update fields
                 inst.LateInterest = interestAmount;
-                inst.TotalDueAmount = inst.Installment_BaseAmount + inst.ArrearsCarried + inst.LateInterest;
+                inst.TotalDueAmount = inst.Installment_BaseAmount + /*inst.ArrearsCarried*/ + inst.LateInterest;
                 inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
                 inst.UpdatedAt = DateTime.UtcNow;
 
