@@ -37,6 +37,11 @@ namespace WebApplication1.Services.ServiceImpl
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
         }
 
+        public async Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationByOrderIdAsync(int orderId, int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null)
+        {
+            return await _repository.GetAllWithPaginationByOrderIdAsync(orderId, pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
+        }
+
         public async Task<BNPL_Installment?> CancelInstallmentAsync(int id)
         {
             var installment = await _repository.GetByIdAsync(id)

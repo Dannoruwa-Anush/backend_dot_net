@@ -20,10 +20,21 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_Installment>> GetAllAsync() =>
-            await _context.BNPL_Installments.ToListAsync();
+            await _context.BNPL_Installments
+                    .Include(bpt => bpt.BNPL_PLAN!)
+                        .ThenInclude(ip => ip.BNPL_PlanType)
+                    .Include(i => i.BNPL_PLAN!)
+                        .ThenInclude(io => io.CustomerOrder)
+                    .ToListAsync();
 
         public async Task<BNPL_Installment?> GetByIdAsync(int id) =>
-            await _context.BNPL_Installments.FindAsync(id);
+            await _context.BNPL_Installments
+                .Include(i => i.BNPL_PLAN!)
+                    .ThenInclude(ip => ip.BNPL_PlanType)
+                .Include(i => i.BNPL_PLAN!)
+                    .ThenInclude(io => io.CustomerOrder)
+                        .ThenInclude(ioc => ioc.Customer)
+                .FirstOrDefaultAsync(i => i.InstallmentID == id);
 
         public async Task AddAsync(BNPL_Installment bnpl_installment)
         {
@@ -50,19 +61,55 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             // Start base query — include related data for searching and display
             var query = _context.BNPL_Installments
-                .Include(i => i.BNPL_PLAN!)
-                    .ThenInclude(p => p.CustomerOrder)
-                        .ThenInclude(o => o.Customer)
-                .AsQueryable();
+                            .Include(i => i.BNPL_PLAN!)
+                                .ThenInclude(ip => ip.BNPL_PlanType)
+                            .Include(i => i.BNPL_PLAN!)
+                                .ThenInclude(io => io.CustomerOrder)
+                                    .ThenInclude(ioc => ioc.Customer)
+                            .AsNoTracking()
+                            .AsQueryable();
 
-            // Filter: by Installment Status
+            // Apply filters from helper
+            query = ApplyBnpl_Installment_StatusFilter(query, bnpl_Installment_StatusId);
+            query = ApplySearch(query, searchKey);
+
+            query = query.OrderByDescending(c => c.CreatedAt);
+
+            // Total count after filters
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination
+            var items = await query
+                .OrderByDescending(i => i.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Return paginated result
+            return new PaginationResultDto<BNPL_Installment>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
+        // Helper method: plan status filter
+        private IQueryable<BNPL_Installment> ApplyBnpl_Installment_StatusFilter(IQueryable<BNPL_Installment> query, int? bnpl_Installment_StatusId)
+        {
             if (bnpl_Installment_StatusId.HasValue)
             {
                 var status = (BNPL_Installment_StatusEnum)bnpl_Installment_StatusId.Value;
                 query = query.Where(i => i.Bnpl_Installment_Status == status);
             }
 
-            // Filter: by Search Key (OrderID, PlanID, Email, Phone)
+            return query;
+        }
+
+        // Helper method: Search filter
+        private IQueryable<BNPL_Installment> ApplySearch(IQueryable<BNPL_Installment> query, string? searchKey)
+        {
             if (!string.IsNullOrWhiteSpace(searchKey))
             {
                 searchKey = searchKey.Trim().ToLower();
@@ -74,8 +121,31 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     i.BNPL_PLAN.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey)
                 );
             }
+            return query;
+        }
 
-            // Get total count (after filters)
+        public async Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationByOrderIdAsync(int orderId, int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null)
+        {
+            // Start base query — include related data for searching and display
+            var query = _context.BNPL_Installments
+                            .Include(i => i.BNPL_PLAN!)
+                                .ThenInclude(ip => ip.BNPL_PlanType)
+                            .Include(i => i.BNPL_PLAN!)
+                                .ThenInclude(io => io.CustomerOrder)
+                                    .ThenInclude(ioc => ioc.Customer)
+                            .AsNoTracking()
+                            .AsQueryable();
+            
+            //filter by order Id
+            query = query.Where(i => i.BNPL_PLAN!.CustomerOrder.OrderID == orderId);                    
+
+            // Apply filters from helper
+            query = ApplyBnpl_Installment_StatusFilter(query, bnpl_Installment_StatusId);
+            query = ApplySearch(query, searchKey);
+
+            query = query.OrderByDescending(c => c.CreatedAt);
+
+            // Total count after filters
             var totalCount = await query.CountAsync();
 
             // Apply pagination

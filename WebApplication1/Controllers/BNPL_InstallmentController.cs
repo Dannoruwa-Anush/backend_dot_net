@@ -67,12 +67,37 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
-
-                var response = new ApiResponseDto<PaginationResultDto<BNPL_Installment>>(
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<BNPL_InstallmentResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<BNPL_InstallmentResponseDto>>(
                     200,
                     "Bnpl installment records retrieved successfully",
-                    result
+                    paginationResponse
+                );
+
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
+        }
+
+        //Custom Query Operations
+        [HttpGet("paged/order")]
+        public async
+        Task<IActionResult> GetAllWithPaginationByOrderIdAsync([FromQuery] int orderId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? bnpl_Installment_StatusId = null, [FromQuery] string? searchKey = null)
+        {
+            try
+            {
+                var pageResultDto = await _service.GetAllWithPaginationByOrderIdAsync(orderId, pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<BNPL_InstallmentResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<BNPL_InstallmentResponseDto>>(
+                    200,
+                    "Bnpl installment records of the order retrieved successfully",
+                    paginationResponse
                 );
 
                 return Ok(response);

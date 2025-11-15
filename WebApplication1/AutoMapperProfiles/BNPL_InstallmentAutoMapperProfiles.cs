@@ -9,7 +9,9 @@ namespace WebApplication1.AutoMapperProfiles
     {
         public BNPL_InstallmentAutoMapperProfiles()
         {
-            CreateMap<BNPL_Installment, BNPL_InstallmentResponseDto>();
+            CreateMap<BNPL_Installment, BNPL_InstallmentResponseDto>()
+                .ForMember(dest => dest.BNPL_PlanResponseDto, opt => opt.MapFrom(src => src.BNPL_PLAN));
+
             CreateMap<BNPL_InstallmentRequestDto, BNPL_Installment>();
         }
     }
