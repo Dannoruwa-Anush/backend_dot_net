@@ -108,28 +108,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
-        [HttpPost("apply-late-interest")]
-        public async Task<IActionResult> ApplyLateInterest()
-        {
-            try
-            {
-                await _service.ApplyLateInterestAsync();
-                return Ok(new ApiResponseDto<string>(
-                    200,
-                    "Late interest applied successfully to all overdue installments."
-                ));
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiResponseDto<string>(
-                    500,
-                    "An internal server error occurred. Please try again later."
-                ));
-            }
-        }
-
-        //Simulator
+        //Installment Paymenr Simulator
         [HttpPost("bnpl-installmant-payment-simulate")]
         public async Task<IActionResult> SimulateBnplInstallmentPayment([FromBody] BnplInstallmentPaymentSimulationRequestDto request)
         {
@@ -148,6 +127,27 @@ namespace WebApplication1.Controllers
                 return BadRequest(new ApiResponseDto<string>(
                     400,
                     ex.Message
+                ));
+            }
+        }
+
+        //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
+        [HttpPost("apply-late-interest")]
+        public async Task<IActionResult> ApplyLateInterest()
+        {
+            try
+            {
+                await _service.ApplyLateInterestAsync();
+                return Ok(new ApiResponseDto<string>(
+                    200,
+                    "Late interest applied successfully to all overdue installments."
+                ));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
                 ));
             }
         }
