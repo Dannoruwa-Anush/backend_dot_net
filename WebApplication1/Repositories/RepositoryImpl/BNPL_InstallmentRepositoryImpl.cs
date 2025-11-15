@@ -135,9 +135,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
                                     .ThenInclude(ioc => ioc.Customer)
                             .AsNoTracking()
                             .AsQueryable();
-            
+
             //filter by order Id
-            query = query.Where(i => i.BNPL_PLAN!.CustomerOrder.OrderID == orderId);                    
+            query = query.Where(i => i.BNPL_PLAN!.CustomerOrder.OrderID == orderId);
 
             // Apply filters from helper
             query = ApplyBnpl_Installment_StatusFilter(query, bnpl_Installment_StatusId);
@@ -173,6 +173,22 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Where(i => i.Bnpl_PlanID == planId)
                 .OrderBy(i => i.InstallmentNo)
                 .ToListAsync();
+        }
+
+        public async Task<BNPL_Installment?> GetLatestInstallmentUpToDateAsync(int planId, DateTime asOfDate)
+        {
+            return await _context.BNPL_Installments
+                .Where(i => i.Bnpl_PlanID == planId && i.Installment_DueDate <= asOfDate)
+                .OrderByDescending(i => i.Installment_DueDate)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<BNPL_Installment?> GetFirstUpcomingInstallmentAsync(int planId)
+        {
+            return await _context.BNPL_Installments
+                .Where(i => i.Bnpl_PlanID == planId)
+                .OrderBy(i => i.Installment_DueDate)
+                .FirstOrDefaultAsync();
         }
 
         //Bulk insert

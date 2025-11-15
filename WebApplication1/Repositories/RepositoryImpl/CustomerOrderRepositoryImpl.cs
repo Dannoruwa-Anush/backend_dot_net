@@ -29,6 +29,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(ou => ou.User)
                 .Include(o => o.CustomerOrderElectronicItems)
                     .ThenInclude(oi => oi.ElectronicItem)
+                .Include(o => o.BNPL_PLAN!)
+                    .ThenInclude(p => p.BNPL_Installments)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
 
         public async Task AddAsync(CustomerOrder customerOrder)

@@ -4,6 +4,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 using WebApplication1.Utils.SystemConstants;
 
@@ -12,15 +13,17 @@ namespace WebApplication1.Services.ServiceImpl
     public class BNPL_InstallmentServiceImpl : IBNPL_InstallmentService
     {
         private readonly IBNPL_InstallmentRepository _repository;
+        private readonly ICustomerOrderRepository _customerOrderRepository;
 
         //logger: for auditing
         private readonly ILogger<BNPL_InstallmentServiceImpl> _logger;
 
         // Constructor
-        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, ILogger<BNPL_InstallmentServiceImpl> logger)
+        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_InstallmentServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _customerOrderRepository = customerOrderRepository;
             _logger = logger;
         }
 
@@ -45,14 +48,43 @@ namespace WebApplication1.Services.ServiceImpl
         //simulator
         public async Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request)
         {
-            var installment = await _repository.GetByIdAsync(request.InstallmentId);
+            var customerOrder = await _customerOrderRepository.GetByIdAsync(request.OrderId);
+            if (customerOrder == null)
+                throw new Exception("Customer order not found.");
+
+            var planId = customerOrder.BNPL_PLAN!.Bnpl_PlanID;
+
+            var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // 1. Get the latest installment with due date <= today
+            var targetInstallment = await _repository.GetLatestInstallmentUpToDateAsync(planId, today);
+
+            // 2. If none found (all future installments), take the first upcoming
+            if (targetInstallment == null)
+            {
+                targetInstallment = await _repository.GetFirstUpcomingInstallmentAsync(planId);
+            }
+
+            if (targetInstallment == null)
+                throw new Exception("No installments found for this plan.");
+
+            return await SimulateBnplInstallmentPaymentPerInstallmentAsync(
+                targetInstallment.InstallmentID,
+                request.PaymentAmount
+            );
+        }
+
+        //Helper method : simulator per installment
+        private async Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentPerInstallmentAsync(int installmentId, decimal paymentAmount)
+        {
+            var installment = await _repository.GetByIdAsync(installmentId);
             if (installment == null)
                 throw new Exception("Installment not found.");
 
-            if (request.PaymentAmount <= 0)
+            if (paymentAmount <= 0)
                 throw new Exception("Payment amount must be greater than zero.");
 
-            decimal remaining = request.PaymentAmount;
+            decimal remaining = paymentAmount;
             decimal paidToArrears = 0m;
             decimal paidToInterest = 0m;
             decimal paidToBase = 0m;
@@ -117,7 +149,7 @@ namespace WebApplication1.Services.ServiceImpl
             return new BnplInstallmentPaymentSimulationResultDto
             {
                 InstallmentId = installment.InstallmentID,
-                InputPayment = request.PaymentAmount,
+                InputPayment = paymentAmount,
                 PaidToArrears = paidToArrears,
                 PaidToInterest = paidToInterest,
                 PaidToBase = paidToBase,
