@@ -48,14 +48,17 @@ namespace WebApplication1.Services.ServiceImpl
         //simulator : Main Driver
         public async Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request)
         {
+            // Load the customer order
             var order = await _customerOrderRepository.GetByIdAsync(request.OrderId)
                 ?? throw new Exception("Customer order not found.");
 
             var planId = order.BNPL_PLAN!.Bnpl_PlanID;
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
+            // Get unsettled installments up to today
             var unsettled = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
 
+            // Initialize remaining payment with input
             decimal remainingPayment = request.PaymentAmount;
 
             var finalResult = new BnplInstallmentPaymentSimulationResultDto
@@ -72,10 +75,14 @@ namespace WebApplication1.Services.ServiceImpl
                     if (remainingPayment <= 0)
                         break;
 
+                    // Add any previous overpayment on this installment
+                    remainingPayment += installment.OverPaymentCarried;
+
                     var r = await SimulatePerInstallmentInternalAsync(installment, remainingPayment);
 
                     finalResult.PerInstallmentBreakdown.Add(r);
 
+                    // Remaining payment to next installment
                     remainingPayment = r.OverPaymentCarried;
                 }
 
@@ -89,9 +96,12 @@ namespace WebApplication1.Services.ServiceImpl
                 return finalResult;
             }
 
-            // CASE B: Nothing unsettled → apply to next upcoming
+            // CASE B: No unsettled installments → apply to next upcoming
             var target = await _repository.GetFirstUpcomingInstallmentAsync(planId)
                 ?? throw new Exception("No installments found for this plan.");
+
+            // Include any overpayment already on the installment
+            remainingPayment += target.OverPaymentCarried;
 
             var single = await SimulatePerInstallmentInternalAsync(target, remainingPayment);
 
