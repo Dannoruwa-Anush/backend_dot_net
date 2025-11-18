@@ -84,7 +84,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("BNPL plan type deleted successfully: Id={Id}", id);
         }
 
-        //CRUD operations
+        //Custom Query Operations
         public async Task<PaginationResultDto<BNPL_PlanType>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);

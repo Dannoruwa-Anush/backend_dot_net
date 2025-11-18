@@ -22,7 +22,7 @@ namespace WebApplication1.Data
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
-        public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummary{ get; set; }
+        public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries{ get; set; }
         //---
 
         //-------- [Start: configure model] -----------

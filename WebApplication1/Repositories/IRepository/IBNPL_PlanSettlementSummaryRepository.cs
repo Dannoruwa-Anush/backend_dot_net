@@ -1,0 +1,14 @@
+using WebApplication1.Models;
+
+namespace WebApplication1.Repositories.IRepository
+{
+    public interface IBNPL_PlanSettlementSummaryRepository
+    {
+        //CRUD operations
+        Task AddAsync(BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary);
+
+        //Custom Query Operations
+        Task MarkPreviousSnapshotsAsNotLatestAsync(int planId);
+
+    }
+}
