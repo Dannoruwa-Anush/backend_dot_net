@@ -15,15 +15,15 @@ namespace WebApplication1.Models
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Installment_BaseAmount { get; set; }
-
-        [Required]
-        [Column(TypeName = "decimal(18,2)")]
         public decimal TotalCurrentArrears { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalCurrentInterest { get; set; }
+        public decimal TotalCurrentLateInterest { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal InstallmentBaseAmount { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
@@ -33,14 +33,13 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPayableSettlement { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalPaidSettlement { get; set; } = 0m;
-
         public DateTime? RefundDate { get; set; }
 
         [EnumDataType(typeof(BNPL_PlanSettlementSummary_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_PlanSettlementSummary_StatusEnum Bnpl_PlanSettlementSummary_Status { get; set; } = BNPL_PlanSettlementSummary_StatusEnum.Active;
+        
+        public bool IsLatest { get; set; }
 
         //******* [Start: BNPL_PLAN (1) — BNPL_PlanSettlementSummary (M)] ****
         //FK

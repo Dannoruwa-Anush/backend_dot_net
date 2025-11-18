@@ -20,10 +20,6 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Remaining installment count is required")]
         public int Bnpl_RemainingInstallmentCount { get; set; }
 
-        [Required(ErrorMessage = "Remaining total overpayment is required")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal RemainingTotalOverpayment { get; set; }
-
         [Required(ErrorMessage = "Bnpl Start date is required")]
         public DateTime Bnpl_StartDate { get; set; }
 
