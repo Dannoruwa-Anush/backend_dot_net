@@ -17,8 +17,5 @@ namespace WebApplication1.Services.IService
         //calculations
         Task<List<BNPL_Installment>> ApplyPaymentToInstallmentAsync(int installmentId, decimal paymentAmount);
         Task ApplyLateInterestAsync();
-
-        //simulator
-        //Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request);
     }
 }
