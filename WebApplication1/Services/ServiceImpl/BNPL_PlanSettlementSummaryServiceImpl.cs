@@ -1,3 +1,5 @@
+using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
+using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
@@ -10,13 +12,15 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly IBNPL_PlanSettlementSummaryRepository _repository;
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
+        private readonly ICustomerOrderRepository _customerOrderRepository;
 
         // Constructor
-        public BNPL_PlanSettlementSummaryServiceImpl(IBNPL_PlanSettlementSummaryRepository repository, IBNPL_InstallmentRepository bNPL_InstallmentRepository)
+        public BNPL_PlanSettlementSummaryServiceImpl(IBNPL_PlanSettlementSummaryRepository repository, IBNPL_InstallmentRepository bNPL_InstallmentRepository, ICustomerOrderRepository customerOrderRepository)
         {
             // Dependency injection
             _repository = repository;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
+            _customerOrderRepository = customerOrderRepository;
         }
 
         //CRUD operations
@@ -80,6 +84,100 @@ namespace WebApplication1.Services.ServiceImpl
                 Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
                 IsLatest = true,
             };
+        }
+
+        //simulator : Main Driver
+        public async Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request)
+        {
+            // Load the customer order
+            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+                throw new Exception("Customer order not found.");
+
+            var planId = order.BNPL_PLAN!.Bnpl_PlanID;
+
+            // Initialize remaining payment with input
+            decimal remainingPayment = request.PaymentAmount;
+
+            var latestSnapshot = await _repository.GetLatestSnapshotAsync(planId);
+            if (latestSnapshot == null)
+                throw new Exception("Latest snapshot not found");
+
+            return await SimulatePerInstallmentInternalAsync(latestSnapshot, remainingPayment);
+        }
+
+        //Helper method : simulator per installment
+        private async Task<BnplSnapshotPayingSimulationResultDto> SimulatePerInstallmentInternalAsync(BNPL_PlanSettlementSummary latestSnapshot, decimal paymentAmount)
+        {
+            return await Task.Run(() =>
+            {
+                decimal remaining = paymentAmount;
+                decimal paidToArrears = 0m;
+                decimal paidToInterest = 0m;
+                decimal paidToBase = 0m;
+
+                decimal arrears = latestSnapshot.TotalCurrentArrears;
+                decimal interest = latestSnapshot.TotalCurrentLateInterest;
+                decimal baseAmount = latestSnapshot.InstallmentBaseAmount;
+                decimal totalDue = latestSnapshot.TotalPayableSettlement;
+
+                // -----------------------------
+                // 1. PAY ARREARS FIRST
+                // -----------------------------
+                if (arrears > 0 && remaining > 0)
+                {
+                    paidToArrears = Math.Min(arrears, remaining);
+                    remaining -= paidToArrears;
+                }
+
+                // -----------------------------
+                // 2. PAY LATE INTEREST
+                // -----------------------------
+                if (interest > 0 && remaining > 0)
+                {
+                    paidToInterest = Math.Min(interest, remaining);
+                    remaining -= paidToInterest;
+                }
+
+                // -----------------------------
+                // 3. PAY BASE AMOUNT
+                // -----------------------------
+                if (baseAmount > 0 && remaining > 0)
+                {
+                    paidToBase = Math.Min(baseAmount, remaining);
+                    remaining -= paidToBase;
+                }
+
+                // ---------------------------------
+                // CALCULATE APPLIED + OVERPAYMENT
+                // ---------------------------------
+                decimal appliedTotal = paidToArrears + paidToInterest + paidToBase;
+                decimal remainingBalance = Math.Max(0, totalDue - appliedTotal);
+                decimal overPayment = remaining > 0 ? remaining : 0;
+
+                // ---------------------------------
+                // DETERMINE RESULT STATUS
+                // ---------------------------------
+                string status;
+
+                if (remainingBalance == 0 && overPayment > 0)
+                    status = "Overpaid";
+                else if (remainingBalance == 0)
+                    status = "Fully Settled";
+                else
+                    status = "Partially Paid";
+
+                return new BnplSnapshotPayingSimulationResultDto
+                {
+                    InstallmentId = latestSnapshot.CurrentInstallmentNo,
+                    PaidToArrears = paidToArrears,
+                    PaidToInterest = paidToInterest,
+                    PaidToBase = paidToBase,
+                    RemainingBalance = remainingBalance,
+                    OverPaymentCarried = overPayment,
+                    ResultStatus = status
+                };
+            });
         }
     }
 }

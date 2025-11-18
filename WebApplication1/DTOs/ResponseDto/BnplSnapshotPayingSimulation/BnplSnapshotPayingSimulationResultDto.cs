@@ -1,20 +1,15 @@
-namespace WebApplication1.DTOs.ResponseDto.BnplPaymentSimulation
+namespace WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation
 {
-    public class BnplInstallmentPaymentSimulationResultDto
+    public class BnplSnapshotPayingSimulationResultDto
     {
         public int InstallmentId { get; set; }
-        public decimal InputPayment { get; set; }
-
         public decimal PaidToArrears { get; set; }
         public decimal PaidToInterest { get; set; }
         public decimal PaidToBase { get; set; }
-
         public decimal RemainingBalance { get; set; }
         public decimal OverPaymentCarried { get; set; }
-
         public string ResultStatus { get; set; } = "";
-
-        public List<BnplPerInstallmentSimulationBreakdownResultDto> PerInstallmentBreakdown { get; set; } = new List<BnplPerInstallmentSimulationBreakdownResultDto>();
     }
 
 }
+

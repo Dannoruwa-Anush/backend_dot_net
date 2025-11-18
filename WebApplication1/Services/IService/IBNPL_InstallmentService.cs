@@ -1,5 +1,3 @@
-using WebApplication1.DTOs.RequestDto.BnplPaymentSimulation;
-using WebApplication1.DTOs.ResponseDto.BnplPaymentSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 
@@ -21,6 +19,6 @@ namespace WebApplication1.Services.IService
         Task ApplyLateInterestAsync();
 
         //simulator
-        Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request);
+        //Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request);
     }
 }

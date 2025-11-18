@@ -1,5 +1,3 @@
-using WebApplication1.DTOs.RequestDto.BnplPaymentSimulation;
-using WebApplication1.DTOs.ResponseDto.BnplPaymentSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -46,6 +44,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //simulator : Main Driver
+        /*
         public async Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request)
         {
             // Load the customer order
@@ -164,7 +163,7 @@ namespace WebApplication1.Services.ServiceImpl
                 };
             });
         }
-
+        */
         //Cancel Installment
         public async Task<BNPL_Installment?> CancelInstallmentAsync(int id)
         {

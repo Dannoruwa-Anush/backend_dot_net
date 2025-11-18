@@ -1,7 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.DTOs.RequestDto.BnplPaymentSimulation;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -109,6 +108,7 @@ namespace WebApplication1.Controllers
         }
 
         //Installment Paymenr Simulator
+        /*
         [HttpPost("bnpl-installmant-payment-simulate")]
         public async Task<IActionResult> SimulateBnplInstallmentPayment([FromBody] BnplInstallmentPaymentSimulationRequestDto request)
         {
@@ -130,7 +130,8 @@ namespace WebApplication1.Controllers
                 ));
             }
         }
-
+        */
+        
         //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
         [HttpPost("apply-late-interest")]
         public async Task<IActionResult> ApplyLateInterest()

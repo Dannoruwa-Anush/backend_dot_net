@@ -9,6 +9,7 @@ namespace WebApplication1.Repositories.IRepository
 
         //Custom Query Operations
         Task MarkPreviousSnapshotsAsNotLatestAsync(int planId);
+        Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotAsync(int planId);
 
     }
 }
