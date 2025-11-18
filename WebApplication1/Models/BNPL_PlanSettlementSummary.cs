@@ -39,7 +39,7 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_PlanSettlementSummary_StatusEnum Bnpl_PlanSettlementSummary_Status { get; set; } = BNPL_PlanSettlementSummary_StatusEnum.Active;
         
-        public bool IsLatest { get; set; }
+        public bool IsLatest { get; set; } = true;
 
         //******* [Start: BNPL_PLAN (1) — BNPL_PlanSettlementSummary (M)] ****
         //FK

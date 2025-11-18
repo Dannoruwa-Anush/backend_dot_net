@@ -253,7 +253,10 @@ namespace WebApplication1.Data
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.TotalPayableSettlement)
-                      .HasColumnType("decimal(18,2)");      
+                      .HasColumnType("decimal(18,2)");  
+
+                entity.Property(i => i.IsLatest)
+                    .HasDefaultValue(true);    
             });
         }
         //-------- [End: configure model] -------------
