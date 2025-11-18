@@ -1,4 +1,6 @@
+using WebApplication1.DTOs.RequestDto.Payment.Bnpl;
 using WebApplication1.DTOs.ResponseDto.Common;
+using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
@@ -43,13 +45,14 @@ namespace WebApplication1.Services.ServiceImpl
             return await _repository.GetAllWithPaginationByOrderIdAsync(orderId, pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
         }
 
-        //simulator : Main Driver
+        //Payment : Main Driver
         /*
-        public async Task<BnplInstallmentPaymentSimulationResultDto> SimulateBnplInstallmentPaymentAsync(BnplInstallmentPaymentSimulationRequestDto request)
+        public async Task<BNPL_InstallmentPaymentRequestDto> InstallmentPaymentAsync(BNPL_InstallmentPaymentRequestDto request)
         {
             // Load the customer order
-            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId)
-                ?? throw new Exception("Customer order not found.");
+            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
+            if(order == null)
+                throw new Exception("Customer order not found.");
 
             var planId = order.BNPL_PLAN!.Bnpl_PlanID;
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -60,7 +63,7 @@ namespace WebApplication1.Services.ServiceImpl
             // Initialize remaining payment with input
             decimal remainingPayment = request.PaymentAmount;
 
-            var finalResult = new BnplInstallmentPaymentSimulationResultDto
+            var finalResult = new BnplPerInstallmentPaymentResultDto
             {
                 InstallmentId = 0,
                 InputPayment = request.PaymentAmount
@@ -77,7 +80,7 @@ namespace WebApplication1.Services.ServiceImpl
                     // Add any previous overpayment on this installment
                     remainingPayment += installment.OverPaymentCarried;
 
-                    var r = await SimulatePerInstallmentInternalAsync(installment, remainingPayment);
+                    var r = await PaymentPerInstallmentInternalAsync(installment, remainingPayment);
 
                     finalResult.PerInstallmentBreakdown.Add(r);
 
@@ -102,7 +105,7 @@ namespace WebApplication1.Services.ServiceImpl
             // Include any overpayment already on the installment
             remainingPayment += target.OverPaymentCarried;
 
-            var single = await SimulatePerInstallmentInternalAsync(target, remainingPayment);
+            var single = await PaymentPerInstallmentInternalAsync(target, remainingPayment);
 
             finalResult.PerInstallmentBreakdown.Add(single);
             finalResult.PaidToArrears = single.PaidToArrears;
@@ -115,7 +118,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper method : simulator per installment
-        private async Task<BnplPerInstallmentSimulationBreakdownResultDto> SimulatePerInstallmentInternalAsync(BNPL_Installment installment, decimal paymentAmount)
+        private async Task<BnplPerInstallmentPaymentBreakdownResultDto> PaymentPerInstallmentInternalAsync(BNPL_Installment installment, decimal paymentAmount)
         {
             return await Task.Run(() =>
             {

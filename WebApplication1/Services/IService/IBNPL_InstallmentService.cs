@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.RequestDto.Payment.Bnpl;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 
@@ -17,5 +18,8 @@ namespace WebApplication1.Services.IService
         //calculations
         Task<List<BNPL_Installment>> ApplyPaymentToInstallmentAsync(int installmentId, decimal paymentAmount);
         Task ApplyLateInterestAsync();
+
+        //payment
+        //Task<BNPL_InstallmentPaymentRequestDto> InstallmentPaymentAsync(BNPL_InstallmentPaymentRequestDto request);
     }
 }

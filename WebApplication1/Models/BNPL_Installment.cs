@@ -24,7 +24,7 @@ namespace WebApplication1.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal OverPaymentCarried { get; set; } = 0m;
-        
+
         [Column(TypeName = "decimal(18,2)")]
         public decimal LateInterest { get; set; } = 0m;
 
@@ -48,6 +48,18 @@ namespace WebApplication1.Models
         [NotMapped]
         public bool IsOverdue => Installment_DueDate < DateTime.UtcNow && Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending;
 
+        [NotMapped]
+        public decimal ArrearsCarried
+        {
+            get
+            {
+                if (!IsOverdue) return 0m;
+
+                var arrears = Installment_BaseAmount - AmountPaid;
+                return arrears > 0 ? arrears : 0m;
+            }
+        }
+        
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
         //FK
         public int Bnpl_PlanID { get; set; }
