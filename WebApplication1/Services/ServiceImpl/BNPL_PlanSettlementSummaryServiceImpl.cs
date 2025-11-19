@@ -28,55 +28,69 @@ namespace WebApplication1.Services.ServiceImpl
         {
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Step 1: Build the settlement snapshot
-            var snapshot = await BuildSettlementSummaryAsync(planId, today);
+            // Build snapshot
+            var snapshot = await BuildSettlementSnapshotAsync(planId, today);
 
-            if (snapshot == null)
-                throw new Exception("Settlement snapshot is null");
+            // Mark previously latest items as old
+            await MarkOldSnapshotsAsync(planId);
 
-            // Mark old snapshots
-            await _repository.MarkPreviousSnapshotsAsNotLatestAsync(snapshot.Bnpl_PlanID);
-            
-            // Step 2: Save to DB
+            // Just stage the new record
             await _repository.AddAsync(snapshot);
 
             return snapshot;
         }
 
-        // Helper method : BuildSettlementSummaryAsync
-        private async Task<BNPL_PlanSettlementSummary> BuildSettlementSummaryAsync(int planId, DateTime asOfDate)
+        // Helper method : Create snapshot
+        private async Task<BNPL_PlanSettlementSummary> BuildSettlementSnapshotAsync(int planId, DateTime asOfDate)
         {
-            // Get all unsettled installments up to date
+            var unsettled = await GetUnsettledInstallmentsAsync(planId, asOfDate);
+
+            var totals = CalculateSettlementValues(unsettled);
+
+            return new BNPL_PlanSettlementSummary
+            {
+                Bnpl_PlanID = planId,
+                CurrentInstallmentNo = unsettled.Max(i => i.InstallmentNo),
+                TotalCurrentArrears = totals.TotalArrears,
+                TotalCurrentLateInterest = totals.TotalLateInterest,
+                InstallmentBaseAmount = totals.TotalBaseAmount,
+                TotalCurrentOverPayment = totals.TotalOverPayment,
+                TotalPayableSettlement = totals.TotalPayable,
+                Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
+                IsLatest = true,
+            };
+        }
+
+        // Helper method : Get All Unsettled Installments
+        private async Task<List<BNPL_Installment>> GetUnsettledInstallmentsAsync(int planId, DateTime asOfDate)
+        {
             var unsettled = await _bNPL_InstallmentRepository
                 .GetAllUnsettledInstallmentUpToDateAsync(planId, asOfDate);
 
             if (unsettled == null || !unsettled.Any())
-                throw new Exception("Unsettled installments not found");
+                throw new Exception("No unsettled installments found");
 
-            // ---------- ACCUMULATIONS ----------
-            var totalBaseAmount = unsettled.Sum(i => i.Installment_BaseAmount);
-            var totalLateInterest = unsettled.Sum(i => i.LateInterest);
-            var totalOverPayment = unsettled.Sum(i => i.OverPaymentCarried);
+            return unsettled.ToList();
+        }
 
-            var totalArrears = unsettled.Sum(i => (i.TotalDueAmount - i.AmountPaid));
+        // Helper method : Get accumulated settlements
+        private (decimal TotalBaseAmount, decimal TotalLateInterest, decimal TotalOverPayment, decimal TotalArrears, decimal TotalPayable) CalculateSettlementValues(List<BNPL_Installment> installments)
+        {
+            var baseAmount = installments.Sum(i => i.Installment_BaseAmount);
+            var lateInterest = installments.Sum(i => i.LateInterest);
+            var overPayment = installments.Sum(i => i.OverPaymentCarried);
 
-            var totalPayable = totalArrears + totalLateInterest - totalOverPayment;
+            var arrears = installments.Sum(i => (i.TotalDueAmount - i.AmountPaid));
 
-            var currentInstallmentNo = unsettled.Max(i => i.InstallmentNo);
+            var payable = arrears + lateInterest - overPayment;
 
-            // ---------- RETURN POPULATED SNAPSHOT MODEL ----------
-            return new BNPL_PlanSettlementSummary
-            {
-                Bnpl_PlanID = planId,
-                CurrentInstallmentNo = currentInstallmentNo,
-                TotalCurrentArrears = totalArrears,
-                TotalCurrentLateInterest = totalLateInterest,
-                InstallmentBaseAmount = totalBaseAmount,
-                TotalCurrentOverPayment = totalOverPayment,
-                TotalPayableSettlement = totalPayable,
-                Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
-                IsLatest = true,
-            };
+            return (baseAmount, lateInterest, overPayment, arrears, payable);
+        }
+        
+        // Helper method : Mark previous snapshot as IsLatested = false
+        private async Task MarkOldSnapshotsAsync(int planId)
+        {
+            await _repository.MarkPreviousSnapshotsAsNotLatestAsync(planId);
         }
 
         //simulator : Main Driver

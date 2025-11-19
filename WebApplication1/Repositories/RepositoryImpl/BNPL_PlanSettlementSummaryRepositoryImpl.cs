@@ -20,7 +20,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary)
         {
             await _context.BNPL_PlanSettlementSummaries.AddAsync(bNPL_PlanSettlementSummary);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
+            //SaveChangesAsync() is handled by the root service layer to ensure atomic operations (Transaction handling).
         }
 
         //Custom Query Operations
