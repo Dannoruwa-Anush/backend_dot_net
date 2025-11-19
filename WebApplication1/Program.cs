@@ -66,7 +66,8 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<ICashflowRepository, CashflowRepositoryImpl>()
                 .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>()
                 .AddScoped<IBNPL_PlanRepository, BNPL_PlanRepositoryImpl>()
-                .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>();
+                .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>()
+                .AddScoped<IBNPL_PlanSettlementSummaryRepository, BNPL_PlanSettlementSummaryRepositoryImpl>();
 
 //--------------------[Services DI]-----------------
 builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
@@ -83,7 +84,8 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICashflowService, CashflowServiceImpl>()
                 .AddScoped<IBNPL_PlanTypeService, BNPL_PlanTypeServiceImpl>()
                 .AddScoped<IBNPL_PlanService, BNPL_PlanServiceImpl>()
-                .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>();
+                .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>()
+                .AddScoped<IBNPL_PlanSettlementSummaryService, BNPL_PlanSettlementSummaryServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

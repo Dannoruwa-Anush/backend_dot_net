@@ -23,18 +23,6 @@ namespace WebApplication1.Services.ServiceImpl
             _customerOrderRepository = customerOrderRepository;
         }
 
-        //CRUD operations
-        public async Task<BNPL_PlanSettlementSummary> AddBNPL_PlanAsync(BNPL_PlanSettlementSummary snapshot)
-        {
-            // Mark old snapshots
-            await _repository.MarkPreviousSnapshotsAsNotLatestAsync(snapshot.Bnpl_PlanID);
-
-            // Insert new snapshot
-            await _repository.AddAsync(snapshot);
-
-            return snapshot;
-        }
-
         //Custom Query Operations
         public async Task<BNPL_PlanSettlementSummary> GenerateSettlementAsync(int planId)
         {
@@ -46,8 +34,13 @@ namespace WebApplication1.Services.ServiceImpl
             if (snapshot == null)
                 throw new Exception("Settlement snapshot is null");
 
+            // Mark old snapshots
+            await _repository.MarkPreviousSnapshotsAsNotLatestAsync(snapshot.Bnpl_PlanID);
+            
             // Step 2: Save to DB
-            return await AddBNPL_PlanAsync(snapshot);
+            await _repository.AddAsync(snapshot);
+
+            return snapshot;
         }
 
         // Helper method : BuildSettlementSummaryAsync

@@ -16,19 +16,21 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanTypeRepository _bnpl_PlanTypeRepository;
         private readonly IBNPL_InstallmentRepository _bnpl_installmentRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
+        private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
 
         //logger: for auditing
         private readonly ILogger<BNPL_PlanServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanServiceImpl> logger)
+        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_PlanServiceImpl> logger)
         {
             // Dependency injection
-            _repository                 = repository;
-            _bnpl_PlanTypeRepository    = bnpl_PlanTypeRepository;
-            _bnpl_installmentRepository = bnpl_installmentRepository;
-            _customerOrderRepository    = customerOrderRepository;
-            _logger                     = logger;
+            _repository                         = repository;
+            _bnpl_PlanTypeRepository            = bnpl_PlanTypeRepository;
+            _bnpl_installmentRepository         = bnpl_installmentRepository;
+            _customerOrderRepository            = customerOrderRepository;
+            _bnpl_planSettlementSummaryService  = bnpl_planSettlementSummaryService;
+            _logger                             = logger;
         }
 
         //CRUD operations
@@ -90,6 +92,10 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Add installments in a single batch
                 await _bnpl_installmentRepository.AddRangeAsync(installments);
+
+                // Create Settlement summuary (Snapshot)
+                await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(bNPL_Plan.Bnpl_PlanID);
+
                 await _repository.SaveChangesAsync();
 
                 await transaction.CommitAsync();
