@@ -6,6 +6,8 @@ namespace WebApplication1.DTOs.ResponseDto
     {
         public int Bnpl_PlanID { get; set; }
 
+        public decimal Bnpl_InitialPayment { get; set; }
+
         public decimal Bnpl_AmountPerInstallment { get; set; }
 
         public int Bnpl_TotalInstallmentCount { get; set; }

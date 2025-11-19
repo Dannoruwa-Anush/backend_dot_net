@@ -10,6 +10,10 @@ namespace WebApplication1.Models
         [Key]
         public int Bnpl_PlanID { get; set; }
 
+        [Required(ErrorMessage = "Initial payment is required")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Bnpl_InitialPayment { get; set; }
+
         [Required(ErrorMessage = "Amount per installment is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Bnpl_AmountPerInstallment { get; set; }

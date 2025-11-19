@@ -5,6 +5,10 @@ namespace WebApplication1.DTOs.RequestDto
 {
     public class BNPL_PlanRequestDto
     {
+        [Required(ErrorMessage = "Initial payment is required")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Bnpl_InitialPayment { get; set; }
+
         [Required(ErrorMessage = "Amount per installment is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Bnpl_AmountPerInstallment { get; set; }
