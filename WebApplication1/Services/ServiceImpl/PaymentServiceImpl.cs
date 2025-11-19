@@ -77,7 +77,7 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        // BNPL : Initial Payment
+        // BNPL : Initial Payment (After the initial payment is completed, bnpl plan will be created)
         public async Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
             await using var transaction = await _cashflowRepository.BeginTransactionAsync();
@@ -91,10 +91,11 @@ namespace WebApplication1.Services.ServiceImpl
                 // Create the BNPL plan (no transaction inside)
                 var bnpl_plan = await _bNPL_PlanService.AddBNPL_PlanAsync(new BNPL_PLAN
                 {
-                    OrderID = request.OrderID,
-                    Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
+                    Bnpl_InitialPayment = request.InitialPayment,
+                    Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
                     Bnpl_TotalInstallmentCount = request.InstallmentCount,
-                    Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment
+                    Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
+                    OrderID = request.OrderID,
                 });
 
                 // Generate installments
