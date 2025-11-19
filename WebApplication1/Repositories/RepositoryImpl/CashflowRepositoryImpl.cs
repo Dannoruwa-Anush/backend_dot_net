@@ -103,6 +103,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return query;
         }
 
+        public async Task<decimal> SumCashflowsByOrderAsync(int orderId)
+        {
+            return await _context.Cashflows
+                .Where(x => x.OrderID == orderId && x.CashflowStatus == CashflowStatusEnum.Paid)
+                .SumAsync(x => x.AmountPaid);
+        }
+
         // EF transaction support
         public async Task<IDbContextTransaction> BeginTransactionAsync() =>
             await _context.Database.BeginTransactionAsync();

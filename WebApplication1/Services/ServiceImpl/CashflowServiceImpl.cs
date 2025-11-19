@@ -113,5 +113,8 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
         }
+
+        public async Task<decimal> SumCashflowsByOrderAsync(int orderId) =>
+            await _repository.SumCashflowsByOrderAsync(orderId);
     }
 }

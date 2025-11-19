@@ -103,7 +103,19 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrderUpdateDto updateDto)
+        public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder)
+        {
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                throw new Exception("Customer order not found.");
+
+            existing.PaymentCompletedDate  = customerOrder.PaymentCompletedDate ;
+            existing.OrderPaymentStatus  = customerOrder.OrderPaymentStatus ;
+
+            return await _repository.UpdateAsync(id, existing);     
+        }
+
+        public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, CustomerOrderUpdateDto updateDto)
         {
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));

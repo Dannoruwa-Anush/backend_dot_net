@@ -94,36 +94,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Employee, Customer")] // JWT is required
-        public async Task<IActionResult> Update(int id, [FromBody] CustomerOrderUpdateDto orderUpdateDto)
-        {
-            try
-            {
-                var updatedOrder = await _service.UpdateCustomerOrderAsync(id, orderUpdateDto);
-
-                var responseDto = _mapper.Map<CustomerOrderResponseDto>(updatedOrder);
-                var response = new ApiResponseDto<CustomerOrderResponseDto>(
-                    200,
-                    "Customer order updated successfully",
-                    responseDto
-                );
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                var message = ex.Message;
-
-                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ApiResponseDto<string>(404, "Order not found"));
-
-                return StatusCode(500, new ApiResponseDto<string>(
-                    500,
-                    "An internal server error occurred. Please try again later."
-                ));
-            }
-        }
+        //Need put inly for : order status change
 
         //Custom Query Operations
         [HttpGet("paged")]

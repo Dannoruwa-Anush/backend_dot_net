@@ -25,13 +25,13 @@ namespace WebApplication1.Services.ServiceImpl
         public PaymentServiceImpl(IPaymentRepository repository, ICashflowService cashflowService, ICustomerOrderService customerOrderService, IBNPL_InstallmentService bNPL_InstallmentService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IBNPL_PlanService bNPL_PlanService, ILogger<PaymentServiceImpl> logger)
         {
             // Dependency injection
-            _repository                         = repository;
-            _cashflowService                    = cashflowService;
-            _customerOrderService               = customerOrderService;
-            _bNPL_InstallmentService            = bNPL_InstallmentService;
-            _bnpl_planSettlementSummaryService  = bnpl_planSettlementSummaryService;
-            _bNPL_PlanService                   = bNPL_PlanService;
-            _logger                             = logger;
+            _repository = repository;
+            _cashflowService = cashflowService;
+            _customerOrderService = customerOrderService;
+            _bNPL_InstallmentService = bNPL_InstallmentService;
+            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
+            _bNPL_PlanService = bNPL_PlanService;
+            _logger = logger;
         }
 
         // Full Payment
@@ -57,7 +57,7 @@ namespace WebApplication1.Services.ServiceImpl
                     PaymentStatus = OrderPaymentStatusEnum.Fully_Paid
                 };
 
-                var customerOrder = await _customerOrderService.UpdateCustomerOrderAsync(paymentRequest.OrderId, customerOrderStatusChangeRequest);
+                var customerOrder = await _customerOrderService.UpdateCustomerOrderPaymentStatusAsync(paymentRequest.OrderId, customerOrderStatusChangeRequest);
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
                 // 3. Commit the transaction
@@ -139,15 +139,18 @@ namespace WebApplication1.Services.ServiceImpl
                 if (plan == null)
                     throw new Exception($"Associated BNPL plan not found for OrderID={paymentRequest.OrderId}");
 
-                // 3. Generate settlement snapshot
+                // 3. Update BNPL status (plan + order)
+                await UpdateBnplPostPaymentStateAsync(plan);
+
+                // 4. Generate settlement snapshot
                 var settlementSnapshot = await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(plan.Bnpl_PlanID);
                 _logger.LogInformation("Generated settlement snapshot for PlanID={PlanId}", plan.Bnpl_PlanID);
 
-                // 4. Generate cashflow record
+                // 5. Generate cashflow record
                 var cashflow = await _cashflowService.AddCashflowAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
-                // 5. Commit transaction
+                // 6. Commit transaction
                 await transaction.CommitAsync();
                 _logger.LogInformation("BNPL installment payment processed successfully for OrderID={OrderId}", paymentRequest.OrderId);
             }
@@ -157,6 +160,72 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogError(ex, "Failed to process BNPL installment payment for OrderID={OrderId}", paymentRequest.OrderId);
                 throw;
             }
+        }
+
+        //Helper Method : update Bnpl plan + customer order
+        private async Task UpdateBnplPostPaymentStateAsync(BNPL_PLAN plan)
+        {
+            if (plan == null)
+                throw new ArgumentNullException(nameof(plan));
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // Get installments of this plan
+            var installments = await _bNPL_InstallmentService.GetAllByPlanIdAsync(plan.Bnpl_PlanID);
+
+            if (installments == null || !installments.Any())
+                throw new Exception($"No installments found for BNPL Plan ID={plan.Bnpl_PlanID}");
+
+            // Define which statuses are considered settled
+            var paidStatuses = new[]
+            {
+                BNPL_Installment_StatusEnum.Paid_OnTime,
+                BNPL_Installment_StatusEnum.Paid_Late
+            };
+
+            // Remaining installments = not fully paid
+            var remainingInstallments = installments!.Count(x => !paidStatuses.Contains(x.Bnpl_Installment_Status));
+
+            plan.Bnpl_RemainingInstallmentCount = remainingInstallments;
+
+            // Next installment due date (if any)
+            plan.Bnpl_NextDueDate = installments!
+                .Where(x => !paidStatuses.Contains(x.Bnpl_Installment_Status))
+                .OrderBy(x => x.Installment_DueDate)
+                .Select(x => x.Installment_DueDate)
+                .FirstOrDefault();
+
+            // If all installments paid : mark completed
+            if (remainingInstallments == 0)
+            {
+                plan.CompletedAt = now;
+                plan.Bnpl_Status = BnplStatusEnum.Completed;
+            }
+
+            // Update plan (only changed fields)
+            await _bNPL_PlanService.UpdateBNPL_PlanAsync(plan.Bnpl_PlanID, plan);
+
+            // update customer order based on new state
+            await UpdateCustomerOrderPaymentState(plan.OrderID);
+        }
+
+        //Helper Method : customer order
+        private async Task UpdateCustomerOrderPaymentState(int orderId)
+        {
+            var order = await _customerOrderService.GetCustomerOrderByIdAsync(orderId);
+            if (order == null)
+                return;
+
+            // Calculate total paid
+            var totalPaid = await _cashflowService.SumCashflowsByOrderAsync(orderId);
+
+            if (totalPaid >= order.TotalAmount)
+            {
+                order.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
+            }
+
+            await _customerOrderService.UpdateCustomerOrderAsync(orderId, order);
         }
     }
 }

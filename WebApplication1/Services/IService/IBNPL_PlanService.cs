@@ -12,7 +12,8 @@ namespace WebApplication1.Services.IService
         Task<IEnumerable<BNPL_PLAN>> GetAllBNPL_PlansAsync();
         Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id);
         Task<BNPL_PLAN> AddBNPL_PlanAsync(BNPL_PLAN bNPL_Plan);
-        Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BnplStatusEnum newStatus);
+        Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BNPL_PLAN bNPL_Plan);
+        Task<BNPL_PLAN?> UpdateBNPL_PlanStatusAsync(int id, BnplStatusEnum newStatus);
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);

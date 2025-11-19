@@ -50,7 +50,9 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationByOrderIdAsync(orderId, pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
         }
-
+        public async Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId) =>
+            await _repository.GetAllByPlanIdAsync(planId);
+            
         //Bulk Add
         public async Task<List<BNPL_Installment>> AddBnplInstallmentsAsync(BNPL_PLAN plan)
         {

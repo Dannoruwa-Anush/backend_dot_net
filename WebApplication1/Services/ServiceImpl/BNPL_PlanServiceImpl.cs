@@ -60,7 +60,20 @@ namespace WebApplication1.Services.ServiceImpl
             return bNPL_Plan;
         }
 
-        public async Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BnplStatusEnum newStatus)
+        public async Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BNPL_PLAN bNPL_Plan)
+        {
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                throw new Exception("BNPL plan not found.");
+
+            existing.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_RemainingInstallmentCount;
+            existing.Bnpl_NextDueDate = bNPL_Plan.Bnpl_NextDueDate;
+            existing.Bnpl_Status = bNPL_Plan.Bnpl_Status;
+
+            return await _repository.UpdateAsync(id, existing);            
+        }
+
+        public async Task<BNPL_PLAN?> UpdateBNPL_PlanStatusAsync(int id, BnplStatusEnum newStatus)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)

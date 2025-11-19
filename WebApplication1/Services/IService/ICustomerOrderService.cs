@@ -11,7 +11,8 @@ namespace WebApplication1.Services.IService
         Task<IEnumerable<CustomerOrder>> GetAllCustomerOrdersAsync();
         Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id);
         Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder);
-        Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrderUpdateDto updateDto);
+        Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder);
+        Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, CustomerOrderUpdateDto updateDto);
 
         //Custom Query Operations
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
