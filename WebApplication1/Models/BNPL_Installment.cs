@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models.Base;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
@@ -34,8 +35,12 @@ namespace WebApplication1.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal AmountPaid { get; set; } = 0m;
+
         public DateTime? LastPaymentDate { get; set; }
+
         public DateTime? RefundDate { get; set; }
+
+        public DateTime? LastLateInterestAppliedDate { get; set; }
 
         [EnumDataType(typeof(BNPL_Installment_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
@@ -46,19 +51,10 @@ namespace WebApplication1.Models
         public decimal RemainingBalance => TotalDueAmount - AmountPaid;
 
         [NotMapped]
-        public bool IsOverdue => Installment_DueDate < DateTime.UtcNow && Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending;
+        public bool IsOverdue => Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow) && Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending;
 
         [NotMapped]
-        public decimal ArrearsCarried
-        {
-            get
-            {
-                if (!IsOverdue) return 0m;
-
-                var arrears = Installment_BaseAmount - AmountPaid;
-                return arrears > 0 ? arrears : 0m;
-            }
-        }
+        public decimal ArrearsCarried => IsOverdue ? Math.Max(Installment_BaseAmount - AmountPaid, 0m) : 0m;
         
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
         //FK

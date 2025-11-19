@@ -14,16 +14,20 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly IBNPL_InstallmentRepository _repository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
+        private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
+        private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
 
         //logger: for auditing
         private readonly ILogger<BNPL_InstallmentServiceImpl> _logger;
 
         // Constructor
-        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_InstallmentServiceImpl> logger)
+        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanRepository bNPL_PlanRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_InstallmentServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _customerOrderRepository = customerOrderRepository;
+            _bNPL_PlanRepository = bNPL_PlanRepository;
+            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _logger = logger;
         }
 
@@ -187,53 +191,60 @@ namespace WebApplication1.Services.ServiceImpl
             return installment;
         }
 
-        //Handle : Overdue Installments
-        public async Task ApplyLateInterestAsync()
+        //Handle : Overdue Installments (LateIntrest + Arreas)
+        public async Task HandleOverdueInstallmentsAsync(int planId)
         {
-            var allInstallments = await _repository.GetAllAsync();
-            int updatedCount = 0;
-
-            foreach (var inst in allInstallments)
+            // Start a transaction for atomicity
+            await using var transaction = await _repository.BeginTransactionAsync();
+            try
             {
-                // Skip if already paid, cancelled, or refunded
-                if (inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Paid_OnTime ||
-                    inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Paid_Late ||
-                    inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Cancelled ||
-                    inst.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Refunded)
-                    continue;
+                var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-                // Determine overdue (after grace period)
-                var overdueDate = inst.Installment_DueDate.AddDays(BnplSystemConstants.FreeTrialPeriodDays);
-                if (DateTime.UtcNow <= overdueDate)
-                    continue; // not overdue yet
+                // Fetch all installments up to today that are not fully settled
+                var overdueInstallments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
 
-                var planType = inst.BNPL_PLAN?.BNPL_PlanType;
-                if (planType == null)
+                if (!overdueInstallments.Any())
                 {
-                    _logger.LogWarning("Skipping installment {Id} — missing BNPL plan type reference.", inst.InstallmentID);
-                    continue;
+                    await transaction.RollbackAsync();
+                    return; // No overdue installments
                 }
 
-                // Calculate late interest
-                decimal lateRate = planType.LatePayInterestRatePerDay / 100m; // convert from percent to decimal
-                decimal basePlusArrears = inst.Installment_BaseAmount /*+ inst.ArrearsCarried*/;
-                decimal interestAmount = basePlusArrears * lateRate;
+                // Get the BNPL plan with its type to access late interest rate
+                var bnplPlan = await _bNPL_PlanRepository.GetByIdAsync(planId);
+                if (bnplPlan == null)
+                    throw new Exception("Associated BNPL plan not found.");
 
-                // Update fields
-                inst.LateInterest = interestAmount;
-                inst.TotalDueAmount = inst.Installment_BaseAmount + /*inst.ArrearsCarried*/ +inst.LateInterest;
-                inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
-                inst.UpdatedAt = DateTime.UtcNow;
+                decimal lateInterestRatePerDay = bnplPlan.BNPL_PlanType.LatePayInterestRatePerDay;
 
-                await _repository.UpdateAsync(inst.InstallmentID, inst);
-                updatedCount++;
+                foreach (var inst in overdueInstallments)
+                {
+                    if (inst.Installment_DueDate < today && inst.AmountPaid < inst.TotalDueAmount)
+                    {
+                        // Calculate overdue days
+                        var overdueDays = (today - inst.Installment_DueDate).Days;
+                        overdueDays = Math.Max(overdueDays, 1); // At least 1 day
 
-                _logger.LogInformation(
-                    "Late interest {Interest:C} applied to installment {InstId}. New total due: {Total:C}",
-                    interestAmount, inst.InstallmentID, inst.TotalDueAmount);
+                        // Apply late interest only on the unpaid portion
+                        decimal lateInterest = inst.RemainingBalance * lateInterestRatePerDay * overdueDays;
+                        inst.LateInterest += lateInterest;
+
+                        // Update installment status
+                        inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
+                    }
+                }
+
+                // Generate a new settlement snapshot (staged, not committing separately)
+                await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(planId);
+
+                // Save all changes and commit the transaction
+                await _repository.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-
-            _logger.LogInformation("Late interest update completed. {Count} installments updated.", updatedCount);
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

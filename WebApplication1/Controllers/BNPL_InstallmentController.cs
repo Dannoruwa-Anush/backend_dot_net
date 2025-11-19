@@ -133,6 +133,7 @@ namespace WebApplication1.Controllers
         */
         
         //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
+        /*
         [HttpPost("apply-late-interest")]
         public async Task<IActionResult> ApplyLateInterest()
         {
@@ -152,5 +153,6 @@ namespace WebApplication1.Controllers
                 ));
             }
         }
+        */
     }
 }

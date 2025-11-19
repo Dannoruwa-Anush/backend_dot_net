@@ -16,8 +16,8 @@ namespace WebApplication1.Services.IService
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationByOrderIdAsync(int orderId, int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
         Task<BNPL_Installment?> CancelInstallmentAsync(int id);
 
-        //calculations
-        Task ApplyLateInterestAsync();
+        //OverDueInstallments
+        Task HandleOverdueInstallmentsAsync(int planId);
 
         //payment
         Task<BnplInstallmentPaymentResultDto> ApplyBnplPaymentAsync(BNPL_InstallmentPaymentRequestDto request);
