@@ -46,127 +46,119 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Payment : Main Driver
-        /*
-        public async Task<BNPL_InstallmentPaymentRequestDto> InstallmentPaymentAsync(BNPL_InstallmentPaymentRequestDto request)
+        public async Task<BnplInstallmentPaymentResultDto> ApplyBnplPaymentAsync(BNPL_InstallmentPaymentRequestDto request)
         {
             // Load the customer order
             var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
-            if(order == null)
+            if (order == null)
                 throw new Exception("Customer order not found.");
 
             var planId = order.BNPL_PLAN!.Bnpl_PlanID;
+
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             // Get unsettled installments up to today
-            var unsettled = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
+            var unsettledInstallments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
 
-            // Initialize remaining payment with input
-            decimal remainingPayment = request.PaymentAmount;
+            if (!unsettledInstallments.Any())
+                throw new Exception("No unsettled installments found.");
 
-            var finalResult = new BnplPerInstallmentPaymentResultDto
+            var response = new BnplInstallmentPaymentResultDto();
+            decimal remaining = request.PaymentAmount;
+
+            foreach (var inst in unsettledInstallments)
             {
-                InstallmentId = 0,
-                InputPayment = request.PaymentAmount
-            };
+                if (remaining <= 0)
+                    break;
 
-            // CASE A: Apply to unsettled installments
-            if (unsettled != null && unsettled.Any())
-            {
-                foreach (var installment in unsettled.OrderBy(i => i.Installment_DueDate))
-                {
-                    if (remainingPayment <= 0)
-                        break;
-
-                    // Add any previous overpayment on this installment
-                    remainingPayment += installment.OverPaymentCarried;
-
-                    var r = await PaymentPerInstallmentInternalAsync(installment, remainingPayment);
-
-                    finalResult.PerInstallmentBreakdown.Add(r);
-
-                    // Remaining payment to next installment
-                    remainingPayment = r.OverPaymentCarried;
-                }
-
-                // Combine totals
-                finalResult.PaidToArrears = finalResult.PerInstallmentBreakdown.Sum(x => x.PaidToArrears);
-                finalResult.PaidToInterest = finalResult.PerInstallmentBreakdown.Sum(x => x.PaidToInterest);
-                finalResult.PaidToBase = finalResult.PerInstallmentBreakdown.Sum(x => x.PaidToBase);
-                finalResult.OverPaymentCarried = remainingPayment;
-                finalResult.ResultStatus = "Applied to multiple installments";
-
-                return finalResult;
+                var breakdown = ApplyPaymentToSingleInstallment(inst, ref remaining);
+                response.PerInstallmentBreakdown.Add(breakdown);
             }
 
-            // CASE B: No unsettled installments → apply to next upcoming
-            var target = await _repository.GetFirstUpcomingInstallmentAsync(planId)
-                ?? throw new Exception("No installments found for this plan.");
-
-            // Include any overpayment already on the installment
-            remainingPayment += target.OverPaymentCarried;
-
-            var single = await PaymentPerInstallmentInternalAsync(target, remainingPayment);
-
-            finalResult.PerInstallmentBreakdown.Add(single);
-            finalResult.PaidToArrears = single.PaidToArrears;
-            finalResult.PaidToInterest = single.PaidToInterest;
-            finalResult.PaidToBase = single.PaidToBase;
-            finalResult.OverPaymentCarried = single.OverPaymentCarried;
-            finalResult.ResultStatus = "Applied to next upcoming installment";
-
-            return finalResult;
+            //await _repository.SaveChangesAsync();
+            return response;
         }
 
-        //Helper method : simulator per installment
-        private async Task<BnplPerInstallmentPaymentBreakdownResultDto> PaymentPerInstallmentInternalAsync(BNPL_Installment installment, decimal paymentAmount)
+        //Helper Method : 
+        private BnplPerInstallmentPaymentBreakdownResultDto ApplyPaymentToSingleInstallment(BNPL_Installment inst, ref decimal remainingPayment)
         {
-            return await Task.Run(() =>
+            var breakdown = new BnplPerInstallmentPaymentBreakdownResultDto
             {
-                decimal remaining = paymentAmount;
-                decimal paidToArrears = 0m;
-                decimal paidToInterest = 0m;
-                decimal paidToBase = 0m;
+                InstallmentId = inst.InstallmentID
+            };
 
-                // ---- Apply Payment Order ----
-                // 1. Arrears
-                //if (installment.ArrearsCarried > 0 && remaining > 0)
-                //{
-                    //paidToArrears = Math.Min(installment.ArrearsCarried, remaining);
-                    //remaining -= paidToArrears;
-                //}
+            // ----------- STEP 1: Arrears -----------
+            decimal arrears = inst.ArrearsCarried;
 
-                // 2. Late Interest
-                if (installment.LateInterest > 0 && remaining > 0)
+            if (arrears > 0 && remainingPayment > 0)
+            {
+                var applied = Math.Min(arrears, remainingPayment);
+                inst.AmountPaid += applied;
+                remainingPayment -= applied;
+                breakdown.AppliedToArrears = applied;
+            }
+
+            // Refresh values
+            decimal lateInterest = inst.LateInterest;
+            decimal baseRemaining = inst.Installment_BaseAmount - inst.AmountPaid;
+
+            // ----------- STEP 2: Late Interest -----------
+            if (lateInterest > 0 && remainingPayment > 0)
+            {
+                var applied = Math.Min(lateInterest, remainingPayment);
+                inst.LateInterest -= applied;
+                remainingPayment -= applied;
+                breakdown.AppliedToLateInterest = applied;
+            }
+
+            // Refresh base after interest
+            baseRemaining = inst.Installment_BaseAmount - inst.AmountPaid;
+
+            // ----------- STEP 3: Base Amount -----------
+            if (baseRemaining > 0 && remainingPayment > 0)
+            {
+                var applied = Math.Min(baseRemaining, remainingPayment);
+                inst.AmountPaid += applied;
+                remainingPayment -= applied;
+                breakdown.AppliedToBase = applied;
+            }
+
+            // ----------- STEP 4: Overpayment -----------
+            if (remainingPayment > 0)
+            {
+                inst.OverPaymentCarried += remainingPayment;
+                breakdown.OverPayment = remainingPayment;
+                remainingPayment = 0;
+            }
+
+            // ----------- Status Update -----------
+            var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            bool fullyPaid = inst.AmountPaid >= inst.Installment_BaseAmount && inst.LateInterest <= 0;
+            bool overdue = inst.Installment_DueDate < today;
+
+            if (fullyPaid)
+            {
+                inst.Bnpl_Installment_Status =
+                    overdue ? BNPL_Installment_StatusEnum.Paid_Late : BNPL_Installment_StatusEnum.Paid_OnTime;
+            }
+            else
+            {
+                if (inst.AmountPaid > 0)
                 {
-                    paidToInterest = Math.Min(installment.LateInterest, remaining);
-                    remaining -= paidToInterest;
+                    inst.Bnpl_Installment_Status =
+                        overdue ? BNPL_Installment_StatusEnum.PartiallyPaid_Late : BNPL_Installment_StatusEnum.PartiallyPaid_OnTime;
                 }
-
-                // 3. Base Amount
-                var baseRemaining = installment.Installment_BaseAmount - installment.AmountPaid;
-                if (baseRemaining > 0 && remaining > 0)
+                else
                 {
-                    paidToBase = Math.Min(baseRemaining, remaining);
-                    remaining -= paidToBase;
+                    inst.Bnpl_Installment_Status =
+                        overdue ? BNPL_Installment_StatusEnum.Overdue : BNPL_Installment_StatusEnum.Pending;
                 }
+            }
 
-                // ---- Compute totals ----
-                decimal applied = paidToArrears + paidToInterest + paidToBase;
-                decimal due = installment.TotalDueAmount;
-
-                return new BnplPerInstallmentSimulationBreakdownResultDto
-                {
-                    InstallmentId = installment.InstallmentID,
-                    PaidToArrears = paidToArrears,
-                    PaidToInterest = paidToInterest,
-                    PaidToBase = paidToBase,
-                    RemainingBalance = Math.Max(0, due - applied),
-                    OverPaymentCarried = remaining,
-                    ResultStatus = applied < due ? "Partially Paid" : "Fully Settled"
-                };
-            });
+            breakdown.NewStatus = inst.Bnpl_Installment_Status.ToString();
+            return breakdown;
         }
-        */
+
         //Cancel Installment
         public async Task<BNPL_Installment?> CancelInstallmentAsync(int id)
         {
@@ -253,9 +245,9 @@ namespace WebApplication1.Services.ServiceImpl
             // Arrears
             //if (installment.ArrearsCarried > 0 && remaining > 0)
             //{
-                //decimal pay = Math.Min(installment.ArrearsCarried, remaining);
-                //installment.ArrearsCarried -= pay;
-                //remaining -= pay;
+            //decimal pay = Math.Min(installment.ArrearsCarried, remaining);
+            //installment.ArrearsCarried -= pay;
+            //remaining -= pay;
             //}
 
             // Late Interest
@@ -333,7 +325,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Update fields
                 inst.LateInterest = interestAmount;
-                inst.TotalDueAmount = inst.Installment_BaseAmount + /*inst.ArrearsCarried*/ + inst.LateInterest;
+                inst.TotalDueAmount = inst.Installment_BaseAmount + /*inst.ArrearsCarried*/ +inst.LateInterest;
                 inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
                 inst.UpdatedAt = DateTime.UtcNow;
 

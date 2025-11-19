@@ -1,6 +1,6 @@
 namespace WebApplication1.DTOs.ResponseDto.Payment.Bnpl
 {
-    public class BnplPerInstallmentPaymentResultDto
+    public class BnplInstallmentPaymentResultDto
     {
         public int InstallmentId { get; set; }
         public decimal AppliedToArrears { get; set; }
