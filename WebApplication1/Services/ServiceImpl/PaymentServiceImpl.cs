@@ -6,16 +6,12 @@ using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
-using WebApplication1.Utils.SystemConstants;
 
 namespace WebApplication1.Services.ServiceImpl
 {
     public class PaymentServiceImpl : IPaymentService
     {
-        private readonly ICashflowRepository _cashflowRepository;
-        private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
-
-        //****
+        private readonly IPaymentRepository _repository;
         private readonly ICashflowService _cashflowService;
         private readonly ICustomerOrderService _customerOrderService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
@@ -26,17 +22,16 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<PaymentServiceImpl> _logger;
 
         // Constructor
-        public PaymentServiceImpl(ICashflowRepository cashflowRepository, IBNPL_PlanRepository bNPL_PlanRepository, ICashflowService cashflowService, ICustomerOrderService customerOrderService, IBNPL_InstallmentService bNPL_InstallmentService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IBNPL_PlanService bNPL_PlanService, ILogger<PaymentServiceImpl> logger)
+        public PaymentServiceImpl(IPaymentRepository repository, ICashflowService cashflowService, ICustomerOrderService customerOrderService, IBNPL_InstallmentService bNPL_InstallmentService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IBNPL_PlanService bNPL_PlanService, ILogger<PaymentServiceImpl> logger)
         {
             // Dependency injection
-            _cashflowRepository = cashflowRepository;
-            _bNPL_PlanRepository = bNPL_PlanRepository;
-            _cashflowService = cashflowService;
-            _customerOrderService = customerOrderService;
-            _bNPL_InstallmentService = bNPL_InstallmentService;
-            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
-            _bNPL_PlanService = bNPL_PlanService;
-            _logger = logger;
+            _repository                         = repository;
+            _cashflowService                    = cashflowService;
+            _customerOrderService               = customerOrderService;
+            _bNPL_InstallmentService            = bNPL_InstallmentService;
+            _bnpl_planSettlementSummaryService  = bnpl_planSettlementSummaryService;
+            _bNPL_PlanService                   = bNPL_PlanService;
+            _logger                             = logger;
         }
 
         // Full Payment
@@ -45,7 +40,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));
 
-            await using var transaction = await _cashflowRepository.BeginTransactionAsync();
+            await using var transaction = await _repository.BeginTransactionAsync();
 
             try
             {
@@ -80,7 +75,7 @@ namespace WebApplication1.Services.ServiceImpl
         // BNPL : Initial Payment (After the initial payment is completed, bnpl plan will be created)
         public async Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
-            await using var transaction = await _cashflowRepository.BeginTransactionAsync();
+            await using var transaction = await _repository.BeginTransactionAsync();
             try
             {
                 var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -132,7 +127,7 @@ namespace WebApplication1.Services.ServiceImpl
         // BNPL : Installment Payment
         public async Task ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
-            await using var transaction = await _cashflowRepository.BeginTransactionAsync();
+            await using var transaction = await _repository.BeginTransactionAsync();
             try
             {
                 // 1. Apply BNPL installment payment
@@ -140,7 +135,7 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Applied installment payment: {PaymentResult}", paymentResult);
 
                 // 2. Retrieve associated BNPL plan
-                var plan = await _bNPL_PlanRepository.GetByOrderIdAsync(paymentRequest.OrderId);
+                var plan = await _bNPL_PlanService.GetByOrderIdAsync(paymentRequest.OrderId);
                 if (plan == null)
                     throw new Exception($"Associated BNPL plan not found for OrderID={paymentRequest.OrderId}");
 

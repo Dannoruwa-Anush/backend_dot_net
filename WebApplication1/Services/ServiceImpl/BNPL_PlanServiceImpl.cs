@@ -14,22 +14,18 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly IBNPL_PlanRepository _repository;
         private readonly IBNPL_PlanTypeRepository _bnpl_PlanTypeRepository;
-        private readonly IBNPL_InstallmentRepository _bnpl_installmentRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
-        private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
 
         //logger: for auditing
         private readonly ILogger<BNPL_PlanServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, IBNPL_InstallmentRepository bnpl_installmentRepository, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_PlanServiceImpl> logger)
+        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _bnpl_PlanTypeRepository = bnpl_PlanTypeRepository;
-            _bnpl_installmentRepository = bnpl_installmentRepository;
             _customerOrderRepository = customerOrderRepository;
-            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _logger = logger;
         }
 
@@ -96,6 +92,9 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, planStatusId, searchKey);
         }
+
+        public async Task<BNPL_PLAN?> GetByOrderIdAsync(int OrderId) =>
+            await _repository.GetByOrderIdAsync(OrderId);
 
         //calculator
         public async Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
