@@ -6,6 +6,7 @@ using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
+using WebApplication1.Utils.SystemConstants;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -79,16 +80,53 @@ namespace WebApplication1.Services.ServiceImpl
         // BNPL : Initial Payment
         public async Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
-            //calculate the values
-            var bnpl_Plan_calculation = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
+            await using var transaction = await _cashflowRepository.BeginTransactionAsync();
+            try
+            {
+                var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            //Create a Bnpl plan + installments
-            //var bnpl_plan = await
+                // Calculate BNPL values
+                var bnplCalc = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
 
-            //Create a cashflow for initial payment
-            
+                // Create the BNPL plan (no transaction inside)
+                var bnpl_plan = await _bNPL_PlanService.AddBNPL_PlanAsync(new BNPL_PLAN
+                {
+                    OrderID = request.OrderID,
+                    Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
+                    Bnpl_TotalInstallmentCount = request.InstallmentCount,
+                    Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment
+                });
+
+                // Generate installments
+                await _bNPL_InstallmentService.AddBnplInstallmentsAsync(bnpl_plan);
+
+                // Create a cashflow for initial payment
+                var paymentRequest = new PaymentRequestDto
+                {
+                    PaymentAmount = request.InitialPayment,
+                    OrderId = request.OrderID
+                };
+
+                var cashflow = await _cashflowService.AddCashflowAsync(
+                    paymentRequest,
+                    CashflowTypeEnum.BnplInitialPayment
+                );
+
+                // Generate settlement snapshot
+                await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(bnpl_plan.Bnpl_PlanID);
+
+                // Commit
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("BNPL initial payment processed successfully for OrderID={OrderId}", request.OrderID);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to process BNPL initial payment for OrderID={OrderId}", request.OrderID);
+                throw;
+            }
         }
-
 
         // BNPL : Installment Payment
         public async Task ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)

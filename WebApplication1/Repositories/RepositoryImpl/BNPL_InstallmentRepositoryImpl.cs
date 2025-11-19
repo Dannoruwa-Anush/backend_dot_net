@@ -34,14 +34,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(ip => ip.BNPL_PlanType)
                 .Include(i => i.BNPL_PLAN!)
                     .ThenInclude(io => io.CustomerOrder)
-                        .ThenInclude(ioc => ioc.Customer)
+                        .ThenInclude(ioc => ioc!.Customer)
                 .FirstOrDefaultAsync(i => i.InstallmentID == id);
-
-        public async Task AddAsync(BNPL_Installment bnpl_installment)
-        {
-            await _context.BNPL_Installments.AddAsync(bnpl_installment);
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment)
         {
@@ -66,7 +60,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                                 .ThenInclude(ip => ip.BNPL_PlanType)
                             .Include(i => i.BNPL_PLAN!)
                                 .ThenInclude(io => io.CustomerOrder)
-                                    .ThenInclude(ioc => ioc.Customer)
+                                    .ThenInclude(ioc => ioc!.Customer)
                             .AsNoTracking()
                             .AsQueryable();
 
@@ -118,7 +112,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 query = query.Where(i =>
                     i.BNPL_PLAN!.OrderID.ToString().Contains(searchKey) ||
                     i.BNPL_PLAN.Bnpl_PlanID.ToString().Contains(searchKey) ||
-                    i.BNPL_PLAN.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey) ||
+                    i.BNPL_PLAN.CustomerOrder!.Customer.User.Email.ToLower().Contains(searchKey) ||
                     i.BNPL_PLAN.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey)
                 );
             }
@@ -133,12 +127,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
                                 .ThenInclude(ip => ip.BNPL_PlanType)
                             .Include(i => i.BNPL_PLAN!)
                                 .ThenInclude(io => io.CustomerOrder)
-                                    .ThenInclude(ioc => ioc.Customer)
+                                    .ThenInclude(ioc => ioc!.Customer)
                             .AsNoTracking()
                             .AsQueryable();
 
             //filter by order Id
-            query = query.Where(i => i.BNPL_PLAN!.CustomerOrder.OrderID == orderId);
+            query = query.Where(i => i.BNPL_PLAN!.CustomerOrder!.OrderID == orderId);
 
             // Apply filters from helper
             query = ApplyBnpl_Installment_StatusFilter(query, bnpl_Installment_StatusId);
@@ -213,9 +207,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Bulk insert
-        public async Task AddRangeAsync(IEnumerable<BNPL_Installment> installments)
+        public async Task AddRangeAsync(List<BNPL_Installment> installments)
         {
             await _context.BNPL_Installments.AddRangeAsync(installments);
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
         }
 
         // EF transaction support

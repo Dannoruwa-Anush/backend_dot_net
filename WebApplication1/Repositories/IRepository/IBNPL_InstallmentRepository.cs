@@ -9,7 +9,6 @@ namespace WebApplication1.Repositories.IRepository
         //CRUD operations
         Task<IEnumerable<BNPL_Installment>> GetAllAsync();
         Task<BNPL_Installment?> GetByIdAsync(int id);
-        Task AddAsync(BNPL_Installment bnpl_installment);
         Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment);
 
         //Custom Query Operations
@@ -21,7 +20,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<List<BNPL_Installment>> GetAllUnsettledInstallmentUpToDateAsync(int planId, DateTime asOfDate);
         
         //Bulk insert
-        Task AddRangeAsync(IEnumerable<BNPL_Installment> installments);
+        Task AddRangeAsync(List<BNPL_Installment> installments);
 
         // EF transaction support
         Task<IDbContextTransaction> BeginTransactionAsync();

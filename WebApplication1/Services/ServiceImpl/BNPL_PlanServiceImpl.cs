@@ -42,84 +42,26 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<BNPL_PLAN> AddBNPL_PlanAsync(BNPL_PLAN bNPL_Plan)
         {
-            await using var transaction = await _repository.BeginTransactionAsync();
+            // Validate inputs
+            if (bNPL_Plan.Bnpl_TotalInstallmentCount <= 0)
+                throw new Exception("BNPL plan must have at least one installment.");
 
-            try
-            {
-                if (bNPL_Plan.Bnpl_TotalInstallmentCount <= 0)
-                    throw new Exception("BNPL plan must have at least one installment.");
+            var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(bNPL_Plan.Bnpl_PlanTypeID);
+            if (planType == null)
+                throw new Exception("Invalid BNPL plan type.");
 
-                var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(bNPL_Plan.Bnpl_PlanTypeID);
-                if (planType == null)
-                    throw new Exception("Invalid BNPL plan type.");
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
+            int daysPerInstallment = planType.Bnpl_DurationDays;
 
-                var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
-                int daysPerInstallment = planType.Bnpl_DurationDays;
+            bNPL_Plan.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_TotalInstallmentCount;
+            bNPL_Plan.Bnpl_StartDate = now;
+            bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
+            bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
 
-                // Configure plan
-                bNPL_Plan.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_TotalInstallmentCount;
-                bNPL_Plan.Bnpl_StartDate = now;
-                bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
-                bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
+            await _repository.AddAsync(bNPL_Plan);
 
-                await _repository.AddAsync(bNPL_Plan);
-                await _repository.SaveChangesAsync();  // Ensure PlanID is generated
-
-                // Generate installments using helper
-                var installments = GenerateInstallments(
-                    bNPL_Plan,
-                    now,
-                    freeTrialDays,
-                    daysPerInstallment
-                );
-
-                await _bnpl_installmentRepository.AddRangeAsync(installments);
-
-                // Settlement snapshot
-                await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(bNPL_Plan.Bnpl_PlanID);
-
-                await _repository.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                _logger.LogInformation(
-                    "BNPL Plan Created: ID={Id}, {Count} installments",
-                    bNPL_Plan.Bnpl_PlanID,
-                    installments.Count
-                );
-
-                return bNPL_Plan;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Failed to create BNPL plan.");
-                throw;
-            }
-        }
-
-        //Helper class
-        private List<BNPL_Installment> GenerateInstallments(BNPL_PLAN plan, DateTime startDate, int freeTrialDays, int daysPerInstallment)
-        {
-            var installments = new List<BNPL_Installment>(plan.Bnpl_TotalInstallmentCount);
-
-            for (int i = 1; i <= plan.Bnpl_TotalInstallmentCount; i++)
-            {
-                var dueDate = startDate.AddDays(freeTrialDays + (daysPerInstallment * (i - 1)));
-
-                installments.Add(new BNPL_Installment
-                {
-                    Bnpl_PlanID = plan.Bnpl_PlanID,
-                    InstallmentNo = i,
-                    Installment_BaseAmount = plan.Bnpl_AmountPerInstallment,
-                    Installment_DueDate = dueDate,
-                    TotalDueAmount = plan.Bnpl_AmountPerInstallment,
-                    CreatedAt = startDate,
-                    Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
-                });
-            }
-
-            return installments;
+            return bNPL_Plan;
         }
 
         public async Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BnplStatusEnum newStatus)

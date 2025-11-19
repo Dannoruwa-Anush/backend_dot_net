@@ -44,7 +44,7 @@ namespace WebApplication1.Models
 
         // Many Side: Navigation property
         [ForeignKey(nameof(Bnpl_PlanTypeID))]
-        public required BNPL_PlanType BNPL_PlanType { get; set; }
+        public BNPL_PlanType? BNPL_PlanType { get; set; }
         //******* [End: BNPL_PlanType (1) — BNPL_PLAN (M)] ******
 
 
@@ -55,7 +55,7 @@ namespace WebApplication1.Models
         // One Side: Navigation property
         [ForeignKey(nameof(OrderID))]
         [InverseProperty(nameof(CustomerOrder.BNPL_PLAN))]
-        public required CustomerOrder CustomerOrder { get; set; }
+        public CustomerOrder? CustomerOrder { get; set; }
         //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
 
 
