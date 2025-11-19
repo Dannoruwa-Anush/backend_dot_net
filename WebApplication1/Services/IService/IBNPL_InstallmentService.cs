@@ -17,7 +17,7 @@ namespace WebApplication1.Services.IService
         Task<BNPL_Installment?> CancelInstallmentAsync(int id);
 
         //OverDueInstallments
-        Task HandleOverdueInstallmentsAsync(int planId);
+        Task ApplyLateInterestForAllPlansAsync();
 
         //payment
         Task<BnplInstallmentPaymentResultDto> ApplyBnplPaymentAsync(BNPL_InstallmentPaymentRequestDto request);

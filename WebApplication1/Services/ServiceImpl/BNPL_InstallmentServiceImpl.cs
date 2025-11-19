@@ -192,51 +192,22 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Handle : Overdue Installments (LateIntrest + Arreas)
-        public async Task HandleOverdueInstallmentsAsync(int planId)
+        public async Task ApplyLateInterestForAllPlansAsync()
         {
-            // Start a transaction for atomicity
+            var activePlans = await _bNPL_PlanRepository.GetAllAsync();
+            if (!activePlans.Any()) return;
+
+            // Use a single transaction for all plans
             await using var transaction = await _repository.BeginTransactionAsync();
             try
             {
                 var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-                // Fetch all installments up to today that are not fully settled
-                var overdueInstallments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
-
-                if (!overdueInstallments.Any())
+                foreach (var plan in activePlans)
                 {
-                    await transaction.RollbackAsync();
-                    return; // No overdue installments
+                    await HandleOverdueInstallmentsAsync(plan.Bnpl_PlanID, today);
                 }
 
-                // Get the BNPL plan with its type to access late interest rate
-                var bnplPlan = await _bNPL_PlanRepository.GetByIdAsync(planId);
-                if (bnplPlan == null)
-                    throw new Exception("Associated BNPL plan not found.");
-
-                decimal lateInterestRatePerDay = bnplPlan.BNPL_PlanType.LatePayInterestRatePerDay;
-
-                foreach (var inst in overdueInstallments)
-                {
-                    if (inst.Installment_DueDate < today && inst.AmountPaid < inst.TotalDueAmount)
-                    {
-                        // Calculate overdue days
-                        var overdueDays = (today - inst.Installment_DueDate).Days;
-                        overdueDays = Math.Max(overdueDays, 1); // At least 1 day
-
-                        // Apply late interest only on the unpaid portion
-                        decimal lateInterest = inst.RemainingBalance * lateInterestRatePerDay * overdueDays;
-                        inst.LateInterest += lateInterest;
-
-                        // Update installment status
-                        inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
-                    }
-                }
-
-                // Generate a new settlement snapshot (staged, not committing separately)
-                await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(planId);
-
-                // Save all changes and commit the transaction
                 await _repository.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -245,6 +216,36 @@ namespace WebApplication1.Services.ServiceImpl
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        // Helper: Handle Overdue Installments 
+        private async Task HandleOverdueInstallmentsAsync(int planId, DateTime today)
+        {
+            // Fetch installments due up to today
+            var overdueInstallments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
+            if (!overdueInstallments.Any()) return;
+
+            var bnplPlan = await _bNPL_PlanRepository.GetByIdAsync(planId);
+            if (bnplPlan == null) throw new Exception("Associated BNPL plan not found.");
+
+            decimal lateInterestRatePerDay = bnplPlan.BNPL_PlanType.LatePayInterestRatePerDay;
+
+            foreach (var inst in overdueInstallments)
+            {
+                if (inst.Installment_DueDate < today && inst.AmountPaid < inst.TotalDueAmount)
+                {
+                    int overdueDays = Math.Max((today - inst.Installment_DueDate).Days, 1);
+
+                    // Apply late interest on remaining balance
+                    decimal lateInterest = inst.RemainingBalance * lateInterestRatePerDay * overdueDays;
+                    inst.LateInterest += lateInterest;
+
+                    inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
+                }
+            }
+
+            // Generate snapshot (staged)
+            await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(planId);
         }
     }
 }

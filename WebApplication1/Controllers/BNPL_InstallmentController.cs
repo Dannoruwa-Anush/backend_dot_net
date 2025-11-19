@@ -133,13 +133,12 @@ namespace WebApplication1.Controllers
         */
         
         //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
-        /*
         [HttpPost("apply-late-interest")]
         public async Task<IActionResult> ApplyLateInterest()
         {
             try
             {
-                await _service.ApplyLateInterestAsync();
+                await _service.ApplyLateInterestForAllPlansAsync();
                 return Ok(new ApiResponseDto<string>(
                     200,
                     "Late interest applied successfully to all overdue installments."
@@ -153,6 +152,5 @@ namespace WebApplication1.Controllers
                 ));
             }
         }
-        */
     }
 }
