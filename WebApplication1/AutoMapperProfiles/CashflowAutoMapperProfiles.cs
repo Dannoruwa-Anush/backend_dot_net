@@ -10,7 +10,7 @@ namespace WebApplication1.AutoMapperProfiles
         public CashflowAutoMapperProfiles()
         {
             CreateMap<Cashflow, CashflowResponseDto>();
-            CreateMap<CashflowRequestDto, Cashflow>();
+            //CreateMap<CashflowRequestDto, Cashflow>();
         }   
     }
 }

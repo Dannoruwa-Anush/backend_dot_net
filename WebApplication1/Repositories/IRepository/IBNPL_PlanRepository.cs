@@ -15,6 +15,7 @@ namespace WebApplication1.Repositories.IRepository
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);
         Task<bool> ExistsByBnplPlanTypeAsync(int bnplPlanTypeId);
+        Task<BNPL_PLAN?> GetByOrderIdAsync(int OrderId);
 
         // EF transaction support
         Task<IDbContextTransaction> BeginTransactionAsync();

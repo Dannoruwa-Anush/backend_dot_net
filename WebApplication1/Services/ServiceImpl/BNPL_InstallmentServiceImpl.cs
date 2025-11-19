@@ -1,4 +1,4 @@
-using WebApplication1.DTOs.RequestDto.Payment.Bnpl;
+using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
@@ -50,7 +50,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Payment : Main Driver
-        public async Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(BNPL_InstallmentPaymentRequestDto request)
+        public async Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(PaymentRequestDto request)
         {
             // Load the customer order
             var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);

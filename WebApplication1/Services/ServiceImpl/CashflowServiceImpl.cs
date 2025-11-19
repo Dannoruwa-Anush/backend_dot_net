@@ -31,6 +31,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Cashflow?> GetCashflowByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
+        /*
         public async Task<Cashflow> AddCashflowAsync(CashflowRequestDto request)
         {
             var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
@@ -74,7 +75,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             return cashflow;
         }
-
+        */
         public async Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow updatedCashflow)
         {
             var existing = await _repository.GetByIdAsync(id);

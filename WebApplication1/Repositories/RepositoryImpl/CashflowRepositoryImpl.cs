@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -28,7 +29,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(Cashflow cashflow)
         {
             await _context.Cashflows.AddAsync(cashflow);
-            await _context.SaveChangesAsync();
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
         }
 
         public async Task<Cashflow?> UpdateAsync(int id, Cashflow cashflow)
@@ -40,7 +41,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.CashflowStatus = cashflow.CashflowStatus;
 
             _context.Cashflows.Update(existing);
-            await _context.SaveChangesAsync();
+            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
 
             return existing;
         }
@@ -101,5 +102,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
             }
             return query;
         }
+
+        // EF transaction support
+        public async Task<IDbContextTransaction> BeginTransactionAsync() =>
+            await _context.Database.BeginTransactionAsync();
+
+        public async Task SaveChangesAsync() =>
+            await _context.SaveChangesAsync();
     }
 }

@@ -35,7 +35,7 @@ namespace WebApplication1.Models
         // Many Side: Navigation property
         [ForeignKey(nameof(OrderID))]
         [InverseProperty(nameof(CustomerOrder.Cashflows))]
-        public required CustomerOrder CustomerOrder { get; set; }
+        public CustomerOrder? CustomerOrder { get; set; }
         //******* [End: CustomerOrder (1) — Cashflow (M)] ******
 
     }

@@ -1,4 +1,4 @@
-using WebApplication1.DTOs.RequestDto.Payment.Bnpl;
+using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
@@ -20,6 +20,6 @@ namespace WebApplication1.Services.IService
         Task ApplyLateInterestForAllPlansAsync();
 
         //payment
-        Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(BNPL_InstallmentPaymentRequestDto request);
+        Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(PaymentRequestDto request);
     }
 }

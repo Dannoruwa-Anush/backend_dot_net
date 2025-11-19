@@ -133,6 +133,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return query;
         }
 
+        public async Task<BNPL_PLAN?> GetByOrderIdAsync(int orderId) =>
+            await _context.BNPL_PLANs
+                .FirstOrDefaultAsync(b => b.OrderID == orderId);
+
         // EF transaction support
         public async Task<IDbContextTransaction> BeginTransactionAsync() =>
             await _context.Database.BeginTransactionAsync();
