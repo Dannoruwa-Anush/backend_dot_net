@@ -20,6 +20,6 @@ namespace WebApplication1.Services.IService
         Task ApplyLateInterestForAllPlansAsync();
 
         //payment
-        Task<BnplInstallmentPaymentResultDto> ApplyBnplPaymentAsync(BNPL_InstallmentPaymentRequestDto request);
+        Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(BNPL_InstallmentPaymentRequestDto request);
     }
 }

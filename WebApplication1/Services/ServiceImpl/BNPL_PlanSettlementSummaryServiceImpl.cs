@@ -28,15 +28,16 @@ namespace WebApplication1.Services.ServiceImpl
         {
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Build snapshot
+            // Build the new staged settlement snapshot
             var snapshot = await BuildSettlementSnapshotAsync(planId, today);
 
-            // Mark previously latest items as old
+            // Mark previously-latest summaries as not latest (staged only)
             await MarkOldSnapshotsAsync(planId);
 
-            // Just stage the new record
+            // Stage the new snapshot
             await _repository.AddAsync(snapshot);
 
+            // No SaveChanges() here. That is handled by caller.
             return snapshot;
         }
 
@@ -51,11 +52,12 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 Bnpl_PlanID = planId,
                 CurrentInstallmentNo = unsettled.Max(i => i.InstallmentNo),
-                TotalCurrentArrears = totals.TotalArrears,
-                TotalCurrentLateInterest = totals.TotalLateInterest,
                 InstallmentBaseAmount = totals.TotalBaseAmount,
+                TotalCurrentLateInterest = totals.TotalLateInterest,
                 TotalCurrentOverPayment = totals.TotalOverPayment,
+                TotalCurrentArrears = totals.TotalArrears,
                 TotalPayableSettlement = totals.TotalPayable,
+
                 Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
                 IsLatest = true,
             };
@@ -80,16 +82,19 @@ namespace WebApplication1.Services.ServiceImpl
             var lateInterest = installments.Sum(i => i.LateInterest);
             var overPayment = installments.Sum(i => i.OverPaymentCarried);
 
-            var arrears = installments.Sum(i => (i.TotalDueAmount - i.AmountPaid));
+            // Arrears = Remaining base + arrears carried (late not included)
+            var arrears = installments.Sum(i => i.RemainingBalance);
 
+            // Total amount currently payable
             var payable = arrears + lateInterest - overPayment;
 
             return (baseAmount, lateInterest, overPayment, arrears, payable);
         }
-        
+
         // Helper method : Mark previous snapshot as IsLatested = false
         private async Task MarkOldSnapshotsAsync(int planId)
         {
+            // Only stage updates, no SaveChanges inside
             await _repository.MarkPreviousSnapshotsAsNotLatestAsync(planId);
         }
 

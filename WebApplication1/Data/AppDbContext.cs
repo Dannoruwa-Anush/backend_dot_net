@@ -231,7 +231,13 @@ namespace WebApplication1.Data
                 entity.Property(i => i.TotalDueAmount)
                     .HasColumnType("decimal(18,2)");
 
-                entity.Property(i => i.AmountPaid)
+                entity.Property(i => i.AmountPaid_AgainstBase)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.AmountPaid_AgainstArrears)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.AmountPaid_AgainstLateInterest)
                       .HasColumnType("decimal(18,2)");
             });
 

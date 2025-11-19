@@ -34,7 +34,13 @@ namespace WebApplication1.Models
         public decimal TotalDueAmount { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal AmountPaid { get; set; } = 0m;
+        public decimal AmountPaid_AgainstBase { get; set; } = 0m;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AmountPaid_AgainstArrears { get; set; } = 0m;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AmountPaid_AgainstLateInterest { get; set; } = 0m;
 
         public DateTime? LastPaymentDate { get; set; }
 
@@ -48,13 +54,19 @@ namespace WebApplication1.Models
 
         // Derived convenience fields
         [NotMapped]
-        public decimal RemainingBalance => TotalDueAmount - AmountPaid;
+        public decimal TotalPaid => AmountPaid_AgainstBase + AmountPaid_AgainstArrears + AmountPaid_AgainstLateInterest;
+
+        [NotMapped]
+        public decimal RemainingBalance => TotalDueAmount - TotalPaid;
 
         [NotMapped]
         public bool IsOverdue => Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow) && Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending;
 
-        [NotMapped]
-        public decimal ArrearsCarried => IsOverdue ? Math.Max(Installment_BaseAmount - AmountPaid, 0m) : 0m;
+        [NotMapped] 
+        public decimal BaseShortage => Math.Max(Installment_BaseAmount - (AmountPaid_AgainstBase + AmountPaid_AgainstArrears), 0m);
+
+        [NotMapped] 
+        public decimal ArrearsCarried => IsOverdue ? BaseShortage : 0m;
         
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
         //FK
