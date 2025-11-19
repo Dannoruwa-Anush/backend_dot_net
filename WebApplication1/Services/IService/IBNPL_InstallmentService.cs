@@ -17,7 +17,6 @@ namespace WebApplication1.Services.IService
         Task<BNPL_Installment?> CancelInstallmentAsync(int id);
 
         //calculations
-        Task<List<BNPL_Installment>> ApplyPaymentToInstallmentAsync(int installmentId, decimal paymentAmount);
         Task ApplyLateInterestAsync();
 
         //payment
