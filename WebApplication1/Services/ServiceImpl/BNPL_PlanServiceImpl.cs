@@ -190,7 +190,7 @@ namespace WebApplication1.Services.ServiceImpl
             return new BNPLInstallmentCalculatorResponseDto
             {
                 InterestRate = planType.InterestRate,
-                LatePayInterestRate = planType.LatePayInterestRate,
+                LatePayInterestRate = planType.LatePayInterestRatePerDay,
                 PlanTypeName = planType.Bnpl_PlanTypeName,
                 Description = planType.Bnpl_Description,
                 AmountPerInstallment = Math.Round(monthlyInstallment, 2),

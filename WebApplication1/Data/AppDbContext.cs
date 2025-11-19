@@ -181,7 +181,7 @@ namespace WebApplication1.Data
                 entity.Property(p => p.InterestRate)
                       .HasColumnType("decimal(5,2)");
 
-                entity.Property(p => p.LatePayInterestRate)
+                entity.Property(p => p.LatePayInterestRatePerDay)
                       .HasColumnType("decimal(5,2)");
 
                 // (1) — (M) BNPL_PLAN handled in BNPL_PLAN entity

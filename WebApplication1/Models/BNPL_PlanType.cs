@@ -23,10 +23,10 @@ namespace WebApplication1.Models
         [Range(0, 100, ErrorMessage = "Interest rate must be between 0 and 100")]
         public decimal InterestRate { get; set; }
 
-        [Required(ErrorMessage = "Late payment interest rate is required")]
+        [Required(ErrorMessage = "Late payment interest rate per day is required")]
         [Column(TypeName = "decimal(5,2)")]
-        [Range(0, 100, ErrorMessage = "Late payment interest rate must be between 0 and 100")]
-        public decimal LatePayInterestRate { get; set; }
+        [Range(0, 100, ErrorMessage = "Late payment interest rate per day must be between 0 and 100")]
+        public decimal LatePayInterestRatePerDay { get; set; }
 
         public string Bnpl_Description { get; set; } = string.Empty;
 

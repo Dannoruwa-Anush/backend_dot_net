@@ -215,7 +215,7 @@ namespace WebApplication1.Services.ServiceImpl
                 }
 
                 // Calculate late interest
-                decimal lateRate = planType.LatePayInterestRate / 100m; // convert from percent to decimal
+                decimal lateRate = planType.LatePayInterestRatePerDay / 100m; // convert from percent to decimal
                 decimal basePlusArrears = inst.Installment_BaseAmount /*+ inst.ArrearsCarried*/;
                 decimal interestAmount = basePlusArrears * lateRate;
 
