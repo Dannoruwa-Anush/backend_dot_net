@@ -48,6 +48,30 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationByOrderIdAsync(orderId, pageNumber, pageSize, bnpl_Installment_StatusId, searchKey);
         }
+        
+        //Bulk Add
+        public async Task<List<BNPL_Installment>> GenerateInstallments(BNPL_PLAN plan, DateTime startDate, int freeTrialDays, int daysPerInstallment)
+        {
+            var installments = new List<BNPL_Installment>(plan.Bnpl_TotalInstallmentCount);
+
+            for (int i = 1; i <= plan.Bnpl_TotalInstallmentCount; i++)
+            {
+                var dueDate = startDate.AddDays(freeTrialDays + (daysPerInstallment * (i - 1)));
+
+                installments.Add(new BNPL_Installment
+                {
+                    Bnpl_PlanID = plan.Bnpl_PlanID,
+                    InstallmentNo = i,
+                    Installment_BaseAmount = plan.Bnpl_AmountPerInstallment,
+                    Installment_DueDate = dueDate,
+                    TotalDueAmount = plan.Bnpl_AmountPerInstallment,
+                    CreatedAt = startDate,
+                    Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
+                });
+            }
+
+            return installments;
+        }
 
         //Payment : Main Driver
         public async Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(PaymentRequestDto request)

@@ -14,6 +14,10 @@ namespace WebApplication1.Services.IService
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationByOrderIdAsync(int orderId, int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
+        
+        //Bulk Add
+        Task<List<BNPL_Installment>> GenerateInstallments(BNPL_PLAN plan, DateTime startDate, int freeTrialDays, int daysPerInstallment);
+        
         Task<BNPL_Installment?> CancelInstallmentAsync(int id);
 
         //OverDueInstallments

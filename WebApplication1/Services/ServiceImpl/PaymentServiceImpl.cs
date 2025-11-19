@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.Models;
@@ -12,16 +13,19 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICashflowRepository _cashflowRepository;
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
+
+        //****
         private readonly ICashflowService _cashflowService;
         private readonly ICustomerOrderService _customerOrderService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
+        private readonly IBNPL_PlanService _bNPL_PlanService;
 
         //logger: for auditing
         private readonly ILogger<PaymentServiceImpl> _logger;
 
         // Constructor
-        public PaymentServiceImpl(ICashflowRepository cashflowRepository, IBNPL_PlanRepository bNPL_PlanRepository, ICashflowService cashflowService, ICustomerOrderService customerOrderService, IBNPL_InstallmentService bNPL_InstallmentService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<PaymentServiceImpl> logger)
+        public PaymentServiceImpl(ICashflowRepository cashflowRepository, IBNPL_PlanRepository bNPL_PlanRepository, ICashflowService cashflowService, ICustomerOrderService customerOrderService, IBNPL_InstallmentService bNPL_InstallmentService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IBNPL_PlanService bNPL_PlanService, ILogger<PaymentServiceImpl> logger)
         {
             // Dependency injection
             _cashflowRepository = cashflowRepository;
@@ -30,6 +34,7 @@ namespace WebApplication1.Services.ServiceImpl
             _customerOrderService = customerOrderService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
+            _bNPL_PlanService = bNPL_PlanService;
             _logger = logger;
         }
 
@@ -71,7 +76,18 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        // BNPL : Initial payment ???
+        // BNPL : Initial Payment
+        public async Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request)
+        {
+            //calculate the values
+            var bnpl_Plan_calculation = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
+
+            //Create a Bnpl plan + installments
+            //var bnpl_plan = await
+
+            //Create a cashflow for initial payment
+            
+        }
 
 
         // BNPL : Installment Payment
