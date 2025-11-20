@@ -16,7 +16,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
-
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
+        
         //CRUD operations
         public async Task<IEnumerable<ElectronicItem>> GetAllAsync() =>
             await _context.ElectronicItems
@@ -30,11 +31,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Include(e => e.Category)
                 .FirstOrDefaultAsync(e => e.ElectronicItemID == id);
 
-        public async Task AddAsync(ElectronicItem electronicItem)
-        {
+        public async Task AddAsync(ElectronicItem electronicItem) =>
             await _context.ElectronicItems.AddAsync(electronicItem);
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<ElectronicItem?> UpdateAsync(int id, ElectronicItem electronicItem)
         {
@@ -49,8 +47,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.CategoryID = electronicItem.CategoryID;
 
             _context.ElectronicItems.Update(existing);
-            await _context.SaveChangesAsync();
-
             return existing;
         }
 
@@ -61,8 +57,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return false;
 
             _context.ElectronicItems.Remove(e_item);
-            await _context.SaveChangesAsync();
-
             return true;
         }
 

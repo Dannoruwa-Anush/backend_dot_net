@@ -2,21 +2,24 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 
 namespace WebApplication1.Services.ServiceImpl
 {
     public class ElectronicItemServiceImpl : IElectronicItemService
     {
         private readonly IElectronicItemRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
         private readonly ILogger<ElectronicItemServiceImpl> _logger;
 
         // Constructor
-        public ElectronicItemServiceImpl(IElectronicItemRepository repository, ILogger<ElectronicItemServiceImpl> logger)
+        public ElectronicItemServiceImpl(IElectronicItemRepository repository, IAppUnitOfWork unitOfWork, ILogger<ElectronicItemServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -35,6 +38,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Electronic item with name '{electronicItem.ElectronicItemName}' already exists.");
 
             await _repository.AddAsync(electronicItem);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Electronic item created: Id={Id}, Name={Name}", electronicItem.ElectronicItemID, electronicItem.ElectronicItemName);
             return electronicItem;
@@ -51,6 +55,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Electronic item with name '{electronicItem.ElectronicItemName}' already exists.");
 
             var updatedElectronicItem = await _repository.UpdateAsync(id, electronicItem);
+            await _unitOfWork.SaveChangesAsync();
 
             if (updatedElectronicItem != null)
             {
@@ -64,6 +69,8 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task DeleteElectronicItemAsync(int id)
         {
             var deleted = await _repository.DeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+            
             if (!deleted)
             {
                 _logger.LogWarning("Attempted to delete electronic item with id {Id}, but it does not exist.", id);
