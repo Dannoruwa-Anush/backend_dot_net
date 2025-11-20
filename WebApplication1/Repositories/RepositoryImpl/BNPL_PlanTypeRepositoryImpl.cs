@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
@@ -17,6 +16,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_PlanType>> GetAllAsync() =>
@@ -25,11 +25,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<BNPL_PlanType?> GetByIdAsync(int id) =>
             await _context.BNPL_PlanTypes.FindAsync(id);
 
-        public async Task AddAsync(BNPL_PlanType bNPL_PlanType)
-        {
+        public async Task AddAsync(BNPL_PlanType bNPL_PlanType) =>
             await _context.BNPL_PlanTypes.AddAsync(bNPL_PlanType);
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<BNPL_PlanType?> UpdateAsync(int id, BNPL_PlanType bNPL_PlanType)
         {
@@ -42,8 +39,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.Bnpl_Description = bNPL_PlanType.Bnpl_Description;
 
             _context.BNPL_PlanTypes.Update(existing);
-            await _context.SaveChangesAsync();
-
             return existing;
         }
 
@@ -54,8 +49,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return false;
 
             _context.BNPL_PlanTypes.Remove(bnpl_PlanType);
-            await _context.SaveChangesAsync();
-
             return true;
         }
 

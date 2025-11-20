@@ -2,12 +2,14 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 
 namespace WebApplication1.Services.ServiceImpl
 {
     public class BNPL_PlanTypeServiceImpl : IBNPL_PlanTypeService
     {
         private readonly IBNPL_PlanTypeRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly IBNPL_PlanRepository _bnpl_planRepository;
 
@@ -15,10 +17,11 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<BNPL_PlanTypeServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IBNPL_PlanRepository bnpl_planRepository, ILogger<BNPL_PlanTypeServiceImpl> logger)
+        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IAppUnitOfWork unitOfWork, IBNPL_PlanRepository bnpl_planRepository, ILogger<BNPL_PlanTypeServiceImpl> logger)
         {
             // Dependency injection
             _repository          = repository;
+            _unitOfWork          = unitOfWork;
             _bnpl_planRepository = bnpl_planRepository;
             _logger              = logger;
         }
@@ -37,6 +40,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"BNPL Plan Type with name '{bNPL_PlanType.Bnpl_PlanTypeName}' already exists.");
 
             await _repository.AddAsync(bNPL_PlanType);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("BNPL Plan Type created: Id={Id}, Name={Name}", bNPL_PlanType.Bnpl_PlanTypeID, bNPL_PlanType.Bnpl_PlanTypeName);
             return bNPL_PlanType;
@@ -53,6 +57,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"BNPL plan type with email '{bNPL_PlanType.Bnpl_PlanTypeName}' already exists.");
 
             var updatedBNPL_PlanType = await _repository.UpdateAsync(id, bNPL_PlanType);
+            await _unitOfWork.SaveChangesAsync();
 
             if (updatedBNPL_PlanType != null)
             {
@@ -75,6 +80,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+            
             if (!deleted)
             {
                 _logger.LogWarning("Attempted to delete BNPL  plan type with id {Id}, but it does not exist.", id);
