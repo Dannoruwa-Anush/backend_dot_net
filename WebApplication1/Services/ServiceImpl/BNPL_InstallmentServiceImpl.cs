@@ -55,52 +55,6 @@ namespace WebApplication1.Services.ServiceImpl
         }
         public async Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId) =>
             await _repository.GetAllByPlanIdAsync(planId);
-            
-        //Bulk Add
-        public async Task<List<BNPL_Installment>> AddBnplInstallmentsAsync(BNPL_PLAN plan)
-        {
-            if (plan == null)
-                throw new ArgumentNullException(nameof(plan));
-
-            // Ensure valid installment count
-            if (plan.Bnpl_TotalInstallmentCount <= 0)
-                throw new Exception("BNPL plan must have at least one installment.");
-
-            // Load plan type to determine installment spacing
-            var planType = await _bNPL_PlanTypeRepository.GetByIdAsync(plan.Bnpl_PlanTypeID);
-            if (planType == null)
-                throw new Exception($"BNPL Plan Type {plan.Bnpl_PlanTypeID} is invalid or missing.");
-
-            int daysPerInstallment = planType.Bnpl_DurationDays;
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            var freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
-
-            var installmentCount = plan.Bnpl_TotalInstallmentCount;
-            var installments = new List<BNPL_Installment>(installmentCount);
-
-            // First due date
-            var firstDueDate = now.AddDays(freeTrialDays);
-
-            for (int i = 1; i <= installmentCount; i++)
-            {
-                installments.Add(new BNPL_Installment
-                {
-                    Bnpl_PlanID = plan.Bnpl_PlanID,
-                    InstallmentNo = i,
-                    Installment_BaseAmount = plan.Bnpl_AmountPerInstallment,
-                    Installment_DueDate = firstDueDate.AddDays(daysPerInstallment * (i - 1)),
-                    TotalDueAmount = plan.Bnpl_AmountPerInstallment,
-                    CreatedAt = now,
-                    Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
-                });
-            }
-
-            // Bulk insert
-            await _repository.AddRangeAsync(installments);
-
-            return installments;
-        }
 
         //Payment : Main Driver
         public async Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(PaymentRequestDto request)
@@ -299,6 +253,49 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Generate settlement snapshot after applying interest
             await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(planId);
+        }
+
+        //Builds the object without DB Access
+        public async Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan)
+        {
+            if (plan == null)
+                throw new ArgumentNullException(nameof(plan));
+
+            // Ensure valid installment count
+            if (plan.Bnpl_TotalInstallmentCount <= 0)
+                throw new Exception("BNPL plan must have at least one installment.");
+
+            // Load plan type to determine installment spacing
+            var planType = await _bNPL_PlanTypeRepository.GetByIdAsync(plan.Bnpl_PlanTypeID);
+            if (planType == null)
+                throw new Exception($"BNPL Plan Type {plan.Bnpl_PlanTypeID} is invalid or missing.");
+
+            int daysPerInstallment = planType.Bnpl_DurationDays;
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            var freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
+
+            var installmentCount = plan.Bnpl_TotalInstallmentCount;
+            var installments = new List<BNPL_Installment>(installmentCount);
+
+            // First due date
+            var firstDueDate = now.AddDays(freeTrialDays);
+
+            for (int i = 1; i <= installmentCount; i++)
+            {
+                installments.Add(new BNPL_Installment
+                {
+                    Bnpl_PlanID = plan.Bnpl_PlanID,
+                    InstallmentNo = i,
+                    Installment_BaseAmount = plan.Bnpl_AmountPerInstallment,
+                    Installment_DueDate = firstDueDate.AddDays(daysPerInstallment * (i - 1)),
+                    TotalDueAmount = plan.Bnpl_AmountPerInstallment,
+                    CreatedAt = now,
+                    Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
+                });
+            }
+            
+            return installments;
         }
     }
 }

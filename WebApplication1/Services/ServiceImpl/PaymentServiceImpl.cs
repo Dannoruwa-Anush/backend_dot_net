@@ -18,7 +18,9 @@ namespace WebApplication1.Services.ServiceImpl
         //Repositories
         private readonly ICustomerOrderRepository _customerOrderRepository;
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
+        private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
         private readonly ICashflowRepository _cashflowRepository;
+
 
 
 
@@ -38,6 +40,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         ICustomerOrderRepository customerOrderRepository,
         IBNPL_PlanRepository bNPL_PlanRepository,
+        IBNPL_InstallmentRepository bNPL_InstallmentRepository,
         ICashflowRepository cashflowRepository,
 
         ICustomerOrderService customerOrderService,
@@ -53,6 +56,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             _customerOrderRepository = customerOrderRepository;
             _bNPL_PlanRepository = bNPL_PlanRepository;
+            _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
             _cashflowRepository = cashflowRepository;
 
 
@@ -124,7 +128,8 @@ namespace WebApplication1.Services.ServiceImpl
                 await _bNPL_PlanRepository.AddAsync(bnpl_plan);
 
                 // Generate installments
-                await _bNPL_InstallmentService.AddBnplInstallmentsAsync(bnpl_plan);
+                var installments = await _bNPL_InstallmentService.BuildBnplInstallmentBulkAddRequestAsync(bnpl_plan);
+                await _bNPL_InstallmentRepository.AddRangeAsync(installments);
 
                 // Create a cashflow for initial payment
                 var paymentRequest = new PaymentRequestDto
