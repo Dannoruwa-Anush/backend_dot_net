@@ -233,7 +233,8 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             // Update plan (only changed fields)
-            await _bNPL_PlanService.UpdateBNPL_PlanAsync(plan.Bnpl_PlanID, plan);
+            await _bNPL_PlanService.BuildBNPL_PlanUpdateRequestAsync(plan.Bnpl_PlanID, plan);
+            await _bNPL_PlanRepository.UpdateAsync(plan.Bnpl_PlanID, plan);
 
             // update customer order based on new state
             var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto{OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid});
