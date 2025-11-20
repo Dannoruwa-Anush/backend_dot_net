@@ -20,8 +20,6 @@ namespace WebApplication1.Services.ServiceImpl
 
 
 
-        private readonly ICashflowService _cashflowService;
-        private readonly ICustomerOrderService _customerOrderService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
         private readonly IBNPL_PlanService _bNPL_PlanService;
@@ -39,8 +37,6 @@ namespace WebApplication1.Services.ServiceImpl
 
 
 
-
-        ICashflowService cashflowService, ICustomerOrderService customerOrderService, 
         IBNPL_InstallmentService bNPL_InstallmentService, 
         IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, 
         IBNPL_PlanService bNPL_PlanService)
@@ -54,9 +50,6 @@ namespace WebApplication1.Services.ServiceImpl
 
 
 
-
-            _cashflowService = cashflowService;
-            _customerOrderService = customerOrderService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
@@ -76,7 +69,7 @@ namespace WebApplication1.Services.ServiceImpl
                     paymentRequest.OrderId, paymentRequest.PaymentAmount);
 
                 // 1. Create a cashflow record
-                var cashflow = await _cashflowService.AddCashflowAsync(paymentRequest, CashflowTypeEnum.FullPayment);
+                var cashflow = await AddCashflowAsync(paymentRequest, CashflowTypeEnum.FullPayment);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 2. Update customer order payment status to Fully Paid
@@ -132,7 +125,7 @@ namespace WebApplication1.Services.ServiceImpl
                     OrderId = request.OrderID
                 };
 
-                var cashflow = await _cashflowService.AddCashflowAsync(
+                var cashflow = await AddCashflowAsync(
                     paymentRequest,
                     CashflowTypeEnum.BnplInitialPayment
                 );
@@ -177,7 +170,7 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Generated settlement snapshot for PlanID={PlanId}", plan.Bnpl_PlanID);
 
                 // 5. Generate cashflow record
-                var cashflow = await _cashflowService.AddCashflowAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+                var cashflow = await AddCashflowAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 6. Commit transaction
@@ -308,6 +301,36 @@ namespace WebApplication1.Services.ServiceImpl
                 order.OrderID, order.OrderPaymentStatus);
 
             return order;
+        }
+
+        //**************** [Helper methods] *******************
+        //Helper method : create a new cashflow
+        private async Task<Cashflow> AddCashflowAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
+        {
+            if (paymentRequest == null)
+                throw new ArgumentNullException(nameof(paymentRequest));
+
+            // Determine status (default: Paid)
+            var status = CashflowStatusEnum.Paid;
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            
+            // Build reference
+            var cashflowRef = $"CF-{paymentRequest.OrderId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
+
+            var newCashflow = new Cashflow
+            {
+                OrderID = paymentRequest.OrderId,
+                AmountPaid = paymentRequest.PaymentAmount,
+                CashflowDate = now,
+                CashflowStatus = status,
+                CashflowRef = cashflowRef
+            };
+            
+            await _cashflowRepository.AddAsync(newCashflow);
+            _logger.LogInformation("Cashflow created for OrderID={OrderID}, Type={Type}, Amount={Amount}, Ref={Ref}", paymentRequest.OrderId, cashflowType.ToString(), paymentRequest.PaymentAmount, newCashflow.CashflowRef);
+
+            return newCashflow;
         }
     }
 }

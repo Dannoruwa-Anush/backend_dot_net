@@ -1,10 +1,7 @@
-using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
-using WebApplication1.UOW.IUOW;
-using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
@@ -32,33 +29,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.GetByIdAsync(id);
 
 
-        public async Task<Cashflow> AddCashflowAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
-        {
-            if (paymentRequest == null)
-                throw new ArgumentNullException(nameof(paymentRequest));
-
-            // Determine status (default: Paid)
-            var status = CashflowStatusEnum.Paid;
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            
-            // Build reference
-            var cashflowRef = $"CF-{paymentRequest.OrderId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
-
-            var newCashflow = new Cashflow
-            {
-                OrderID = paymentRequest.OrderId,
-                AmountPaid = paymentRequest.PaymentAmount,
-                CashflowDate = now,
-                CashflowStatus = status,
-                CashflowRef = cashflowRef
-            };
-            
-            await _repository.AddAsync(newCashflow);
-            _logger.LogInformation("Cashflow created for OrderID={OrderID}, Type={Type}, Amount={Amount}, Ref={Ref}", paymentRequest.OrderId, cashflowType.ToString(), paymentRequest.PaymentAmount, newCashflow.CashflowRef);
-
-            return newCashflow;
-        }
+        
 
         public async Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow updatedCashflow)
         {
