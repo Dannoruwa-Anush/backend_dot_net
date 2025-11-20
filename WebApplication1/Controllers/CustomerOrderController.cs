@@ -2,7 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
-using WebApplication1.DTOs.RequestDto.Custom;
+using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -94,7 +94,36 @@ namespace WebApplication1.Controllers
             }
         }
 
-        //Need put inly for : order status change
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Employee, Customer")] // JWT is required
+        public async Task<IActionResult> Update(int id, [FromBody] CustomerOrderStatusChangeRequestDto request)
+        {
+            try
+            {
+                var updatedOrder = await _service.UpdateCustomerOrderStatusAsync(request);
+
+                var responseDto = _mapper.Map<CustomerOrderResponseDto>(updatedOrder);
+                var response = new ApiResponseDto<CustomerOrderResponseDto>(
+                    200,
+                    "Customer order status updated successfully",
+                    responseDto
+                );
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Order not found"));
+
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
+        }
 
         //Custom Query Operations
         [HttpGet("paged")]

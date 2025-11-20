@@ -1,8 +1,6 @@
-using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {
@@ -13,11 +11,9 @@ namespace WebApplication1.Services.IService
         Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id);
         Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder);
         Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto requet);
-        Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(CustomerOrderPaymentStatusChangeRequestDto request);
 
         //Custom Query Operations
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
-
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
     }
 }

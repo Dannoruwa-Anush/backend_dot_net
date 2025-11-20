@@ -1,4 +1,3 @@
-using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -18,20 +17,18 @@ namespace WebApplication1.Services.ServiceImpl
 
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
-        private readonly ICashflowRepository _cashflowRepository;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ICashflowRepository cashflowRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _customerRepository = customerRepository;
             _electronicItemRepository = electronicItemRepository;
-            _cashflowRepository = cashflowRepository;
             _logger = logger;
         }
 
@@ -44,6 +41,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
         {
+            // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -128,7 +126,6 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
-
             try
             {
                 // Fetch order with all related entities in one query
@@ -239,72 +236,7 @@ namespace WebApplication1.Services.ServiceImpl
                     snapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;
             }
         }
-
-        public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(CustomerOrderPaymentStatusChangeRequestDto request)
-        {
-            var order = await _repository.GetByIdAsync(request.OrderID);
-            if (order == null)
-                throw new Exception("Customer order not found");
-
-            var oldStatus = order.OrderPaymentStatus;
-
-            // No change
-            if (oldStatus == request.NewPaymentStatus)
-                return order;
-
-            // Validate allowed transitions
-            switch (oldStatus)
-            {
-                case OrderPaymentStatusEnum.Partially_Paid:
-                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
-                        request.NewPaymentStatus != OrderPaymentStatusEnum.Overdue)
-                        throw new InvalidOperationException(
-                            "Partially paid orders can only move to 'Fully_Paid', or 'Overdue'.");
-                    break;
-
-                case OrderPaymentStatusEnum.Fully_Paid:
-                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Refunded)
-                        throw new InvalidOperationException(
-                            "Fully paid orders can only move to 'Refunded'.");
-                    break;
-
-                case OrderPaymentStatusEnum.Overdue:
-                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
-                        request.NewPaymentStatus != OrderPaymentStatusEnum.Partially_Paid)
-                        throw new InvalidOperationException(
-                            "Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
-                    break;
-
-                case OrderPaymentStatusEnum.Refunded:
-                    throw new InvalidOperationException(
-                        "Refunded orders cannot change payment status.");
-            }
-
-            // Check total paid so far
-            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
-
-            // If payment is now complete, we override with Fully Paid
-            if (totalPaid >= order.TotalAmount)
-            {
-                order.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
-            }
-            else
-            {
-                // Otherwise use requested status
-                order.OrderPaymentStatus = request.NewPaymentStatus;
-            }
-
-            await _repository.UpdateAsync(request.OrderID, order);
-            //uow will be handled by top service layer (Payment)
-            
-            _logger.LogInformation(
-                "Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}",
-                order.OrderID, order.OrderPaymentStatus);
-
-            return order;
-        }
-
+        
         //Custom Query Operations
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null)
         {

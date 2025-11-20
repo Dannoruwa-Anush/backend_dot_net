@@ -13,6 +13,12 @@ namespace WebApplication1.Services.ServiceImpl
     public class PaymentServiceImpl : IPaymentService
     {
         private readonly IPaymentRepository _repository;
+        private readonly ICashflowRepository _cashflowRepository;
+        private readonly ICustomerOrderRepository _customerOrderRepository;
+
+
+
+
         private readonly ICashflowService _cashflowService;
         private readonly ICustomerOrderService _customerOrderService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
@@ -23,16 +29,36 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<PaymentServiceImpl> _logger;
 
         // Constructor
-        public PaymentServiceImpl(IPaymentRepository repository, ICashflowService cashflowService, ICustomerOrderService customerOrderService, IBNPL_InstallmentService bNPL_InstallmentService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IBNPL_PlanService bNPL_PlanService, ILogger<PaymentServiceImpl> logger)
+        public PaymentServiceImpl(
+        IPaymentRepository repository, 
+
+        ICashflowRepository cashflowRepository,
+        ICustomerOrderRepository customerOrderRepository,
+        ILogger<PaymentServiceImpl> logger,
+
+
+
+
+        ICashflowService cashflowService, ICustomerOrderService customerOrderService, 
+        IBNPL_InstallmentService bNPL_InstallmentService, 
+        IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, 
+        IBNPL_PlanService bNPL_PlanService)
         {
             // Dependency injection
             _repository = repository;
+
+            _cashflowRepository = cashflowRepository;
+            _customerOrderRepository = customerOrderRepository;
+            _logger = logger;
+
+
+
+
             _cashflowService = cashflowService;
             _customerOrderService = customerOrderService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
-            _logger = logger;
         }
 
         // Full Payment
@@ -213,7 +239,72 @@ namespace WebApplication1.Services.ServiceImpl
                 NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid,
             };
 
-            await _customerOrderService.UpdateCustomerOrderPaymentStatusAsync(request);
+            await UpdateCustomerOrderPaymentStatusAsync(request);
+        }
+
+        //Helper Method
+        private async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(CustomerOrderPaymentStatusChangeRequestDto request)
+        {
+            var order = await _customerOrderRepository.GetByIdAsync(request.OrderID);
+            if (order == null)
+                throw new Exception("Customer order not found");
+
+            var oldStatus = order.OrderPaymentStatus;
+
+            // No change
+            if (oldStatus == request.NewPaymentStatus)
+                return order;
+
+            // Validate allowed transitions
+            switch (oldStatus)
+            {
+                case OrderPaymentStatusEnum.Partially_Paid:
+                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
+                        request.NewPaymentStatus != OrderPaymentStatusEnum.Overdue)
+                        throw new InvalidOperationException(
+                            "Partially paid orders can only move to 'Fully_Paid', or 'Overdue'.");
+                    break;
+
+                case OrderPaymentStatusEnum.Fully_Paid:
+                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Refunded)
+                        throw new InvalidOperationException(
+                            "Fully paid orders can only move to 'Refunded'.");
+                    break;
+
+                case OrderPaymentStatusEnum.Overdue:
+                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
+                        request.NewPaymentStatus != OrderPaymentStatusEnum.Partially_Paid)
+                        throw new InvalidOperationException(
+                            "Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
+                    break;
+
+                case OrderPaymentStatusEnum.Refunded:
+                    throw new InvalidOperationException(
+                        "Refunded orders cannot change payment status.");
+            }
+
+            // Check total paid so far
+            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
+
+            // If payment is now complete, we override with Fully Paid
+            if (totalPaid >= order.TotalAmount)
+            {
+                order.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
+            }
+            else
+            {
+                // Otherwise use requested status
+                order.OrderPaymentStatus = request.NewPaymentStatus;
+            }
+
+            await _customerOrderRepository.UpdateAsync(request.OrderID, order);
+            
+            _logger.LogInformation(
+                "Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}",
+                order.OrderID, order.OrderPaymentStatus);
+
+            return order;
         }
     }
 }

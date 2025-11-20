@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -50,14 +49,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(CustomerOrder customerOrder) =>
             await _context.CustomerOrders.AddAsync(customerOrder);
 
-        public async Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder)
+        public async Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder updatedOrder)
         {
             var existing = await _context.CustomerOrders.FindAsync(id);
             if (existing == null)
                 return null;
 
-            existing.OrderPaymentStatus = customerOrder.OrderPaymentStatus;
-            existing.OrderStatus = customerOrder.OrderStatus;
+            existing.OrderPaymentStatus = updatedOrder.OrderPaymentStatus;
+            existing.OrderStatus = updatedOrder.OrderStatus;
+            existing.PaymentCompletedDate = updatedOrder.PaymentCompletedDate;
+            existing.ShippedDate = updatedOrder.ShippedDate;
+            existing.DeliveredDate = updatedOrder.DeliveredDate;
+            existing.CancelledDate = updatedOrder.CancelledDate;
 
             _context.CustomerOrders.Update(existing);
             return existing;
