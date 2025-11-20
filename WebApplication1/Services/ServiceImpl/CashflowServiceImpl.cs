@@ -30,7 +30,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Cashflow?> GetCashflowByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<Cashflow> BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
+        public Cashflow BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
         {
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));

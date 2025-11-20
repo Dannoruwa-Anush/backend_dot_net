@@ -74,7 +74,7 @@ namespace WebApplication1.Services.ServiceImpl
                     paymentRequest.OrderId, paymentRequest.PaymentAmount);
 
                 // 1. Create a cashflow record
-                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
+                var cashflow = _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
                 await _cashflowRepository.AddAsync(cashflow);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
@@ -131,7 +131,7 @@ namespace WebApplication1.Services.ServiceImpl
                     OrderId = request.OrderID
                 };
 
-                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
+                var cashflow = _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
                 await _cashflowRepository.AddAsync(cashflow);
 
                 // Generate settlement snapshot
@@ -174,7 +174,7 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Generated settlement snapshot for PlanID={PlanId}", plan.Bnpl_PlanID);
 
                 // 5. Generate cashflow record
-                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+                var cashflow = _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
                 await _cashflowRepository.AddAsync(cashflow);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
