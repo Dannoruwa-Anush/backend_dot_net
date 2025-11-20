@@ -192,6 +192,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Update order status
                 order.OrderStatus = request.NewOrderStatus;
+                await _customerOrderRepository.UpdateAsync(order.OrderID, order);
 
                 // No need to call UpdateAsync per entity; EF Core tracks all changes
                 await _unitOfWork.CommitAsync();
