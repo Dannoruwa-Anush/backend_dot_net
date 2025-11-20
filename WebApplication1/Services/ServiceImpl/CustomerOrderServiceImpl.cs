@@ -1,4 +1,5 @@
 using WebApplication1.DTOs.RequestDto.Custom;
+using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -6,6 +7,7 @@ using WebApplication1.Services.IService;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
+using WebApplication1.Utils.SystemConstants;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -107,10 +109,189 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
+        public async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto requet)
+        {
+            var existing = await _repository.GetByIdAsync(requet.OrderID);
+            if (existing == null)
+                throw new Exception("Customer order not found");
+
+            var oldStatus = existing.OrderStatus;
+
+            if (oldStatus == requet.NewOrderStatus)
+                return existing; // No change
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // Validation: allowed transitions
+            switch (oldStatus)
+            {
+                case OrderStatusEnum.Pending:
+                    if (requet.NewOrderStatus != OrderStatusEnum.Shipped && requet.NewOrderStatus != OrderStatusEnum.Cancelled)
+                        throw new InvalidOperationException("Pending orders can only move to 'Shipped' or 'Cancelled'.");
+                    break;
+
+                case OrderStatusEnum.Shipped:
+                    if (requet.NewOrderStatus != OrderStatusEnum.Delivered && requet.NewOrderStatus != OrderStatusEnum.Cancelled)
+                        throw new InvalidOperationException("Shipped orders can only move to 'Delivered' or 'Cancelled'.");
+                    break;
+
+                case OrderStatusEnum.Delivered:
+                    if (requet.NewOrderStatus == OrderStatusEnum.Cancelled)
+                    {
+                        // Deliverd things that can only be ccancelled within free trial period
+                        var deliveredDate = existing.DeliveredDate ?? now;
+                        var daysSinceDelivery = (now - deliveredDate).TotalDays;
+                        if (daysSinceDelivery > BnplSystemConstants.FreeTrialPeriodDays)
+                            throw new InvalidOperationException("Cannot cancel delivered orders after free trial period.");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Delivered orders cannot change status except cancellation within 14 days.");
+                    }
+                    break;
+
+                case OrderStatusEnum.Cancelled:
+                    throw new InvalidOperationException("Cancelled orders cannot change status.");
+            }
+
+            // Start UoW-managed transaction
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // If cancelling, reverse stock
+                if (requet.NewOrderStatus == OrderStatusEnum.Cancelled)
+                {
+                    foreach (var item in existing.CustomerOrderElectronicItems)
+                    {
+                        var electronicItem = await _electronicItemRepository.GetByIdAsync(item.E_ItemID);
+                        if (electronicItem != null)
+                        {
+                            electronicItem.QOH += item.Quantity; // Restock
+                            await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
+                        }
+                    }
+
+                    existing.CancelledDate = now;
+
+                    //If BNpl plan exists : cancel it
+
+                    //Installment : cancel it
+                    // snapshot : ?
+
+                    //If cashflow exist : Refund
+                }
+                else if (requet.NewOrderStatus == OrderStatusEnum.Shipped)
+                {
+                    existing.ShippedDate = now;
+                }
+                else if (requet.NewOrderStatus == OrderStatusEnum.Delivered)
+                {
+                    existing.DeliveredDate = now;
+                }
+
+                existing.OrderStatus = requet.NewOrderStatus;
+
+                await _repository.UpdateAsync(requet.OrderID, existing);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Persist everything in one atomic operation
+                await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", existing.OrderID, existing.OrderStatus);
+
+                return existing;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Failed to update order status.");
+                throw;
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-        public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder)
+     public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -121,26 +302,6 @@ namespace WebApplication1.Services.ServiceImpl
 
             return await _repository.UpdateAsync(id, existing);
         }
-
-        public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, CustomerOrderUpdateDto updateDto)
-        {
-            if (updateDto == null)
-                throw new ArgumentNullException(nameof(updateDto));
-
-            if (updateDto.OrderStatus.HasValue)
-            {
-                return await UpdateCustomerOrderStatusAsync(id, updateDto.OrderStatus.Value);
-            }
-            else if (updateDto.PaymentStatus.HasValue)
-            {
-                return await UpdateCustomerOrderPaymentStatusAsync(id, updateDto.PaymentStatus.Value);
-            }
-            else
-            {
-                throw new Exception("No valid update fields provided");
-            }
-        }
-
         //Helper method : to Update PaymentStatus
         private async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, OrderPaymentStatusEnum newOrderPaymentStatus)
         {
@@ -183,96 +344,7 @@ namespace WebApplication1.Services.ServiceImpl
             return existing;
         }
 
-        //Helper method : to update OrderStatus
-        private async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(int id, OrderStatusEnum newOrderStatus)
-        {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
-                throw new Exception("Customer order not found");
-
-            var oldStatus = existing.OrderStatus;
-
-            if (oldStatus == newOrderStatus)
-                return existing; // No change
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            // Validation: allowed transitions
-            switch (oldStatus)
-            {
-                case OrderStatusEnum.Pending:
-                    if (newOrderStatus != OrderStatusEnum.Shipped && newOrderStatus != OrderStatusEnum.Cancelled)
-                        throw new InvalidOperationException("Pending orders can only move to 'Shipped' or 'Cancelled'.");
-                    break;
-
-                case OrderStatusEnum.Shipped:
-                    if (newOrderStatus != OrderStatusEnum.Delivered && newOrderStatus != OrderStatusEnum.Cancelled)
-                        throw new InvalidOperationException("Shipped orders can only move to 'Delivered' or 'Cancelled'.");
-                    break;
-
-                case OrderStatusEnum.Delivered:
-                    if (newOrderStatus == OrderStatusEnum.Cancelled)
-                    {
-                        // 14-day cancellation window
-                        var deliveredDate = existing.DeliveredDate ?? now;
-                        var daysSinceDelivery = (now - deliveredDate).TotalDays;
-                        if (daysSinceDelivery > 14)
-                            throw new InvalidOperationException("Cannot cancel delivered orders after 14 days.");
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Delivered orders cannot change status except cancellation within 14 days.");
-                    }
-                    break;
-
-                case OrderStatusEnum.Cancelled:
-                    throw new InvalidOperationException("Cancelled orders cannot change status.");
-            }
-
-            // Begin transaction for atomicity
-            using var transaction = await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                // If cancelling, reverse stock
-                if (newOrderStatus == OrderStatusEnum.Cancelled)
-                {
-                    foreach (var item in existing.CustomerOrderElectronicItems)
-                    {
-                        var electronicItem = await _electronicItemRepository.GetByIdAsync(item.E_ItemID);
-                        if (electronicItem != null)
-                        {
-                            electronicItem.QOH += item.Quantity; // Restock
-                            await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
-                        }
-                    }
-
-                    existing.CancelledDate = now;
-                }
-                else if (newOrderStatus == OrderStatusEnum.Shipped)
-                {
-                    existing.ShippedDate = now;
-                }
-                else if (newOrderStatus == OrderStatusEnum.Delivered)
-                {
-                    existing.DeliveredDate = now;
-                }
-
-                existing.OrderStatus = newOrderStatus;
-
-                await _repository.UpdateAsync(id, existing);
-                await _unitOfWork.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", existing.OrderID, existing.OrderStatus);
-
-                return existing;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Failed to update order status.");
-                throw;
-            }
-        }
+        
 
         //Custom Query Operations
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null)

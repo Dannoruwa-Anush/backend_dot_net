@@ -57,7 +57,7 @@ namespace WebApplication1.Services.ServiceImpl
                     PaymentStatus = OrderPaymentStatusEnum.Fully_Paid
                 };
 
-                var customerOrder = await _customerOrderService.UpdateCustomerOrderPaymentStatusAsync(paymentRequest.OrderId, customerOrderStatusChangeRequest);
+                //var customerOrder = await _customerOrderService.UpdateCustomerOrderPaymentStatusAsync(paymentRequest.OrderId, customerOrderStatusChangeRequest);
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
                 // 3. Commit the transaction
@@ -225,7 +225,7 @@ namespace WebApplication1.Services.ServiceImpl
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
             }
 
-            await _customerOrderService.UpdateCustomerOrderAsync(orderId, order);
+            //await _customerOrderService.UpdateCustomerOrderAsync(orderId, order);
         }
     }
 }
