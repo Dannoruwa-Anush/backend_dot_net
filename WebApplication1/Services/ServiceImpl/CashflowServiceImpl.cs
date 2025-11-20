@@ -55,7 +55,7 @@ namespace WebApplication1.Services.ServiceImpl
             return newCashflow;
         }
 
-        public async Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow updatedCashflow)
+        /*public async Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow updatedCashflow)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -99,7 +99,7 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Cashflow refunded: ID={Id}, OrderID={OrderId}, RefundDate={RefundDate}", existing.CashflowID, existing.OrderID, existing.RefundDate);
 
             return existing;
-        }
+        }*/
 
         //Custom Query Operations
         public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
