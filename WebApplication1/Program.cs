@@ -16,6 +16,8 @@ using WebApplication1.Services.IService.Auth;
 using WebApplication1.AutoMapperProfiles.Auth;
 using WebApplication1.Services.ServiceImpl.Auth;
 using System.Security.Claims;
+using WebApplication1.UOW.IUOW;
+using WebApplication1.UOW.UOWImpl;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +71,9 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>()
                 .AddScoped<IBNPL_PlanSettlementSummaryRepository, BNPL_PlanSettlementSummaryRepositoryImpl>()
                 .AddScoped<IPaymentRepository, PaymentRepositoryImpl>();
+
+//--------------------[Unit of work DI]------------
+builder.Services.AddScoped<IAppUnitOfWork, AppUnitOfWorkImpl>();
 
 //--------------------[Services DI]-----------------
 builder.Services.AddScoped<IBrandService, BrandServiceImpl>()

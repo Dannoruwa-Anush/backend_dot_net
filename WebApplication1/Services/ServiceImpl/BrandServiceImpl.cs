@@ -2,12 +2,14 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 
 namespace WebApplication1.Services.ServiceImpl
 {
     public class BrandServiceImpl : IBrandService
     {
         private readonly IBrandRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly IElectronicItemRepository _electronicItemRepository;
 
@@ -15,10 +17,11 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<BrandServiceImpl> _logger;
 
         // Constructor
-        public BrandServiceImpl(IBrandRepository repository, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
+        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
         {
             // Dependency injection
             _repository               = repository;
+            _unitOfWork               = unitOfWork;
             _electronicItemRepository = electronicItemRepository;
             _logger                   = logger;
         }
@@ -37,6 +40,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             await _repository.AddAsync(brand);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Brand created: Id={Id}, BrandName={Name}", brand.BrandID, brand.BrandName);
             return brand;
@@ -53,6 +57,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
             var updatedBrand = await _repository.UpdateBrandAsync(id, brand);
+            await _unitOfWork.SaveChangesAsync();
 
             if (updatedBrand != null)
             {
@@ -75,6 +80,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+            
             if (!deleted)
             {
                 _logger.LogWarning("Attempted to delete brand with id {Id}, but it does not exist.", id);

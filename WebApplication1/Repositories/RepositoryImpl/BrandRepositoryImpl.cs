@@ -16,6 +16,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
         public async Task<IEnumerable<Brand>> GetAllAsync() =>
@@ -24,11 +25,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Brand?> GetByIdAsync(int id) =>
             await _context.Brands.FindAsync(id);
 
-        public async Task AddAsync(Brand brand)
-        {
+        public async Task AddAsync(Brand brand) =>
             await _context.Brands.AddAsync(brand);
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<Brand?> UpdateBrandAsync(int id, Brand brand)
         {
@@ -38,8 +36,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             existing.BrandName = brand.BrandName;
             _context.Brands.Update(existing);
-            await _context.SaveChangesAsync();
-
             return existing;
         }
 
@@ -50,7 +46,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return false;
 
             _context.Brands.Remove(brand);
-            await _context.SaveChangesAsync();
             return true;
         }
 
