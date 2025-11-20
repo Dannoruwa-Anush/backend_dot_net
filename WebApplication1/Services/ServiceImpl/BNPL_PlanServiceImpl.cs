@@ -36,35 +36,6 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-/*
-        public async Task<BNPL_PLAN?> UpdateBNPL_PlanStatusAsync(int id, BnplStatusEnum newStatus)
-        {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
-                throw new Exception("BNPL plan not found.");
-
-            // Validate: cancellation only before shipping or within 14 days after delivery
-            if (newStatus == BnplStatusEnum.Refunded || newStatus == BnplStatusEnum.Cancelled)
-            {
-                var order = existing.CustomerOrder;
-
-                if (order == null)
-                    throw new Exception("Associated order not found.");
-
-                if (order.ShippedDate != null)
-                {
-                    // Check if it's within 14 days of delivery
-                    var deliveredAt = order.DeliveredDate;
-                    if (deliveredAt != null && DateTime.UtcNow > deliveredAt.Value.AddDays(14))
-                        throw new Exception("Cancellation not allowed after 14 days of delivery.");
-                }
-            }
-
-            existing.Bnpl_Status = newStatus;
-            return await _repository.UpdateAsync(id, existing);
-        }
-*/
-
         //Custom Query Operations
         public async Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null)
         {
