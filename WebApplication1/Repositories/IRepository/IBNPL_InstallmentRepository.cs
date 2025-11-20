@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 
@@ -21,9 +20,5 @@ namespace WebApplication1.Repositories.IRepository
         
         //Bulk insert
         Task AddRangeAsync(List<BNPL_Installment> installments);
-
-        // EF transaction support
-        Task<IDbContextTransaction> BeginTransactionAsync();
-        Task SaveChangesAsync();
     }
 }

@@ -3,6 +3,7 @@ using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.RepositoryImpl
@@ -55,12 +56,41 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
-            existing.OrderPaymentStatus = updatedOrder.OrderPaymentStatus;
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            bool orderStatusChanged = existing.OrderStatus != updatedOrder.OrderStatus;
             existing.OrderStatus = updatedOrder.OrderStatus;
-            existing.PaymentCompletedDate = updatedOrder.PaymentCompletedDate;
-            existing.ShippedDate = updatedOrder.ShippedDate;
-            existing.DeliveredDate = updatedOrder.DeliveredDate;
-            existing.CancelledDate = updatedOrder.CancelledDate;
+            // Update other related fields depending on order status
+            if (orderStatusChanged)
+            {
+                switch (updatedOrder.OrderStatus)
+                {
+                    case OrderStatusEnum.Shipped:
+                        existing.ShippedDate = now;
+                        break;
+
+                    case OrderStatusEnum.Delivered:
+                        existing.DeliveredDate = now;
+                        break;
+
+                    case OrderStatusEnum.Cancelled:
+                        existing.CancelledDate = now;
+                        break;
+                }
+            }
+
+            bool orderPaymentChanged = existing.OrderPaymentStatus != updatedOrder.OrderPaymentStatus;
+            existing.OrderPaymentStatus = updatedOrder.OrderPaymentStatus;
+            // Update other related fields depending on payment status
+            if (orderPaymentChanged)
+            {
+                switch (updatedOrder.OrderPaymentStatus)
+                {
+                    case OrderPaymentStatusEnum.Fully_Paid:
+                        existing.PaymentCompletedDate = now;
+                        break;
+                }
+            }
 
             _context.CustomerOrders.Update(existing);
             return existing;

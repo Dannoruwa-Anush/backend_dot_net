@@ -15,13 +15,11 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
-        public async Task AddAsync(BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary)
-        {
+        public async Task AddAsync(BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary) =>
             await _context.BNPL_PlanSettlementSummaries.AddAsync(bNPL_PlanSettlementSummary);
-            //SaveChangesAsync() is handled by the root service layer to ensure atomic operations (Transaction handling).
-        }
 
         //Custom Query Operations
         public async Task MarkPreviousSnapshotsAsNotLatestAsync(int planId)
@@ -34,8 +32,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             {
                 snapshot.IsLatest = false;
             }
-
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
         }
 
         public async Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotAsync(int planId)

@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.RepositoryImpl
@@ -18,6 +19,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_Installment>> GetAllAsync() =>
@@ -37,17 +39,62 @@ namespace WebApplication1.Repositories.RepositoryImpl
                         .ThenInclude(ioc => ioc!.Customer)
                 .FirstOrDefaultAsync(i => i.InstallmentID == id);
 
-        public async Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment)
+        public async Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment input)
         {
             var existing = await _context.BNPL_Installments.FindAsync(id);
             if (existing == null)
                 return null;
 
-            existing.Bnpl_Installment_Status = bnpl_installment.Bnpl_Installment_Status;
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // -------------------------
+            // Update financial fields
+            // -------------------------
+            existing.OverPaymentCarried = input.OverPaymentCarried;
+            existing.LateInterest = input.LateInterest;
+            existing.TotalDueAmount = input.TotalDueAmount;
+
+            bool basePaymentChanged = existing.AmountPaid_AgainstBase != input.AmountPaid_AgainstBase;
+            bool arrearsPaymentChanged = existing.AmountPaid_AgainstArrears != input.AmountPaid_AgainstArrears;
+            bool latePaymentChanged = existing.AmountPaid_AgainstLateInterest != input.AmountPaid_AgainstLateInterest;
+
+            existing.AmountPaid_AgainstBase = input.AmountPaid_AgainstBase;
+            existing.AmountPaid_AgainstArrears = input.AmountPaid_AgainstArrears;
+            existing.AmountPaid_AgainstLateInterest = input.AmountPaid_AgainstLateInterest;
+
+            // -------------------------------------
+            // Update LastPaymentDate only if needed
+            // -------------------------------------
+            if (basePaymentChanged || arrearsPaymentChanged || latePaymentChanged)
+                existing.LastPaymentDate = now;
+
+            // -------------------------------------
+            // Set late interest applied date only 
+            // if late interest has changed positively
+            //
+            // If LateInterest increased OR went above zero, 
+            // we update the timestamp.
+            // -------------------------------------
+            if (input.LateInterest > 0 && input.LateInterest != existing.LateInterest)
+                existing.LastLateInterestAppliedDate = now;
+
+            // -------------------------------------
+            // Update Installment status
+            // -------------------------------------
+            bool statusChanged = existing.Bnpl_Installment_Status != input.Bnpl_Installment_Status;
+            existing.Bnpl_Installment_Status = input.Bnpl_Installment_Status;
+            // Update other related fields depending on status
+            if (statusChanged)
+            {
+                switch (existing.Bnpl_Installment_Status)
+                {
+                    case BNPL_Installment_StatusEnum.Refunded:
+                        existing.RefundDate = now;
+                        break;
+                }
+            }
 
             _context.BNPL_Installments.Update(existing);
-            await _context.SaveChangesAsync();
-
             return existing;
         }
 
@@ -191,7 +238,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             var excludedStatuses = new[]
             {
                 BNPL_Installment_StatusEnum.Refunded,
-                BNPL_Installment_StatusEnum.Cancelled,
                 BNPL_Installment_StatusEnum.Paid_OnTime,
                 BNPL_Installment_StatusEnum.Paid_Late
             };
@@ -207,17 +253,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Bulk insert
-        public async Task AddRangeAsync(List<BNPL_Installment> installments)
-        {
+        public async Task AddRangeAsync(List<BNPL_Installment> installments) =>
             await _context.BNPL_Installments.AddRangeAsync(installments);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
-        }
-
-        // EF transaction support
-        public async Task<IDbContextTransaction> BeginTransactionAsync() =>
-            await _context.Database.BeginTransactionAsync();
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }

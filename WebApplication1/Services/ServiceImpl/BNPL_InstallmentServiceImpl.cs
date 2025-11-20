@@ -4,6 +4,7 @@ using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 using WebApplication1.Utils.SystemConstants;
@@ -13,6 +14,7 @@ namespace WebApplication1.Services.ServiceImpl
     public class BNPL_InstallmentServiceImpl : IBNPL_InstallmentService
     {
         private readonly IBNPL_InstallmentRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
         private readonly ICustomerOrderRepository _customerOrderRepository;
         private readonly IBNPL_PlanTypeRepository _bNPL_PlanTypeRepository;
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
@@ -22,10 +24,11 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<BNPL_InstallmentServiceImpl> _logger;
 
         // Constructor
-        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanTypeRepository bNPL_PlanTypeRepository, IBNPL_PlanRepository bNPL_PlanRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_InstallmentServiceImpl> logger)
+        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanTypeRepository bNPL_PlanTypeRepository, IBNPL_PlanRepository bNPL_PlanRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_InstallmentServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _customerOrderRepository = customerOrderRepository;
             _bNPL_PlanTypeRepository = bNPL_PlanTypeRepository;
             _bNPL_PlanRepository = bNPL_PlanRepository;
@@ -228,7 +231,7 @@ namespace WebApplication1.Services.ServiceImpl
                     throw new Exception($"Cancellation not allowed after {BnplSystemConstants.FreeTrialPeriodDays} days of delivery.");
             }
 
-            installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Cancelled;
+            installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Refunded;
             installment.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(id, installment);
@@ -244,7 +247,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (!activePlans.Any()) return;
 
             // Use single transaction for all plans
-            await using var transaction = await _repository.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync();;
             try
             {
                 var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -254,12 +257,12 @@ namespace WebApplication1.Services.ServiceImpl
                     await HandleOverdueInstallmentsAsync(plan.Bnpl_PlanID, today);
                 }
 
-                await _repository.SaveChangesAsync();
-                await transaction.CommitAsync();
+                //await _repository.SaveChangesAsync();
+                await _unitOfWork.CommitAsync();
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackAsync();
                 throw;
             }
         }

@@ -219,7 +219,7 @@ namespace WebApplication1.Services.ServiceImpl
             // Cancel cashflows
             foreach (var cashflow in order.Cashflows)
             {
-                cashflow.CashflowStatus = CashflowStatusEnum.Cancelled;
+                cashflow.CashflowStatus = CashflowStatusEnum.Refunded;
             }
 
             // Cancel BNPL plan and related entities
@@ -230,7 +230,7 @@ namespace WebApplication1.Services.ServiceImpl
                 plan.CancelledAt = now;
 
                 foreach (var installment in plan.BNPL_Installments)
-                    installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Cancelled;
+                    installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Refunded;
 
                 foreach (var snapshot in plan.BNPL_PlanSettlementSummaries)
                     snapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;

@@ -4,6 +4,7 @@ using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.RepositoryImpl
@@ -36,8 +37,20 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            
+            bool statusChanged = existing.CashflowStatus != cashflow.CashflowStatus;
             existing.CashflowStatus = cashflow.CashflowStatus;
-            existing.RefundDate = cashflow.RefundDate;
+            // Update other related fields depending on status
+            if (statusChanged)
+            {
+                switch (existing.CashflowStatus)
+                {
+                    case CashflowStatusEnum.Refunded:
+                        existing.RefundDate = now;
+                        break;
+                }
+            }
 
             _context.Cashflows.Update(existing);
             return existing;

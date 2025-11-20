@@ -4,6 +4,7 @@ using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.RepositoryImpl
@@ -42,19 +43,26 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existingPlan == null)
                 return null;
 
+            existingPlan.Bnpl_RemainingInstallmentCount = updatedPlan.Bnpl_RemainingInstallmentCount;
+            existingPlan.Bnpl_NextDueDate = updatedPlan.Bnpl_NextDueDate;
             existingPlan.Bnpl_Status = updatedPlan.Bnpl_Status;
 
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            bool statusChanged = existingPlan.Bnpl_Status != updatedPlan.Bnpl_Status;
             // Update other related fields depending on status
-            switch (updatedPlan.Bnpl_Status)
+            if (statusChanged)
             {
-                case BnplStatusEnum.Completed:
-                    existingPlan.CompletedAt = DateTime.UtcNow;
-                    break;
+                switch (updatedPlan.Bnpl_Status)
+                {
+                    case BnplStatusEnum.Completed:
+                        existingPlan.CompletedAt = now;
+                        break;
 
-                case BnplStatusEnum.Cancelled:
-                case BnplStatusEnum.Refunded:
-                    existingPlan.CancelledAt = DateTime.UtcNow;
-                    break;
+                    case BnplStatusEnum.Cancelled:
+                    case BnplStatusEnum.Refunded:
+                        existingPlan.CancelledAt = now;
+                        break;
+                }
             }
 
             _context.BNPL_PLANs.Update(existingPlan);
