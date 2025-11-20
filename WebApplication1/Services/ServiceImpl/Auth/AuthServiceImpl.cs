@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService.Auth;
+using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Services.ServiceImpl.Auth
@@ -13,6 +14,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
     public class AuthServiceImpl : IAuthService
     {
         private readonly IUserRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly JwtSettings _jwtSettings;
 
@@ -20,9 +22,10 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         private readonly ILogger<AuthServiceImpl> _logger;
 
         // Constructor
-        public AuthServiceImpl(IUserRepository repository, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
+        public AuthServiceImpl(IUserRepository repository, IAppUnitOfWork unitOfWork, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
         {
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _jwtSettings = jwtOptions.Value;
             _logger = logger;
         }
@@ -44,6 +47,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             }
 
             await _repository.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("User created: Id={Id}, Email={Email}", user.UserID, user.Email);
             return user;

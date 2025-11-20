@@ -25,10 +25,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Category?> GetByIdAsync(int id) =>
             await _context.Categories.FindAsync(id);
 
-        public async Task AddAsync(Category category)
-        {
+        public async Task AddAsync(Category category) =>
             await _context.Categories.AddAsync(category);
-        }
 
         public async Task<Category?> UpdateAsync(int id, Category category)
         {

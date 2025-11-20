@@ -15,13 +15,11 @@ namespace WebApplication1.Repositories.RepositoryImpl.Auth
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
-        public async Task AddAsync(User user)
-        {
+        public async Task AddAsync(User user) =>
             await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
-        }
 
         //Custom Query Operations
         public async Task<bool> EmailExistsAsync(string email) =>
