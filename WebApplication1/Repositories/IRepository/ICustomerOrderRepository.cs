@@ -8,6 +8,7 @@ namespace WebApplication1.Repositories.IRepository
         //CRUD operations
         Task<IEnumerable<CustomerOrder>> GetAllAsync();
         Task<CustomerOrder?> GetByIdAsync(int id);
+        Task<CustomerOrder?> GetByIdWithAllRelatedAsync(int id);
         Task AddAsync(CustomerOrder customerOrder);
         Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder);
 

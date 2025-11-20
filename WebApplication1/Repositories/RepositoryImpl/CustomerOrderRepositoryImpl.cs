@@ -34,6 +34,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(p => p.BNPL_Installments)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
 
+        public async Task<CustomerOrder?> GetByIdWithAllRelatedAsync(int orderId)
+        {
+            return await _context.CustomerOrders
+                .Include(o => o.CustomerOrderElectronicItems)
+                    .ThenInclude(oi => oi.ElectronicItem)
+                .Include(o => o.BNPL_PLAN!)
+                    .ThenInclude(p => p.BNPL_Installments)
+                .Include(o => o.BNPL_PLAN!)
+                    .ThenInclude(p => p.BNPL_PlanSettlementSummaries)
+                .Include(o => o.Cashflows)
+                .FirstOrDefaultAsync(o => o.OrderID == orderId);
+        }
+
         public async Task AddAsync(CustomerOrder customerOrder) =>
             await _context.CustomerOrders.AddAsync(customerOrder);
 
@@ -127,13 +140,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null)
         {
-             // Start query
+            // Start query
             var query = _context.CustomerOrders
                 .Include(o => o.Customer) // Include customer for email/phone search
                 .AsQueryable();
 
             //filter by customer Id
-            query = query.Where(o => o.CustomerID == customerId);    
+            query = query.Where(o => o.CustomerID == customerId);
 
             // Apply filters
             query = ApplyOrderStatusFilter(query, orderStatusId);

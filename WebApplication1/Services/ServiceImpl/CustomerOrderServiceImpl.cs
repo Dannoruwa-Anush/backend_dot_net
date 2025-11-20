@@ -52,7 +52,7 @@ namespace WebApplication1.Services.ServiceImpl
                     throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
 
                 decimal totalAmount = 0;
-                
+
                 var itemIds = new HashSet<int>();
                 foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
                 {
@@ -109,96 +109,84 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        public async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto requet)
+        public async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto request)
         {
-            var existing = await _repository.GetByIdAsync(requet.OrderID);
-            if (existing == null)
-                throw new Exception("Customer order not found");
-
-            var oldStatus = existing.OrderStatus;
-
-            if (oldStatus == requet.NewOrderStatus)
-                return existing; // No change
-
+            // Current time
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Validation: allowed transitions
-            switch (oldStatus)
-            {
-                case OrderStatusEnum.Pending:
-                    if (requet.NewOrderStatus != OrderStatusEnum.Shipped && requet.NewOrderStatus != OrderStatusEnum.Cancelled)
-                        throw new InvalidOperationException("Pending orders can only move to 'Shipped' or 'Cancelled'.");
-                    break;
-
-                case OrderStatusEnum.Shipped:
-                    if (requet.NewOrderStatus != OrderStatusEnum.Delivered && requet.NewOrderStatus != OrderStatusEnum.Cancelled)
-                        throw new InvalidOperationException("Shipped orders can only move to 'Delivered' or 'Cancelled'.");
-                    break;
-
-                case OrderStatusEnum.Delivered:
-                    if (requet.NewOrderStatus == OrderStatusEnum.Cancelled)
-                    {
-                        // Deliverd things that can only be ccancelled within free trial period
-                        var deliveredDate = existing.DeliveredDate ?? now;
-                        var daysSinceDelivery = (now - deliveredDate).TotalDays;
-                        if (daysSinceDelivery > BnplSystemConstants.FreeTrialPeriodDays)
-                            throw new InvalidOperationException("Cannot cancel delivered orders after free trial period.");
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Delivered orders cannot change status except cancellation within 14 days.");
-                    }
-                    break;
-
-                case OrderStatusEnum.Cancelled:
-                    throw new InvalidOperationException("Cancelled orders cannot change status.");
-            }
-
-            // Start UoW-managed transaction
+            // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                // If cancelling, reverse stock
-                if (requet.NewOrderStatus == OrderStatusEnum.Cancelled)
+                // Fetch order with all related entities in one query
+                var order = await _repository.GetByIdWithAllRelatedAsync(request.OrderID);
+                if (order == null)
+                    throw new Exception("Customer order not found");
+
+                var oldStatus = order.OrderStatus;
+
+                // No change
+                if (oldStatus == request.NewOrderStatus)
+                    return order;
+
+                // Validation: allowed transitions
+                switch (oldStatus)
                 {
-                    foreach (var item in existing.CustomerOrderElectronicItems)
-                    {
-                        var electronicItem = await _electronicItemRepository.GetByIdAsync(item.E_ItemID);
-                        if (electronicItem != null)
+                    case OrderStatusEnum.Pending:
+                        if (request.NewOrderStatus != OrderStatusEnum.Shipped &&
+                            request.NewOrderStatus != OrderStatusEnum.Cancelled)
+                            throw new InvalidOperationException("Pending orders can only move to 'Shipped' or 'Cancelled'.");
+                        break;
+
+                    case OrderStatusEnum.Shipped:
+                        if (request.NewOrderStatus != OrderStatusEnum.Delivered &&
+                            request.NewOrderStatus != OrderStatusEnum.Cancelled)
+                            throw new InvalidOperationException("Shipped orders can only move to 'Delivered' or 'Cancelled'.");
+                        break;
+
+                    case OrderStatusEnum.Delivered:
+                        if (request.NewOrderStatus == OrderStatusEnum.Cancelled)
                         {
-                            electronicItem.QOH += item.Quantity; // Restock
-                            await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
+                            var deliveredDate = order.DeliveredDate ?? now;
+                            if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
+                                throw new InvalidOperationException("Cannot cancel delivered orders after free trial period.");
                         }
-                    }
+                        else
+                        {
+                            throw new InvalidOperationException("Delivered orders cannot change status except cancellation within 14 days.");
+                        }
+                        break;
 
-                    existing.CancelledDate = now;
-
-                    //If BNpl plan exists : cancel it
-
-                    //Installment : cancel it
-                    // snapshot : ?
-
-                    //If cashflow exist : Refund
+                    case OrderStatusEnum.Cancelled:
+                        throw new InvalidOperationException("Cancelled orders cannot change status.");
                 }
-                else if (requet.NewOrderStatus == OrderStatusEnum.Shipped)
+
+                // Perform status-specific actions
+                switch (request.NewOrderStatus)
                 {
-                    existing.ShippedDate = now;
+                    case OrderStatusEnum.Cancelled:
+                        CancelOrder(order, now); // Helper method (restock, cancel BNPL, cashflow)
+                        break;
+
+                    case OrderStatusEnum.Shipped:
+                        order.ShippedDate = now;
+                        break;
+
+                    case OrderStatusEnum.Delivered:
+                        order.DeliveredDate = now;
+                        break;
                 }
-                else if (requet.NewOrderStatus == OrderStatusEnum.Delivered)
-                {
-                    existing.DeliveredDate = now;
-                }
 
-                existing.OrderStatus = requet.NewOrderStatus;
+                // Update order status
+                order.OrderStatus = request.NewOrderStatus;
 
-                await _repository.UpdateAsync(requet.OrderID, existing);
-                await _unitOfWork.SaveChangesAsync();
-
-                // Persist everything in one atomic operation
+                // No need to call UpdateAsync per entity; EF Core tracks all changes
                 await _unitOfWork.CommitAsync();
-                _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", existing.OrderID, existing.OrderStatus);
 
-                return existing;
+                _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", order.OrderID, order.OrderStatus);
+
+                return order;
             }
             catch (Exception ex)
             {
@@ -208,100 +196,121 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-     public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder)
+        // Helper method : CancelOrder
+        private void CancelOrder(CustomerOrder order, DateTime now)
         {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
-                throw new Exception("Customer order not found.");
+            // Restock electronic items
+            foreach (var item in order.CustomerOrderElectronicItems)
+            {
+                item.ElectronicItem.QOH += item.Quantity;
+            }
 
-            existing.PaymentCompletedDate = customerOrder.PaymentCompletedDate;
-            existing.OrderPaymentStatus = customerOrder.OrderPaymentStatus;
+            order.CancelledDate = now;
 
-            return await _repository.UpdateAsync(id, existing);
+            // Cancel cashflows
+            foreach (var cashflow in order.Cashflows)
+            {
+                cashflow.CashflowStatus = CashflowStatusEnum.Cancelled;
+            }
+
+            // Cancel BNPL plan and related entities
+            if (order.BNPL_PLAN != null)
+            {
+                var plan = order.BNPL_PLAN;
+                plan.Bnpl_Status = BnplStatusEnum.Cancelled;
+                plan.CancelledAt = now;
+
+                foreach (var installment in plan.BNPL_Installments)
+                    installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Cancelled;
+
+                foreach (var snapshot in plan.BNPL_PlanSettlementSummaries)
+                    snapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;
+            }
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////
         //Helper method : to Update PaymentStatus
         private async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, OrderPaymentStatusEnum newOrderPaymentStatus)
         {
@@ -344,7 +353,7 @@ namespace WebApplication1.Services.ServiceImpl
             return existing;
         }
 
-        
+
 
         //Custom Query Operations
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null)
