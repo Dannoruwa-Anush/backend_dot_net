@@ -17,6 +17,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
         public async Task<IEnumerable<Employee>> GetAllAsync() =>
@@ -29,11 +30,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .Include(em => em.User)
                     .FirstOrDefaultAsync(em => em.EmployeeID == id);
 
-        public async Task AddAsync(Employee employee)
-        {
+        public async Task AddAsync(Employee employee) =>
             await _context.AddAsync(employee);
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<Employee?> UpdateAsync(int id, Employee employee)
         {
@@ -45,8 +43,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.Position = employee.Position;    
 
             _context.Employees.Update(existing);
-            await _context.SaveChangesAsync();
-
             return existing;
         }
 
@@ -57,8 +53,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return false;
 
             _context.Employees.Remove(employee);
-            await _context.SaveChangesAsync();
-
             return true;
         }
 

@@ -2,21 +2,24 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 
 namespace WebApplication1.Services.ServiceImpl
 {
     public class EmployeeServiceImpl : IEmployeeService
     {
         private readonly IEmployeeRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
         private readonly ILogger<EmployeeServiceImpl> _logger;
 
         // Constructor
-        public EmployeeServiceImpl(IEmployeeRepository repository, ILogger<EmployeeServiceImpl> logger)
+        public EmployeeServiceImpl(IEmployeeRepository repository, IAppUnitOfWork unitOfWork, ILogger<EmployeeServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -30,6 +33,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Employee> AddEmployeeAsync(Employee employee)
         {
             await _repository.AddAsync(employee);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Employee created: Id={Id}, EmploeeName={Name}", employee.EmployeeID, employee.EmployeeName);
             return employee;
@@ -42,6 +46,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception("Employee not found");
 
             var updatedEmployee = await _repository.UpdateAsync(id, employee);
+            await _unitOfWork.SaveChangesAsync();
 
             if (updatedEmployee != null)
             {
