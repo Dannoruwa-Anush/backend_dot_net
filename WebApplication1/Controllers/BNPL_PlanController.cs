@@ -61,23 +61,6 @@ namespace WebApplication1.Controllers
             return Ok(response);
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
-        public async Task<IActionResult> Create([FromBody] BNPL_PlanRequestDto bNPL_PlanCreateDto)
-        {
-            // RequestDto -> Model
-            var bNPL_Plan = _mapper.Map<BNPL_PLAN>(bNPL_PlanCreateDto);
-            var created = await _service.AddBNPL_PlanAsync(bNPL_Plan);
-
-            // Model -> ResponseDto
-            var responseDto = _mapper.Map<BNPL_PlanResponseDto>(created);
-            var response = new ApiResponseDto<BNPL_PlanResponseDto>(201, "BNPL Plan created successfully", responseDto);
-
-            return CreatedAtAction(nameof(GetById), new { id = responseDto.Bnpl_PlanID}, response);
-        }
-
-        //Note : Put request will be handled by payment or order cancel
-
         //Custom Query Operations
         [HttpGet("paged")]
         [Authorize(Roles = "Admin, Employee")] // JWT is required

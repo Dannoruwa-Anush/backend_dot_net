@@ -17,6 +17,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //Repositories
         private readonly ICustomerOrderRepository _customerOrderRepository;
+        private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
         private readonly ICashflowRepository _cashflowRepository;
 
 
@@ -36,6 +37,7 @@ namespace WebApplication1.Services.ServiceImpl
         IAppUnitOfWork unitOfWork,
 
         ICustomerOrderRepository customerOrderRepository,
+        IBNPL_PlanRepository bNPL_PlanRepository,
         ICashflowRepository cashflowRepository,
 
         ICustomerOrderService customerOrderService,
@@ -50,6 +52,7 @@ namespace WebApplication1.Services.ServiceImpl
             _unitOfWork = unitOfWork;
 
             _customerOrderRepository = customerOrderRepository;
+            _bNPL_PlanRepository = bNPL_PlanRepository;
             _cashflowRepository = cashflowRepository;
 
 
@@ -83,7 +86,6 @@ namespace WebApplication1.Services.ServiceImpl
                 // 2. Update customer order payment status to Fully Paid
                 var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto{OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid});
                 await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
-
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
                 // 3. Commit the transaction
@@ -111,7 +113,7 @@ namespace WebApplication1.Services.ServiceImpl
                 var bnplCalc = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
 
                 // Create the BNPL plan (no transaction inside)
-                var bnpl_plan = await _bNPL_PlanService.AddBNPL_PlanAsync(new BNPL_PLAN
+                var bnpl_plan = await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(new BNPL_PLAN
                 {
                     Bnpl_InitialPayment = request.InitialPayment,
                     Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
@@ -119,6 +121,7 @@ namespace WebApplication1.Services.ServiceImpl
                     Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
                     OrderID = request.OrderID,
                 });
+                await _bNPL_PlanRepository.AddAsync(bnpl_plan);
 
                 // Generate installments
                 await _bNPL_InstallmentService.AddBnplInstallmentsAsync(bnpl_plan);

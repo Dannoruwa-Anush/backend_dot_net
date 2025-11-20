@@ -36,30 +36,6 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<BNPL_PLAN> AddBNPL_PlanAsync(BNPL_PLAN bNPL_Plan)
-        {
-            // Validate inputs
-            if (bNPL_Plan.Bnpl_TotalInstallmentCount <= 0)
-                throw new Exception("BNPL plan must have at least one installment.");
-
-            var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(bNPL_Plan.Bnpl_PlanTypeID);
-            if (planType == null)
-                throw new Exception("Invalid BNPL plan type.");
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
-            int daysPerInstallment = planType.Bnpl_DurationDays;
-
-            bNPL_Plan.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_TotalInstallmentCount;
-            bNPL_Plan.Bnpl_StartDate = now;
-            bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
-            bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
-
-            await _repository.AddAsync(bNPL_Plan);
-
-            return bNPL_Plan;
-        }
-
         public async Task<BNPL_PLAN?> UpdateBNPL_PlanAsync(int id, BNPL_PLAN bNPL_Plan)
         {
             var existing = await _repository.GetByIdAsync(id);
@@ -156,6 +132,29 @@ namespace WebApplication1.Services.ServiceImpl
                 TotalPayable = Math.Round(totalRepaymentAmount, 2),
                 TotalInterestAmount = Math.Round(totalInterestAmount, 2)
             };
+        }
+
+        //Builds the object without DB Access
+        public async Task<BNPL_PLAN> BuildBnpl_PlanAddRequestAsync(BNPL_PLAN bNPL_Plan)
+        {
+            // Validate inputs
+            if (bNPL_Plan.Bnpl_TotalInstallmentCount <= 0)
+                throw new Exception("BNPL plan must have at least one installment.");
+
+            var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(bNPL_Plan.Bnpl_PlanTypeID);
+            if (planType == null)
+                throw new Exception("Invalid BNPL plan type.");
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            int freeTrialDays = BnplSystemConstants.FreeTrialPeriodDays;
+            int daysPerInstallment = planType.Bnpl_DurationDays;
+
+            bNPL_Plan.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_TotalInstallmentCount;
+            bNPL_Plan.Bnpl_StartDate = now;
+            bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
+            bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
+
+            return bNPL_Plan;
         }
     }
 }
