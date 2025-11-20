@@ -68,8 +68,7 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<IBNPL_PlanTypeRepository, BNPL_PlanTypeRepositoryImpl>()
                 .AddScoped<IBNPL_PlanRepository, BNPL_PlanRepositoryImpl>()
                 .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>()
-                .AddScoped<IBNPL_PlanSettlementSummaryRepository, BNPL_PlanSettlementSummaryRepositoryImpl>()
-                .AddScoped<IPaymentRepository, PaymentRepositoryImpl>();
+                .AddScoped<IBNPL_PlanSettlementSummaryRepository, BNPL_PlanSettlementSummaryRepositoryImpl>();
 
 //--------------------[Unit of work DI]------------
 builder.Services.AddScoped<IAppUnitOfWork, AppUnitOfWorkImpl>();

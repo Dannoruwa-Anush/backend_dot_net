@@ -18,7 +18,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
-
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
+        
         //CRUD operations
         public async Task<IEnumerable<Cashflow>> GetAllAsync() =>
             await _context.Cashflows.ToListAsync();
@@ -26,11 +27,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Cashflow?> GetByIdAsync(int id) =>
             await _context.Cashflows.FindAsync(id);
 
-        public async Task AddAsync(Cashflow cashflow)
-        {
+        public async Task AddAsync(Cashflow cashflow) =>
             await _context.Cashflows.AddAsync(cashflow);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
-        }
 
         public async Task<Cashflow?> UpdateAsync(int id, Cashflow cashflow)
         {
@@ -39,10 +37,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return null;
 
             existing.CashflowStatus = cashflow.CashflowStatus;
+            existing.RefundDate = cashflow.RefundDate;
 
             _context.Cashflows.Update(existing);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
-
             return existing;
         }
 
@@ -109,12 +106,5 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Where(x => x.OrderID == orderId && x.CashflowStatus == CashflowStatusEnum.Paid)
                 .SumAsync(x => x.AmountPaid);
         }
-
-        // EF transaction support
-        public async Task<IDbContextTransaction> BeginTransactionAsync() =>
-            await _context.Database.BeginTransactionAsync();
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }

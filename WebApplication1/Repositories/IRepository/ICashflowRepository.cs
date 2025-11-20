@@ -15,9 +15,5 @@ namespace WebApplication1.Repositories.IRepository
         //Custom Query Operations
         Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null);
         Task<decimal> SumCashflowsByOrderAsync(int orderId);
-        
-        // EF transaction support
-        Task<IDbContextTransaction> BeginTransactionAsync();
-        Task SaveChangesAsync();
     }
 }

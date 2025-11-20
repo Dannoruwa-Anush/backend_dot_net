@@ -1,9 +1,9 @@
-using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
@@ -12,17 +12,15 @@ namespace WebApplication1.Services.ServiceImpl
     public class CashflowServiceImpl : ICashflowService
     {
         private readonly ICashflowRepository _repository;
-        private readonly ICustomerOrderRepository _customerOrderRepository;
 
         //logger: for auditing
         private readonly ILogger<CashflowServiceImpl> _logger;
 
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<CashflowServiceImpl> logger)
+        public CashflowServiceImpl(ICashflowRepository repository, ILogger<CashflowServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
-            _customerOrderRepository = customerOrderRepository;
             _logger = logger;
         }
 
@@ -43,9 +41,9 @@ namespace WebApplication1.Services.ServiceImpl
             var status = CashflowStatusEnum.Paid;
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            
             // Build reference
-            var cashflowRef =
-                $"CF-{paymentRequest.OrderId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
+            var cashflowRef = $"CF-{paymentRequest.OrderId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
 
             var newCashflow = new Cashflow
             {

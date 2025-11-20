@@ -5,6 +5,7 @@ using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
@@ -12,7 +13,7 @@ namespace WebApplication1.Services.ServiceImpl
 {
     public class PaymentServiceImpl : IPaymentService
     {
-        private readonly IPaymentRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
         private readonly ICashflowRepository _cashflowRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
 
@@ -30,7 +31,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         // Constructor
         public PaymentServiceImpl(
-        IPaymentRepository repository, 
+        IAppUnitOfWork unitOfWork,
 
         ICashflowRepository cashflowRepository,
         ICustomerOrderRepository customerOrderRepository,
@@ -45,7 +46,7 @@ namespace WebApplication1.Services.ServiceImpl
         IBNPL_PlanService bNPL_PlanService)
         {
             // Dependency injection
-            _repository = repository;
+            _unitOfWork = unitOfWork;
 
             _cashflowRepository = cashflowRepository;
             _customerOrderRepository = customerOrderRepository;
@@ -67,8 +68,8 @@ namespace WebApplication1.Services.ServiceImpl
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));
 
-            await using var transaction = await _repository.BeginTransactionAsync();
-
+            // Begin UoW-managed transaction
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 _logger.LogInformation("Starting full payment processing for OrderID={OrderId}, Amount={Amount}",
@@ -88,12 +89,12 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
                 // 3. Commit the transaction
-                await transaction.CommitAsync();
+                await _unitOfWork.CommitAsync();
                 _logger.LogInformation("Full payment processed successfully for OrderID={OrderId}", paymentRequest.OrderId);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to process full payment for OrderID={OrderId}", paymentRequest.OrderId);
                 throw;
             }
@@ -102,7 +103,8 @@ namespace WebApplication1.Services.ServiceImpl
         // BNPL : Initial Payment (After the initial payment is completed, bnpl plan will be created)
         public async Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
-            await using var transaction = await _repository.BeginTransactionAsync();
+            // Begin UoW-managed transaction
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -139,13 +141,13 @@ namespace WebApplication1.Services.ServiceImpl
                 await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(bnpl_plan.Bnpl_PlanID);
 
                 // Commit
-                await transaction.CommitAsync();
+                await _unitOfWork.CommitAsync();
 
                 _logger.LogInformation("BNPL initial payment processed successfully for OrderID={OrderId}", request.OrderID);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to process BNPL initial payment for OrderID={OrderId}", request.OrderID);
                 throw;
             }
@@ -154,7 +156,8 @@ namespace WebApplication1.Services.ServiceImpl
         // BNPL : Installment Payment
         public async Task ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
-            await using var transaction = await _repository.BeginTransactionAsync();
+            // Begin UoW-managed transaction
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // 1. Apply BNPL installment payment
@@ -178,12 +181,12 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 6. Commit transaction
-                await transaction.CommitAsync();
+                await _unitOfWork.CommitAsync();
                 _logger.LogInformation("BNPL installment payment processed successfully for OrderID={OrderId}", paymentRequest.OrderId);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to process BNPL installment payment for OrderID={OrderId}", paymentRequest.OrderId);
                 throw;
             }
