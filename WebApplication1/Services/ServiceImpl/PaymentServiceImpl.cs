@@ -16,12 +16,13 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //Repositories
-        private readonly ICashflowRepository _cashflowRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
+        private readonly ICashflowRepository _cashflowRepository;
 
 
 
         //Service
+        private readonly ICustomerOrderService _customerOrderService;
         private readonly ICashflowService _cashflowService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
@@ -34,10 +35,10 @@ namespace WebApplication1.Services.ServiceImpl
         public PaymentServiceImpl(
         IAppUnitOfWork unitOfWork,
 
-        ICashflowRepository cashflowRepository,
         ICustomerOrderRepository customerOrderRepository,
+        ICashflowRepository cashflowRepository,
 
-
+        ICustomerOrderService customerOrderService,
         ICashflowService cashflowService,
         IBNPL_InstallmentService bNPL_InstallmentService, 
         IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, 
@@ -48,10 +49,11 @@ namespace WebApplication1.Services.ServiceImpl
             // Dependency injection
             _unitOfWork = unitOfWork;
 
-            _cashflowRepository = cashflowRepository;
             _customerOrderRepository = customerOrderRepository;
+            _cashflowRepository = cashflowRepository;
 
 
+            _customerOrderService = customerOrderService;
             _cashflowService = cashflowService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
@@ -79,12 +81,9 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 2. Update customer order payment status to Fully Paid
-                var customerOrderStatusChangeRequest = new CustomerOrderUpdateDto
-                {
-                    PaymentStatus = OrderPaymentStatusEnum.Fully_Paid
-                };
+                var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto{OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid});
+                await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
 
-                //var customerOrder = await _customerOrderService.UpdateCustomerOrderPaymentStatusAsync(paymentRequest.OrderId, customerOrderStatusChangeRequest);
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
                 // 3. Commit the transaction
@@ -234,78 +233,8 @@ namespace WebApplication1.Services.ServiceImpl
             await _bNPL_PlanService.UpdateBNPL_PlanAsync(plan.Bnpl_PlanID, plan);
 
             // update customer order based on new state
-            var request = new CustomerOrderPaymentStatusChangeRequestDto
-            {
-                OrderID = plan.OrderID,
-                NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid,
-            };
-
-            await UpdateCustomerOrderPaymentStatusAsync(request);
-        }
-
-        //Helper Method
-        private async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(CustomerOrderPaymentStatusChangeRequestDto request)
-        {
-            var order = await _customerOrderRepository.GetByIdAsync(request.OrderID);
-            if (order == null)
-                throw new Exception("Customer order not found");
-
-            var oldStatus = order.OrderPaymentStatus;
-
-            // No change
-            if (oldStatus == request.NewPaymentStatus)
-                return order;
-
-            // Validate allowed transitions
-            switch (oldStatus)
-            {
-                case OrderPaymentStatusEnum.Partially_Paid:
-                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
-                        request.NewPaymentStatus != OrderPaymentStatusEnum.Overdue)
-                        throw new InvalidOperationException(
-                            "Partially paid orders can only move to 'Fully_Paid', or 'Overdue'.");
-                    break;
-
-                case OrderPaymentStatusEnum.Fully_Paid:
-                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Refunded)
-                        throw new InvalidOperationException(
-                            "Fully paid orders can only move to 'Refunded'.");
-                    break;
-
-                case OrderPaymentStatusEnum.Overdue:
-                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
-                        request.NewPaymentStatus != OrderPaymentStatusEnum.Partially_Paid)
-                        throw new InvalidOperationException(
-                            "Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
-                    break;
-
-                case OrderPaymentStatusEnum.Refunded:
-                    throw new InvalidOperationException(
-                        "Refunded orders cannot change payment status.");
-            }
-
-            // Check total paid so far
-            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
-
-            // If payment is now complete, we override with Fully Paid
-            if (totalPaid >= order.TotalAmount)
-            {
-                order.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
-            }
-            else
-            {
-                // Otherwise use requested status
-                order.OrderPaymentStatus = request.NewPaymentStatus;
-            }
-
-            await _customerOrderRepository.UpdateAsync(request.OrderID, order);
-            
-            _logger.LogInformation(
-                "Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}",
-                order.OrderID, order.OrderPaymentStatus);
-
-            return order;
+            var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto{OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid});
+            await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
         }
     }
 }

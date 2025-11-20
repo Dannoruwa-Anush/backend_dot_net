@@ -10,8 +10,6 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<Cashflow>> GetAllCashflowsAsync();
         Task<Cashflow?> GetCashflowByIdAsync(int id);
-        
-        //Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow cashflow);
 
         //Custom Query Operations
         Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null);

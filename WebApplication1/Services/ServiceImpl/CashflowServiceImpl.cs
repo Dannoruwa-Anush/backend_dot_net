@@ -30,6 +30,16 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Cashflow?> GetCashflowByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
+        //Custom Query Operations
+        public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
+        {
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
+        }
+
+        public async Task<decimal> SumCashflowsByOrderAsync(int orderId) =>
+            await _repository.SumCashflowsByOrderAsync(orderId);
+
+        // Builds the object without DB Access
         public Cashflow BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
         {
             if (paymentRequest == null)
@@ -54,60 +64,5 @@ namespace WebApplication1.Services.ServiceImpl
             
             return newCashflow;
         }
-
-        /*public async Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow updatedCashflow)
-        {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
-                throw new InvalidOperationException("Cashflow record not found.");
-
-            var order = existing.CustomerOrder;
-            if (order == null)
-                throw new InvalidOperationException("Associated order not found for cashflow.");
-
-            // Validate if cancellation is allowed 
-            var now = DateTime.UtcNow;
-            bool canCancel = false;
-
-            if (order.OrderStatus == OrderStatusEnum.Pending)
-            {
-                canCancel = true; // Always allowed before shipping
-            }
-            else if (order.OrderStatus == OrderStatusEnum.Shipped)
-            {
-                canCancel = false; // Not allowed after shipped
-            }
-            else if (order.OrderStatus == OrderStatusEnum.Delivered)
-            {
-                if (order.DeliveredDate.HasValue)
-                {
-                    var daysSinceDelivery = (now - order.DeliveredDate.Value).TotalDays;
-                    canCancel = daysSinceDelivery <= 14; // Allowed only within 14 days
-                }
-            }
-
-            if (!canCancel)
-                throw new InvalidOperationException("Refund not allowed. Orders can only be cancelled before shipping or within 14 days after delivery.");
-
-            // Perform the refund update
-            existing.CashflowStatus = CashflowStatusEnum.Refunded;
-            existing.RefundDate = now;
-            existing.UpdatedAt = now;
-
-            await _repository.UpdateAsync(id, existing);
-
-            _logger.LogInformation("Cashflow refunded: ID={Id}, OrderID={OrderId}, RefundDate={RefundDate}", existing.CashflowID, existing.OrderID, existing.RefundDate);
-
-            return existing;
-        }*/
-
-        //Custom Query Operations
-        public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
-        {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
-        }
-
-        public async Task<decimal> SumCashflowsByOrderAsync(int orderId) =>
-            await _repository.SumCashflowsByOrderAsync(orderId);
     }
 }
