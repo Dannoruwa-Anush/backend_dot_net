@@ -16,6 +16,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
         public async Task<IEnumerable<Category>> GetAllAsync() =>
@@ -27,7 +28,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(Category category)
         {
             await _context.Categories.AddAsync(category);
-            await _context.SaveChangesAsync();
         }
 
         public async Task<Category?> UpdateAsync(int id, Category category)
@@ -38,8 +38,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             existing.CategoryName = category.CategoryName;
             _context.Categories.Update(existing);
-            await _context.SaveChangesAsync();
-
             return existing;
         }
 
@@ -50,7 +48,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return false;
 
             _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
             return true;
         }
 
