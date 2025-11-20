@@ -2,12 +2,14 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 
 namespace WebApplication1.Services.ServiceImpl
 {
     public class CustomerServiceImpl : ICustomerService
     {
         private readonly ICustomerRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly ICustomerOrderRepository _customerOrderRepository;
 
@@ -15,10 +17,11 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<CustomerServiceImpl> _logger;
 
         // Constructor
-        public CustomerServiceImpl(ICustomerRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<CustomerServiceImpl> logger)
+        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _customerOrderRepository = customerOrderRepository;
             _logger = logger;
         }
@@ -38,6 +41,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
 
             await _repository.AddAsync(customer);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Customer created: Id={Id}, PhoneNo={PhoneNo}", customer.CustomerID, customer.PhoneNo);
             return customer;
@@ -54,6 +58,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
 
             var updatedCustomer = await _repository.UpdateAsync(id, customer);
+            await _unitOfWork.SaveChangesAsync();
 
             if (updatedCustomer != null)
             {
@@ -76,6 +81,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+            
             if (!deleted)
             {
                 _logger.LogWarning("Attempted to delete customer with id {Id}, but it does not exist.", id);
