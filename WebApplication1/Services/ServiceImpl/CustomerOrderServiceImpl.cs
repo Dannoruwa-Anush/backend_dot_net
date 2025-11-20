@@ -296,6 +296,8 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             await _repository.UpdateAsync(request.OrderID, order);
+            //uow will be handled by top service layer (Payment)
+            
             _logger.LogInformation(
                 "Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}",
                 order.OrderID, order.OrderPaymentStatus);

@@ -18,6 +18,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_PLAN>> GetAllAsync() =>
@@ -32,11 +33,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
                         .ThenInclude(bplC => bplC!.Customer)
                     .FirstOrDefaultAsync(bpl => bpl.Bnpl_PlanID == id);
 
-        public async Task AddAsync(BNPL_PLAN bNPL_Plan)
-        {
+        public async Task AddAsync(BNPL_PLAN bNPL_Plan) =>
             await _context.BNPL_PLANs.AddAsync(bNPL_Plan);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
-        }
 
         public async Task<BNPL_PLAN?> UpdateAsync(int id, BNPL_PLAN updatedPlan)
         {
@@ -45,7 +43,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return null;
 
             existingPlan.Bnpl_Status = updatedPlan.Bnpl_Status;
-            existingPlan.UpdatedAt = DateTime.UtcNow;
 
             // Update other related fields depending on status
             switch (updatedPlan.Bnpl_Status)
@@ -61,8 +58,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             }
 
             _context.BNPL_PLANs.Update(existingPlan);
-            await _context.SaveChangesAsync();
-
             return existingPlan;
         }
 
@@ -136,12 +131,5 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<BNPL_PLAN?> GetByOrderIdAsync(int orderId) =>
             await _context.BNPL_PLANs
                 .FirstOrDefaultAsync(b => b.OrderID == orderId);
-
-        // EF transaction support
-        public async Task<IDbContextTransaction> BeginTransactionAsync() =>
-            await _context.Database.BeginTransactionAsync();
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }
