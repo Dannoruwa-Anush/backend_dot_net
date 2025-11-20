@@ -18,6 +18,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Dependency injection
             _context = context;
         }
+        // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD Operations
         public async Task<IEnumerable<CustomerOrder>> GetAllAsync() =>
@@ -33,11 +34,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(p => p.BNPL_Installments)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
 
-        public async Task AddAsync(CustomerOrder customerOrder)
-        {
+        public async Task AddAsync(CustomerOrder customerOrder) =>
             await _context.CustomerOrders.AddAsync(customerOrder);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
-        }
 
         public async Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder)
         {
@@ -49,8 +47,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.OrderStatus = customerOrder.OrderStatus;
 
             _context.CustomerOrders.Update(existing);
-            //SaveChangesAsync() is handled by the service layer to ensure atomic operations (Transaction handling).
-
             return existing;
         }
 
@@ -163,12 +159,5 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageSize = pageSize
             };
         }
-
-        // EF transaction support
-        public async Task<IDbContextTransaction> BeginTransactionAsync() =>
-            await _context.Database.BeginTransactionAsync();
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }

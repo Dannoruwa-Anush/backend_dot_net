@@ -3,6 +3,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
@@ -11,6 +12,8 @@ namespace WebApplication1.Services.ServiceImpl
     public class CustomerOrderServiceImpl : ICustomerOrderService
     {
         private readonly ICustomerOrderRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
+
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
 
@@ -18,13 +21,14 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
-            _repository               = repository;
-            _customerRepository       = customerRepository;
+            _repository = repository;
+            _unitOfWork = unitOfWork;
+            _customerRepository = customerRepository;
             _electronicItemRepository = electronicItemRepository;
-            _logger                   = logger;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -36,8 +40,8 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
         {
-            // Begin EF Core transaction
-            await using var transaction = await _repository.BeginTransactionAsync();
+            // Start UoW-managed transaction
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // Validate customer exists
@@ -46,73 +50,76 @@ namespace WebApplication1.Services.ServiceImpl
                     throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
 
                 decimal totalAmount = 0;
-
-                // Validate stock & calculate subtotal for each order item
-                // Make sure there are no duplicate E_ItemID in the order
+                
                 var itemIds = new HashSet<int>();
                 foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
                 {
                     if (orderItem.Quantity <= 0)
-                        throw new InvalidOperationException($"Invalid quantity for item {orderItem.E_ItemID}. Quantity must be greater than zero.");
-                        
+                        throw new InvalidOperationException($"Invalid quantity for item {orderItem.E_ItemID}.");
+
                     if (!itemIds.Add(orderItem.E_ItemID))
                         throw new InvalidOperationException($"Duplicate item in order: {orderItem.E_ItemID}");
 
                     var electronicItem = await _electronicItemRepository.GetByIdAsync(orderItem.E_ItemID);
                     if (electronicItem == null)
                         throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
-                    
-                    if (electronicItem.QOH < orderItem.Quantity)
-                        throw new InvalidOperationException($"Insufficient stock for {electronicItem.ElectronicItemName}");
 
-                    // Compute subtotal
+                    if (electronicItem.QOH < orderItem.Quantity)
+                        throw new InvalidOperationException(
+                            $"Insufficient stock for {electronicItem.ElectronicItemName}");
+
+                    // subtotal
                     orderItem.UnitPrice = electronicItem.Price;
                     orderItem.SubTotal = orderItem.Quantity * electronicItem.Price;
                     totalAmount += orderItem.SubTotal;
 
-                    // Deduct stock
+                    // deduct stock
                     electronicItem.QOH -= orderItem.Quantity;
-                    await _electronicItemRepository.UpdateAsync(electronicItem.ElectronicItemID, electronicItem);
+                    await _electronicItemRepository.UpdateAsync(
+                        electronicItem.ElectronicItemID,
+                        electronicItem);
                 }
 
-                // Set order total & default statuses
+                // Apply order data
                 customerOrder.TotalAmount = totalAmount;
                 customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
                 customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
 
-                // Save order along with its child items in one go
-                // EF Core will automatically insert CustomerOrderElectronicItems via navigation property
+                // Add order (EFCore will insert line items)
                 await _repository.AddAsync(customerOrder);
-                await _repository.SaveChangesAsync();
 
-                // Commit transaction
-                await transaction.CommitAsync();
+                // Persist everything in one atomic operation
+                await _unitOfWork.CommitAsync();
 
-                _logger.LogInformation("Customer order created: Id={Id}, TotalAmount={Total}", customerOrder.OrderID, totalAmount);
+                _logger.LogInformation(
+                    "Customer order created: Id={Id}, TotalAmount={Total}",
+                    customerOrder.OrderID, totalAmount);
 
                 return customerOrder;
             }
             catch (Exception ex)
             {
-                // Rollback transaction if anything fails
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackAsync();
 
                 _logger.LogError(ex, "Failed to create customer order.");
                 throw;
             }
         }
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////
         public async Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
                 throw new Exception("Customer order not found.");
 
-            existing.PaymentCompletedDate  = customerOrder.PaymentCompletedDate ;
-            existing.OrderPaymentStatus  = customerOrder.OrderPaymentStatus ;
+            existing.PaymentCompletedDate = customerOrder.PaymentCompletedDate;
+            existing.OrderPaymentStatus = customerOrder.OrderPaymentStatus;
 
-            return await _repository.UpdateAsync(id, existing);     
+            return await _repository.UpdateAsync(id, existing);
         }
 
         public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, CustomerOrderUpdateDto updateDto)
@@ -187,7 +194,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             if (oldStatus == newOrderStatus)
                 return existing; // No change
-            
+
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
             // Validation: allowed transitions
             switch (oldStatus)
@@ -222,7 +229,7 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             // Begin transaction for atomicity
-            await using var transaction = await _repository.BeginTransactionAsync();
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // If cancelling, reverse stock
@@ -252,7 +259,7 @@ namespace WebApplication1.Services.ServiceImpl
                 existing.OrderStatus = newOrderStatus;
 
                 await _repository.UpdateAsync(id, existing);
-                await _repository.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 await transaction.CommitAsync();
                 _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", existing.OrderID, existing.OrderStatus);

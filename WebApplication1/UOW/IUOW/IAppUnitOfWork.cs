@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace WebApplication1.UOW.IUOW
 {
     public interface IAppUnitOfWork
@@ -6,7 +8,7 @@ namespace WebApplication1.UOW.IUOW
         // changes across multiple repositories in a single transaction
         // Repository - Unit of Work - Service - Controller.
 
-        Task BeginTransactionAsync();
+        Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitAsync();
         Task RollbackAsync();
 

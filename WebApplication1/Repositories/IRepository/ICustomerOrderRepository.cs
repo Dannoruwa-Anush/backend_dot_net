@@ -1,7 +1,5 @@
-using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.IRepository
 {
@@ -17,9 +15,5 @@ namespace WebApplication1.Repositories.IRepository
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<bool> ExistsByCustomerAsync(int customerId);
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
-        
-        // EF transaction support
-        Task<IDbContextTransaction> BeginTransactionAsync();
-        Task SaveChangesAsync();
     }
 }

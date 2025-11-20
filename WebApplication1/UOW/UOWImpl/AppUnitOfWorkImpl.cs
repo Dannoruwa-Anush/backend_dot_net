@@ -20,9 +20,10 @@ namespace WebApplication1.UOW.UOWImpl
             _context = context;
         }
 
-        public async Task BeginTransactionAsync()
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             _transaction = await _context.Database.BeginTransactionAsync();
+            return _transaction;
         }
 
         public async Task CommitAsync()
