@@ -10,6 +10,7 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<Cashflow>> GetAllCashflowsAsync();
         Task<Cashflow?> GetCashflowByIdAsync(int id);
+        Task<Cashflow> BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType);
         Task<Cashflow?> UpdateCashflowAsync(int id, Cashflow cashflow);
 
         //Custom Query Operations
