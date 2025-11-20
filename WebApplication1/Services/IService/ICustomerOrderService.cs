@@ -13,8 +13,7 @@ namespace WebApplication1.Services.IService
         Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id);
         Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder);
         Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto requet);
-        //Task<CustomerOrder?> UpdateCustomerOrderAsync(int id, CustomerOrder customerOrder);
-        //Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, CustomerOrderUpdateDto updateDto);
+        Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(CustomerOrderPaymentStatusChangeRequestDto request);
 
         //Custom Query Operations
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);

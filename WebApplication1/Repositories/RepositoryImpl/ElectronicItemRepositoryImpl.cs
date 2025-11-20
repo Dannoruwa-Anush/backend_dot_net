@@ -17,7 +17,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
         // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
-        
+
         //CRUD operations
         public async Task<IEnumerable<ElectronicItem>> GetAllAsync() =>
             await _context.ElectronicItems
@@ -136,5 +136,11 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.ElectronicItems.AnyAsync(e => e.BrandID == brandId);
         }
 
+        public async Task<List<ElectronicItem>> GetAllByIdsAsync(List<int> ids)
+        {
+            return await _context.ElectronicItems
+                .Where(e => ids.Contains(e.ElectronicItemID))
+                .ToListAsync();
+        }
     }
 }

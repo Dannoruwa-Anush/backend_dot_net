@@ -20,5 +20,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<IEnumerable<ElectronicItem>> GetAllByBrandAsync(int brandId);
         Task<bool> ExistsByCategoryAsync(int categoryId);
         Task<bool> ExistsByBrandAsync(int brandId);
+        Task<List<ElectronicItem>> GetAllByIdsAsync(List<int> ids);
     }
 }

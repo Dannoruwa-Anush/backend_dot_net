@@ -18,18 +18,20 @@ namespace WebApplication1.Services.ServiceImpl
 
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
+        private readonly ICashflowRepository _cashflowRepository;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ICashflowRepository cashflowRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _customerRepository = customerRepository;
             _electronicItemRepository = electronicItemRepository;
+            _cashflowRepository = cashflowRepository;
             _logger = logger;
         }
 
@@ -42,56 +44,60 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
         {
-            // Start UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Validate customer exists
+                // Validate customer
                 var customer = await _customerRepository.GetByIdAsync(customerOrder.CustomerID);
                 if (customer == null)
                     throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
 
+                // Extract item IDs from incoming order
+                var itemIds = customerOrder.CustomerOrderElectronicItems
+                                           .Select(i => i.E_ItemID)
+                                           .ToList();
+
+                // Check duplicates
+                if (itemIds.Count != itemIds.Distinct().Count())
+                    throw new InvalidOperationException("Order contains duplicate electronic items.");
+
+                // Load all electronic items in ONE query
+                var itemDict = await LoadElectronicItemsAsync(itemIds);
+
                 decimal totalAmount = 0;
 
-                var itemIds = new HashSet<int>();
+                // Loop through order line items
                 foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
                 {
+                    if (!itemDict.TryGetValue(orderItem.E_ItemID, out var electronicItem))
+                        throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
+
                     if (orderItem.Quantity <= 0)
                         throw new InvalidOperationException($"Invalid quantity for item {orderItem.E_ItemID}.");
-
-                    if (!itemIds.Add(orderItem.E_ItemID))
-                        throw new InvalidOperationException($"Duplicate item in order: {orderItem.E_ItemID}");
-
-                    var electronicItem = await _electronicItemRepository.GetByIdAsync(orderItem.E_ItemID);
-                    if (electronicItem == null)
-                        throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
 
                     if (electronicItem.QOH < orderItem.Quantity)
                         throw new InvalidOperationException(
                             $"Insufficient stock for {electronicItem.ElectronicItemName}");
 
-                    // subtotal
+                    // Pricing
                     orderItem.UnitPrice = electronicItem.Price;
                     orderItem.SubTotal = orderItem.Quantity * electronicItem.Price;
                     totalAmount += orderItem.SubTotal;
 
-                    // deduct stock
+                    // Deduct stock in memory
                     electronicItem.QOH -= orderItem.Quantity;
-                    await _electronicItemRepository.UpdateAsync(
-                        electronicItem.ElectronicItemID,
-                        electronicItem);
                 }
 
-                // Apply order data
+                // Update order metadata
                 customerOrder.TotalAmount = totalAmount;
                 customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
                 customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
 
-                // Add order (EFCore will insert line items)
+                // Add order — EFCore will detect all changes (order + stock)
                 await _repository.AddAsync(customerOrder);
 
-                // Persist everything in one atomic operation
+                // Save everything together
                 await _unitOfWork.CommitAsync();
 
                 _logger.LogInformation(
@@ -103,10 +109,16 @@ namespace WebApplication1.Services.ServiceImpl
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-
                 _logger.LogError(ex, "Failed to create customer order.");
                 throw;
             }
+        }
+
+        // Helper method : Loads multiple ElectronicItem entities in one DB call and returns them as a Dictionary.
+        private async Task<Dictionary<int, ElectronicItem>> LoadElectronicItemsAsync(IEnumerable<int> ids)
+        {
+            var items = await _electronicItemRepository.GetAllByIdsAsync(ids.ToList());
+            return items.ToDictionary(x => x.ElectronicItemID);
         }
 
         public async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto request)
@@ -228,132 +240,68 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////
-        //Helper method : to Update PaymentStatus
-        private async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(int id, OrderPaymentStatusEnum newOrderPaymentStatus)
+        public async Task<CustomerOrder?> UpdateCustomerOrderPaymentStatusAsync(CustomerOrderPaymentStatusChangeRequestDto request)
         {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
+            var order = await _repository.GetByIdAsync(request.OrderID);
+            if (order == null)
                 throw new Exception("Customer order not found");
 
-            var oldPayment = existing.OrderPaymentStatus;
+            var oldStatus = order.OrderPaymentStatus;
 
-            if (oldPayment == newOrderPaymentStatus)
-                return existing; // No change
+            // No change
+            if (oldStatus == request.NewPaymentStatus)
+                return order;
 
-            switch (oldPayment)
+            // Validate allowed transitions
+            switch (oldStatus)
             {
                 case OrderPaymentStatusEnum.Partially_Paid:
-                    if (newOrderPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
-                        newOrderPaymentStatus != OrderPaymentStatusEnum.Overdue)
-                        throw new InvalidOperationException("Partially paid orders can only move to 'Fully_Paid' or 'Overdue'.");
+                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
+                        request.NewPaymentStatus != OrderPaymentStatusEnum.Overdue)
+                        throw new InvalidOperationException(
+                            "Partially paid orders can only move to 'Fully_Paid', or 'Overdue'.");
                     break;
 
                 case OrderPaymentStatusEnum.Fully_Paid:
-                    if (newOrderPaymentStatus != OrderPaymentStatusEnum.Refunded)
-                        throw new InvalidOperationException("Fully paid orders can only move to 'Refunded'.");
+                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Refunded)
+                        throw new InvalidOperationException(
+                            "Fully paid orders can only move to 'Refunded'.");
                     break;
 
                 case OrderPaymentStatusEnum.Overdue:
-                    if (newOrderPaymentStatus != OrderPaymentStatusEnum.Fully_Paid)
-                        throw new InvalidOperationException("Overdue orders can only move to 'Fully_Paid'.");
+                    if (request.NewPaymentStatus != OrderPaymentStatusEnum.Fully_Paid &&
+                        request.NewPaymentStatus != OrderPaymentStatusEnum.Partially_Paid)
+                        throw new InvalidOperationException(
+                            "Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
                     break;
 
                 case OrderPaymentStatusEnum.Refunded:
-                    throw new InvalidOperationException("Refunded orders cannot change payment status.");
+                    throw new InvalidOperationException(
+                        "Refunded orders cannot change payment status.");
             }
 
-            existing.OrderPaymentStatus = newOrderPaymentStatus;
+            // Check total paid so far
+            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
 
-            await _repository.UpdateAsync(id, existing);
-            _logger.LogInformation("Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}", existing.OrderID, existing.OrderPaymentStatus);
+            // If payment is now complete, we override with Fully Paid
+            if (totalPaid >= order.TotalAmount)
+            {
+                order.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
+            }
+            else
+            {
+                // Otherwise use requested status
+                order.OrderPaymentStatus = request.NewPaymentStatus;
+            }
 
-            return existing;
+            await _repository.UpdateAsync(request.OrderID, order);
+            _logger.LogInformation(
+                "Customer payment status updated: Id={Id}, PaymentStatus={PaymentStatus}",
+                order.OrderID, order.OrderPaymentStatus);
+
+            return order;
         }
-
-
 
         //Custom Query Operations
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null)

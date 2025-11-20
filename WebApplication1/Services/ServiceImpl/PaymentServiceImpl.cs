@@ -1,6 +1,7 @@
 using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.RequestDto.Payment;
+using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
@@ -206,26 +207,13 @@ namespace WebApplication1.Services.ServiceImpl
             await _bNPL_PlanService.UpdateBNPL_PlanAsync(plan.Bnpl_PlanID, plan);
 
             // update customer order based on new state
-            await UpdateCustomerOrderPaymentState(plan.OrderID);
-        }
-
-        //Helper Method : customer order
-        private async Task UpdateCustomerOrderPaymentState(int orderId)
-        {
-            var order = await _customerOrderService.GetCustomerOrderByIdAsync(orderId);
-            if (order == null)
-                return;
-
-            // Calculate total paid
-            var totalPaid = await _cashflowService.SumCashflowsByOrderAsync(orderId);
-
-            if (totalPaid >= order.TotalAmount)
+            var request = new CustomerOrderPaymentStatusChangeRequestDto
             {
-                order.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
-            }
+                OrderID = plan.OrderID,
+                NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid,
+            };
 
-            //await _customerOrderService.UpdateCustomerOrderAsync(orderId, order);
+            await _customerOrderService.UpdateCustomerOrderPaymentStatusAsync(request);
         }
     }
 }
