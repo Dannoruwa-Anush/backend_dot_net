@@ -56,7 +56,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (duplicate)
                 throw new Exception($"Brand with name '{brand.BrandName}' already exists.");
 
-            var updatedBrand = await _repository.UpdateBrandAsync(id, brand);
+            var updatedBrand = await _repository.UpdateAsync(id, brand);
             await _unitOfWork.SaveChangesAsync();
 
             if (updatedBrand != null)

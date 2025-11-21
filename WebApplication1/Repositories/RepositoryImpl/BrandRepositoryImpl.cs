@@ -28,7 +28,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(Brand brand) =>
             await _context.Brands.AddAsync(brand);
 
-        public async Task<Brand?> UpdateBrandAsync(int id, Brand brand)
+        public async Task<Brand?> UpdateAsync(int id, Brand brand)
         {
             var existing = await _context.Brands.FindAsync(id);
             if (existing == null)

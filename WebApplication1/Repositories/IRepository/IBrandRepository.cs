@@ -9,7 +9,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<IEnumerable<Brand>> GetAllAsync();
         Task<Brand?> GetByIdAsync(int id);
         Task AddAsync(Brand brand);
-        Task<Brand?> UpdateBrandAsync(int id, Brand brand);
+        Task<Brand?> UpdateAsync(int id, Brand brand);
         Task<bool> DeleteAsync(int id);
 
         //Custom Query Operations
