@@ -11,19 +11,16 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICustomerRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
 
-        private readonly ICustomerOrderRepository _customerOrderRepository;
-
         //logger: for auditing
         private readonly ILogger<CustomerServiceImpl> _logger;
 
         // Constructor
-        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, ILogger<CustomerServiceImpl> logger)
+        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-            _customerOrderRepository = customerOrderRepository;
-            _logger = logger;
+            _repository     = repository;
+            _unitOfWork     = unitOfWork;
+            _logger         = logger;
         }
 
         //CRUD operations
