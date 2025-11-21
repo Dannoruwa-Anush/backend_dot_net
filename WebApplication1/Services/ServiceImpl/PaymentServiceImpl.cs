@@ -2,6 +2,7 @@ using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.RequestDto.StatusChange;
+using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
@@ -45,8 +46,8 @@ namespace WebApplication1.Services.ServiceImpl
 
         ICustomerOrderService customerOrderService,
         ICashflowService cashflowService,
-        IBNPL_InstallmentService bNPL_InstallmentService, 
-        IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, 
+        IBNPL_InstallmentService bNPL_InstallmentService,
+        IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
         IBNPL_PlanService bNPL_PlanService,
 
         ILogger<PaymentServiceImpl> logger)
@@ -66,7 +67,7 @@ namespace WebApplication1.Services.ServiceImpl
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
 
-             _logger = logger;
+            _logger = logger;
         }
 
         // Full Payment
@@ -88,7 +89,7 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 2. Update customer order payment status to Fully Paid
-                var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto{OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid});
+                var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid });
                 await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
@@ -158,14 +159,15 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         // BNPL : Installment Payment
-        public async Task ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
+        public async Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
             // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // 1. Apply BNPL installment payment
-                var paymentResult = await _bNPL_InstallmentService.ApplyBnplInstallmentPaymentAsync(paymentRequest);
+                var (paymentResult, updatedInstallments) = await _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(paymentRequest);
+                await _bNPL_InstallmentRepository.UpdateRangeAsync(updatedInstallments);
                 _logger.LogInformation("Applied installment payment: {PaymentResult}", paymentResult);
 
                 // 2. Retrieve associated BNPL plan
@@ -188,6 +190,8 @@ namespace WebApplication1.Services.ServiceImpl
                 // 6. Commit transaction
                 await _unitOfWork.CommitAsync();
                 _logger.LogInformation("BNPL installment payment processed successfully for OrderID={OrderId}", paymentRequest.OrderId);
+
+                return paymentResult;
             }
             catch (Exception ex)
             {
@@ -242,7 +246,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _bNPL_PlanRepository.UpdateAsync(plan.Bnpl_PlanID, plan);
 
             // update customer order based on new state
-            var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto{OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid});
+            var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid });
             await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
         }
     }

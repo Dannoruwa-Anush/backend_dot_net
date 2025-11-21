@@ -56,144 +56,6 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId) =>
             await _repository.GetAllByPlanIdAsync(planId);
 
-        //Payment : Main Driver
-        public async Task<BnplInstallmentPaymentResultDto> ApplyBnplInstallmentPaymentAsync(PaymentRequestDto request)
-        {
-            // Load the customer order
-            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
-            if (order == null)
-                throw new Exception("Customer order not found.");
-
-            var planId = order.BNPL_PLAN!.Bnpl_PlanID;
-
-            var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            // Get unsettled installments up to today
-            var unsettledInstallments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
-
-            if (!unsettledInstallments.Any())
-                throw new Exception("No unsettled installments found.");
-
-            var response = new BnplInstallmentPaymentResultDto();
-            decimal remaining = request.PaymentAmount;
-
-            foreach (var inst in unsettledInstallments)
-            {
-                if (remaining <= 0)
-                    break;
-
-                var breakdown = ApplyPaymentToSingleInstallment(inst, ref remaining);
-                response.PerInstallmentBreakdown.Add(breakdown);
-            }
-
-            return response;
-        }
-
-        //Helper Method : 
-        private BnplPerInstallmentPaymentBreakdownResultDto ApplyPaymentToSingleInstallment(BNPL_Installment inst, ref decimal remainingPayment)
-        {
-            var breakdown = new BnplPerInstallmentPaymentBreakdownResultDto
-            {
-                InstallmentId = inst.InstallmentID
-            };
-
-            // ******** STEP 1: Arrears (Base not fully paid and installment overdue) ********
-            decimal arrears = Math.Max(inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase, 0m);
-
-            if (arrears > 0 && remainingPayment > 0)
-            {
-                var applied = Math.Min(arrears, remainingPayment);
-                inst.AmountPaid_AgainstArrears += applied;
-                remainingPayment -= applied;
-                breakdown.AppliedToArrears = applied;
-            }
-
-            // ******** STEP 2: Late Interest ********
-            if (inst.LateInterest > 0 && remainingPayment > 0)
-            {
-                var applied = Math.Min(inst.LateInterest, remainingPayment);
-                inst.LateInterest -= applied;
-                inst.AmountPaid_AgainstLateInterest += applied;
-                remainingPayment -= applied;
-                breakdown.AppliedToLateInterest = applied;
-            }
-
-            // ******** STEP 3: Base Installment Amount ********
-            decimal baseRemaining = Math.Max(inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase, 0m);
-
-            if (baseRemaining > 0 && remainingPayment > 0)
-            {
-                var applied = Math.Min(baseRemaining, remainingPayment);
-                inst.AmountPaid_AgainstBase += applied;
-                remainingPayment -= applied;
-                breakdown.AppliedToBase = applied;
-            }
-
-            // ******** STEP 4: Overpayment ********
-            if (remainingPayment > 0)
-            {
-                inst.OverPaymentCarried += remainingPayment;
-                breakdown.OverPayment = remainingPayment;
-                remainingPayment = 0;
-            }
-
-            inst.LastPaymentDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            // ******** STATUS UPDATES ********
-            bool fullyPaid = inst.TotalPaid >= inst.TotalDueAmount;
-            bool overdue = inst.Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            if (fullyPaid)
-            {
-                inst.Bnpl_Installment_Status =
-                    overdue ? BNPL_Installment_StatusEnum.Paid_Late : BNPL_Installment_StatusEnum.Paid_OnTime;
-            }
-            else
-            {
-                if (inst.TotalPaid > 0)
-                {
-                    inst.Bnpl_Installment_Status =
-                        overdue ? BNPL_Installment_StatusEnum.PartiallyPaid_Late : BNPL_Installment_StatusEnum.PartiallyPaid_OnTime;
-                }
-                else
-                {
-                    inst.Bnpl_Installment_Status =
-                        overdue ? BNPL_Installment_StatusEnum.Overdue : BNPL_Installment_StatusEnum.Pending;
-                }
-            }
-
-            breakdown.NewStatus = inst.Bnpl_Installment_Status.ToString();
-            return breakdown;
-        }
-
-        //Cancel Installment
-        public async Task<BNPL_Installment?> CancelInstallmentAsync(int id)
-        {
-            var installment = await _repository.GetByIdAsync(id)
-                ?? throw new Exception("Installment not found.");
-
-            var plan = installment.BNPL_PLAN;
-            if (plan?.CustomerOrder == null)
-                throw new Exception("Associated order not found.");
-
-            var order = plan.CustomerOrder;
-
-            if (order.ShippedDate != null)
-            {
-                var deliveredAt = order.DeliveredDate;
-                if (deliveredAt != null && DateTime.UtcNow > deliveredAt.Value.AddDays(BnplSystemConstants.FreeTrialPeriodDays))
-                    throw new Exception($"Cancellation not allowed after {BnplSystemConstants.FreeTrialPeriodDays} days of delivery.");
-            }
-
-            installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Refunded;
-            installment.UpdatedAt = DateTime.UtcNow;
-
-            await _repository.UpdateAsync(id, installment);
-            _logger.LogInformation("Installment {Id} cancelled successfully.", id);
-
-            return installment;
-        }
-
         //Handle : Overdue Installments (LateIntrest + Arreas)
         public async Task ApplyLateInterestForAllPlansAsync()
         {
@@ -201,7 +63,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (!activePlans.Any()) return;
 
             // Use single transaction for all plans
-            await _unitOfWork.BeginTransactionAsync();;
+            await _unitOfWork.BeginTransactionAsync(); ;
             try
             {
                 var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -294,8 +156,124 @@ namespace WebApplication1.Services.ServiceImpl
                     Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
                 });
             }
-            
+
             return installments;
+        }
+
+        //Payment : Main Driver
+        public async Task<(BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)>BuildBnplInstallmentSettlementAsync(PaymentRequestDto request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+                throw new InvalidOperationException("Customer order not found.");
+
+            var planId = order.BNPL_PLAN!.Bnpl_PlanID;
+            var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            var installments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
+
+            if (!installments.Any())
+                throw new InvalidOperationException("No unsettled installments found.");
+
+            var response = new BnplInstallmentPaymentResultDto();
+            decimal remaining = request.PaymentAmount;
+
+            foreach (var inst in installments)
+            {
+                if (remaining <= 0)
+                    break;
+
+                var breakdown = ApplyPaymentToSingleInstallmentLogic(inst, ref remaining);
+                response.PerInstallmentBreakdown.Add(breakdown);
+            }
+
+            // Return both breakdown + modified entities
+            return (response, installments);
+        }
+
+        // Helper Method : apply payment for an installment
+        private BnplPerInstallmentPaymentBreakdownResultDto ApplyPaymentToSingleInstallmentLogic(
+            BNPL_Installment inst,
+            ref decimal remainingPayment)
+        {
+            var breakdown = new BnplPerInstallmentPaymentBreakdownResultDto
+            {
+                InstallmentId = inst.InstallmentID
+            };
+
+            // ===== STEP 1 – Arrears =====
+            decimal arrears = Math.Max(inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase, 0m);
+
+            if (arrears > 0 && remainingPayment > 0)
+            {
+                var applied = Math.Min(arrears, remainingPayment);
+                inst.AmountPaid_AgainstArrears += applied;
+                remainingPayment -= applied;
+                breakdown.AppliedToArrears = applied;
+            }
+
+            // ===== STEP 2 – Late Interest =====
+            if (inst.LateInterest > 0 && remainingPayment > 0)
+            {
+                var applied = Math.Min(inst.LateInterest, remainingPayment);
+                inst.LateInterest -= applied;
+                inst.AmountPaid_AgainstLateInterest += applied;
+                remainingPayment -= applied;
+                breakdown.AppliedToLateInterest = applied;
+            }
+
+            // ===== STEP 3 – Base Installment =====
+            decimal baseRemaining = Math.Max(inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase, 0m);
+
+            if (baseRemaining > 0 && remainingPayment > 0)
+            {
+                var applied = Math.Min(baseRemaining, remainingPayment);
+                inst.AmountPaid_AgainstBase += applied;
+                remainingPayment -= applied;
+                breakdown.AppliedToBase = applied;
+            }
+
+            // ===== STEP 4 – Overpayment =====
+            if (remainingPayment > 0)
+            {
+                inst.OverPaymentCarried += remainingPayment;
+                breakdown.OverPayment = remainingPayment;
+                remainingPayment = 0;
+            }
+
+            inst.LastPaymentDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // ===== STATUS UPDATE =====
+            bool fullyPaid = inst.TotalPaid >= inst.TotalDueAmount;
+            bool overdue = inst.Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            if (fullyPaid)
+            {
+                inst.Bnpl_Installment_Status =
+                    overdue ? BNPL_Installment_StatusEnum.Paid_Late
+                            : BNPL_Installment_StatusEnum.Paid_OnTime;
+            }
+            else
+            {
+                if (inst.TotalPaid > 0)
+                {
+                    inst.Bnpl_Installment_Status =
+                        overdue ? BNPL_Installment_StatusEnum.PartiallyPaid_Late
+                                : BNPL_Installment_StatusEnum.PartiallyPaid_OnTime;
+                }
+                else
+                {
+                    inst.Bnpl_Installment_Status =
+                        overdue ? BNPL_Installment_StatusEnum.Overdue
+                                : BNPL_Installment_StatusEnum.Pending;
+                }
+            }
+
+            breakdown.NewStatus = inst.Bnpl_Installment_Status.ToString();
+            return breakdown;
         }
     }
 }

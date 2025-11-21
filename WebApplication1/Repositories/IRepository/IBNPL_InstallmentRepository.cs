@@ -8,7 +8,7 @@ namespace WebApplication1.Repositories.IRepository
         //CRUD operations
         Task<IEnumerable<BNPL_Installment>> GetAllAsync();
         Task<BNPL_Installment?> GetByIdAsync(int id);
-        Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment);
+        //Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment);
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);
@@ -20,5 +20,8 @@ namespace WebApplication1.Repositories.IRepository
         
         //Bulk insert
         Task AddRangeAsync(List<BNPL_Installment> installments);
+
+        //Bulk Update
+        Task UpdateRangeAsync(List<BNPL_Installment> installments);
     }
 }
