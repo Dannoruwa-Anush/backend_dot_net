@@ -18,13 +18,14 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICustomerOrderRepository _customerOrderRepository;
         private readonly IBNPL_PlanTypeRepository _bNPL_PlanTypeRepository;
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
+        private readonly IBNPL_PlanSettlementSummaryRepository _bNPL_PlanSettlementSummaryRepository;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
 
         //logger: for auditing
         private readonly ILogger<BNPL_InstallmentServiceImpl> _logger;
 
         // Constructor
-        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanTypeRepository bNPL_PlanTypeRepository, IBNPL_PlanRepository bNPL_PlanRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_InstallmentServiceImpl> logger)
+        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanTypeRepository bNPL_PlanTypeRepository, IBNPL_PlanRepository bNPL_PlanRepository, IBNPL_PlanSettlementSummaryRepository bNPL_PlanSettlementSummaryRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<BNPL_InstallmentServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
@@ -32,6 +33,7 @@ namespace WebApplication1.Services.ServiceImpl
             _customerOrderRepository = customerOrderRepository;
             _bNPL_PlanTypeRepository = bNPL_PlanTypeRepository;
             _bNPL_PlanRepository = bNPL_PlanRepository;
+            _bNPL_PlanSettlementSummaryRepository = bNPL_PlanSettlementSummaryRepository;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _logger = logger;
         }
@@ -116,7 +118,8 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.UpdateRangeAsync(overdueInstallments);
 
             // Snapshot after modifications
-            await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(planId);
+            var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(planId);
+            await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
         }
 
         //Builds the object without DB Access

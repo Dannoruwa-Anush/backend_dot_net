@@ -9,9 +9,10 @@ namespace WebApplication1.Services.IService
         //CRUD operations
 
         //Custom Query Operations
-        Task<BNPL_PlanSettlementSummary> GenerateSettlementAsync(int planId);
-
+        
         //simulator
         Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request);
+        //Builds the object without DB Access
+        Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId);
     }
 }

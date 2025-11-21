@@ -21,7 +21,7 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
         private readonly ICashflowRepository _cashflowRepository;
-
+        private readonly IBNPL_PlanSettlementSummaryRepository _bNPL_PlanSettlementSummaryRepository;
 
 
 
@@ -42,6 +42,7 @@ namespace WebApplication1.Services.ServiceImpl
         ICustomerOrderRepository customerOrderRepository,
         IBNPL_PlanRepository bNPL_PlanRepository,
         IBNPL_InstallmentRepository bNPL_InstallmentRepository,
+        IBNPL_PlanSettlementSummaryRepository bNPL_PlanSettlementSummaryRepository,
         ICashflowRepository cashflowRepository,
 
         ICustomerOrderService customerOrderService,
@@ -58,6 +59,7 @@ namespace WebApplication1.Services.ServiceImpl
             _customerOrderRepository = customerOrderRepository;
             _bNPL_PlanRepository = bNPL_PlanRepository;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
+            _bNPL_PlanSettlementSummaryRepository = bNPL_PlanSettlementSummaryRepository;
             _cashflowRepository = cashflowRepository;
 
 
@@ -143,8 +145,9 @@ namespace WebApplication1.Services.ServiceImpl
                 await _cashflowRepository.AddAsync(cashflow);
 
                 // Generate settlement snapshot
-                await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(bnpl_plan.Bnpl_PlanID);
-
+                var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnpl_plan.Bnpl_PlanID);
+                await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
+               
                 // Commit
                 await _unitOfWork.CommitAsync();
 
@@ -179,7 +182,8 @@ namespace WebApplication1.Services.ServiceImpl
                 await UpdateBnplPostPaymentStateAsync(plan);
 
                 // 4. Generate settlement snapshot
-                var settlementSnapshot = await _bnpl_planSettlementSummaryService.GenerateSettlementAsync(plan.Bnpl_PlanID);
+                var settlementSnapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(plan.Bnpl_PlanID);
+                await _bNPL_PlanSettlementSummaryRepository.AddAsync(settlementSnapshot);
                 _logger.LogInformation("Generated settlement snapshot for PlanID={PlanId}", plan.Bnpl_PlanID);
 
                 // 5. Generate cashflow record
