@@ -20,7 +20,7 @@ namespace WebApplication1.Services.ServiceImpl
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
-            _logger = logger;
+            _logger     = logger;
         }
 
         //CRUD operations
@@ -31,7 +31,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<ElectronicItem?> GetElectronicItemByIdAsync(int id)=>
             await _repository.GetByIdAsync(id);
         
-        public async Task<ElectronicItem> AddElectronicItemAsync(ElectronicItem electronicItem)
+        public async Task<ElectronicItem> AddElectronicItemWithSaveAsync(ElectronicItem electronicItem)
         {
             var duplicate = await _repository.ExistsByNameAsync(electronicItem.ElectronicItemName);
             if (duplicate)
@@ -44,7 +44,7 @@ namespace WebApplication1.Services.ServiceImpl
             return electronicItem;
         }
 
-        public async Task<ElectronicItem> UpdateElectronicItemAsync(int id, ElectronicItem electronicItem)
+        public async Task<ElectronicItem> UpdateElectronicItemWithSaveAsync(int id, ElectronicItem electronicItem)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -66,7 +66,7 @@ namespace WebApplication1.Services.ServiceImpl
             throw new Exception("Electronic item update failed.");
         }
 
-        public async Task DeleteElectronicItemAsync(int id)
+        public async Task DeleteElectronicItemWithSaveAsync(int id)
         {
             var deleted = await _repository.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
@@ -81,10 +81,8 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
-        {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
-        }
+        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null) =>
+            await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
 
         public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByCategoryIdAsync(int categoryId)=>
             await _repository.GetAllByCategoryAsync(categoryId);

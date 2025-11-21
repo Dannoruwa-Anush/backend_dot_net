@@ -75,7 +75,7 @@ namespace WebApplication1.Controllers
                     electronicItem.ElectronicItemImage = await _fileService.SaveFileAsync(electronicItemCreateDto.ImageFile, "uploads/images");
                 }
 
-                var created = await _service.AddElectronicItemAsync(electronicItem);
+                var created = await _service.AddElectronicItemWithSaveAsync(electronicItem);
                 var dto = _mapper.Map<ElectronicItemResponseDto>(created);
 
                 var response = new ApiResponseDto<ElectronicItemResponseDto>(201, "Electronic item created successfully", dto);
@@ -122,7 +122,7 @@ namespace WebApplication1.Controllers
                     electronicItem.ElectronicItemImage = existingItem.ElectronicItemImage;
                 }
 
-                var updated = await _service.UpdateElectronicItemAsync(id, electronicItem);
+                var updated = await _service.UpdateElectronicItemWithSaveAsync(id, electronicItem);
                 var dto = _mapper.Map<ElectronicItemResponseDto>(updated);
 
                 var response = new ApiResponseDto<ElectronicItemResponseDto>(200, "Electronic item updated successfully", dto);
@@ -156,7 +156,7 @@ namespace WebApplication1.Controllers
                 if (!string.IsNullOrEmpty(existingItem.ElectronicItemImage))
                     _fileService.DeleteFile(existingItem.ElectronicItemImage);
 
-                await _service.DeleteElectronicItemAsync(id);
+                await _service.DeleteElectronicItemWithSaveAsync(id);
 
                 var response = new ApiResponseDto<string>(204, "Electronic item deleted successfully");
                 return Ok(response);

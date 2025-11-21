@@ -8,9 +8,11 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsAsync();
         Task<ElectronicItem?> GetElectronicItemByIdAsync(int id);
-        Task<ElectronicItem> AddElectronicItemAsync(ElectronicItem electronicItem);
-        Task<ElectronicItem> UpdateElectronicItemAsync(int id, ElectronicItem electronicItem);
-        Task DeleteElectronicItemAsync(int id);
+
+        //Single Repository Operations (save immediately)
+        Task<ElectronicItem> AddElectronicItemWithSaveAsync(ElectronicItem electronicItem);
+        Task<ElectronicItem> UpdateElectronicItemWithSaveAsync(int id, ElectronicItem electronicItem);
+        Task DeleteElectronicItemWithSaveAsync(int id);
 
         //Custom Query Operations
         Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
