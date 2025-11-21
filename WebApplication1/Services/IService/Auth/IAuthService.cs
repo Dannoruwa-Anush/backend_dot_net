@@ -4,7 +4,9 @@ namespace WebApplication1.Services.IService.Auth
 {
     public interface IAuthService
     {
-        Task<User> RegisterUserAsync(User user);
+        //Single Repository Operations (save immediately)
+        Task<User> RegisterUserWithSaveAsync(User user);
+
         Task<(User user, string token)> LoginAsync(string email, string password);
     }
 }

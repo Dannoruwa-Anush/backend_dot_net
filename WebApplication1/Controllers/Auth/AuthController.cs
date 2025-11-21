@@ -34,7 +34,7 @@ namespace WebApplication1.Controllers.Auth
             try
             {
                 var user = _mapper.Map<User>(dto);
-                var created = await _service.RegisterUserAsync(user);
+                var created = await _service.RegisterUserWithSaveAsync(user);
 
                 var responseDto = _mapper.Map<LoginResponseDto>(created);
                 var response = new ApiResponseDto<LoginResponseDto>(201, "User registered successfully", responseDto);

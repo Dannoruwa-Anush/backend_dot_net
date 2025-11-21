@@ -24,14 +24,14 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         // Constructor
         public AuthServiceImpl(IUserRepository repository, IAppUnitOfWork unitOfWork, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
         {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-            _jwtSettings = jwtOptions.Value;
-            _logger = logger;
+            _repository     = repository;
+            _unitOfWork     = unitOfWork;
+            _jwtSettings    = jwtOptions.Value;
+            _logger         = logger;
         }
 
         //Register
-        public async Task<User> RegisterUserAsync(User user)
+        public async Task<User> RegisterUserWithSaveAsync(User user)
         {
             if (await _repository.EmailExistsAsync(user.Email))
                 throw new Exception($"User with email '{user.Email}' already exists.");
