@@ -65,7 +65,7 @@ namespace WebApplication1.Controllers
         {
             // RequestDto -> Model
             var customer = _mapper.Map<Customer>(customerCreateDto);
-            var created = await _service.AddCustomerAsync(customer);
+            var created = await _service.AddCustomerWithSaveAsync(customer);
 
             // Model -> ResponseDto
             var responseDto = _mapper.Map<CustomerResponseDto>(created);
@@ -82,7 +82,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model
                 var customer = _mapper.Map<Customer>(customerUpdateDto);
-                var updated = await _service.UpdateCustomerAsync(id, customer);
+                var updated = await _service.UpdateCustomerWithSaveAsync(id, customer);
 
                 // Model -> ResponseDto
                 var responseDto = _mapper.Map<CustomerResponseDto>(updated);

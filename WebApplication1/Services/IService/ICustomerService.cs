@@ -8,9 +8,10 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<Customer>> GetAllCustomersAsync();
         Task<Customer?> GetCustomerByIdAsync(int id);
-        Task<Customer> AddCustomerAsync(Customer customer);
-        Task<Customer> UpdateCustomerAsync(int id, Customer customer);
-        Task DeleteCustomerAsync(int id);
+
+        //Single Repository Operations (save immediately)
+        Task<Customer> AddCustomerWithSaveAsync(Customer customer);
+        Task<Customer> UpdateCustomerWithSaveAsync(int id, Customer customer);
 
         //Custom Query Operations
         Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);

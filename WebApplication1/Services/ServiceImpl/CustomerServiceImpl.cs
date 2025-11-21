@@ -34,7 +34,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Customer?> GetCustomerByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<Customer> AddCustomerAsync(Customer customer)
+        public async Task<Customer> AddCustomerWithSaveAsync(Customer customer)
         {
             var duplicate = await _repository.ExistsByPhoneNoAsync(customer.PhoneNo);
             if (duplicate)
@@ -47,7 +47,7 @@ namespace WebApplication1.Services.ServiceImpl
             return customer;
         }
 
-        public async Task<Customer> UpdateCustomerAsync(int id, Customer customer)
+        public async Task<Customer> UpdateCustomerWithSaveAsync(int id, Customer customer)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -67,29 +67,6 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             throw new Exception("Customer update failed.");
-        }
-
-        public async Task DeleteCustomerAsync(int id)
-        {
-            // Check if any CustomerOrders reference this customer
-            bool hasItems = await _customerOrderRepository.ExistsByCustomerAsync(id);
-            if (hasItems)
-            {
-                _logger.LogWarning("Cannot delete customer {Id} — associated customer orders exist.", id);
-                throw new InvalidOperationException("Cannot delete this customer because customer orders are associated with it.");
-            }
-
-            // Proceed with deletion if safe
-            var deleted = await _repository.DeleteAsync(id);
-            await _unitOfWork.SaveChangesAsync();
-            
-            if (!deleted)
-            {
-                _logger.LogWarning("Attempted to delete customer with id {Id}, but it does not exist.", id);
-                throw new Exception("Customer not found");
-            }
-
-            _logger.LogInformation("Customer deleted successfully: Id={Id}", id);
         }
 
         //Custom Query Operations
