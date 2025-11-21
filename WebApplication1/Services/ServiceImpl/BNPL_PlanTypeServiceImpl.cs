@@ -33,7 +33,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<BNPL_PlanType?> GetBNPL_PlanTypeByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<BNPL_PlanType> AddBNPL_PlanTypeAsync(BNPL_PlanType bNPL_PlanType)
+        public async Task<BNPL_PlanType> AddBNPL_PlanTypeWithSaveAsync(BNPL_PlanType bNPL_PlanType)
         {
             var duplicate = await _repository.ExistsByBNPL_PlanTypeNameAsync(bNPL_PlanType.Bnpl_PlanTypeName);
             if (duplicate)
@@ -46,7 +46,7 @@ namespace WebApplication1.Services.ServiceImpl
             return bNPL_PlanType;
         }
         
-        public async Task<BNPL_PlanType> UpdateBNPL_PlanTypeAsync(int id, BNPL_PlanType bNPL_PlanType)
+        public async Task<BNPL_PlanType> UpdateBNPL_PlanTypeWithSaveAsync(int id, BNPL_PlanType bNPL_PlanType)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -68,7 +68,7 @@ namespace WebApplication1.Services.ServiceImpl
             throw new Exception("BNPL plan type update failed.");
         }
 
-        public async Task DeleteBNPL_PlanTypeAsync(int id)
+        public async Task DeleteBNPL_PlanTypeWithSaveAsync(int id)
         {
             // Check if any BNPL_Plans reference this BNPL_PlanType
             bool hasItems = await _bnpl_planRepository.ExistsByBnplPlanTypeAsync(id);

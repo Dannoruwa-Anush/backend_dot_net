@@ -68,7 +68,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model
                 var bNPL_PlanType = _mapper.Map<BNPL_PlanType>(bNPL_PlanTypeCreateDto);
-                var created = await _service.AddBNPL_PlanTypeAsync(bNPL_PlanType);
+                var created = await _service.AddBNPL_PlanTypeWithSaveAsync(bNPL_PlanType);
 
                 // Model -> ResponseDto
                 var responseDtos = _mapper.Map<BNPL_PlanTypeResponseDto>(created);
@@ -98,7 +98,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model
                 var bNPL_PlanType = _mapper.Map<BNPL_PlanType>(bNPL_PlanTypeUpdateDto);
-                var updated = await _service.UpdateBNPL_PlanTypeAsync(id, bNPL_PlanType);
+                var updated = await _service.UpdateBNPL_PlanTypeWithSaveAsync(id, bNPL_PlanType);
 
                 // Model -> ResponseDto
                 var responseDtos = _mapper.Map<BNPL_PlanTypeResponseDto>(updated);
@@ -125,7 +125,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                await _service.DeleteBNPL_PlanTypeAsync(id);
+                await _service.DeleteBNPL_PlanTypeWithSaveAsync(id);
 
                 var response = new ApiResponseDto<string>(204, "BNPL Plan Type deleted successfully");
                 return Ok(response);

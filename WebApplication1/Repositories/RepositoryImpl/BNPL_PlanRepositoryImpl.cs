@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -23,11 +22,17 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_PLAN>> GetAllAsync() =>
+            await _context.BNPL_PLANs.ToListAsync();
+
+        public async Task<IEnumerable<BNPL_PLAN>> GetAllWithBnplPlanAsync() =>
             await _context.BNPL_PLANs
                     .Include(bpl => bpl.BNPL_PlanType)
                     .ToListAsync();
 
         public async Task<BNPL_PLAN?> GetByIdAsync(int id) =>
+            await _context.BNPL_PLANs.FindAsync(id);
+
+        public async Task<BNPL_PLAN?> GetWithPlanTypeCustomerDetailsByIdAsync(int id) =>
             await _context.BNPL_PLANs
                     .Include(bpl => bpl.BNPL_PlanType)
                     .Include(bpl => bpl.CustomerOrder)

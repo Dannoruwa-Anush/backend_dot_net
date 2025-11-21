@@ -31,10 +31,10 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_PLAN>> GetAllBNPL_PlansAsync() =>
-            await _repository.GetAllAsync();
+            await _repository.GetAllWithBnplPlanAsync();
 
         public async Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id) =>
-            await _repository.GetByIdAsync(id);
+            await _repository.GetWithPlanTypeCustomerDetailsByIdAsync(id);
 
         //Custom Query Operations
         public async Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null)
@@ -69,7 +69,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Amortized monthly payment formula
             /*
-            Note :
+                Note :
                 Monthly payment is fixed : makes budgeting predictable
                 Interest portion decreases over time : because it’s always calculated on the remaining balance
                 Principal portion increases over time : so by the last installment, almost the entire payment goes to principal
@@ -79,8 +79,7 @@ namespace WebApplication1.Services.ServiceImpl
             decimal totalRepaymentAmount = monthlyInstallment * installmentCount;
             decimal totalInterestAmount = totalRepaymentAmount - principalAmount;
 
-            _logger.LogInformation("BNPL Calculation done for PlanType={Plan}, PrincipalAmount ={PrincipalAmount}, Installments={Count}, Rate={Rate}", planType.Bnpl_PlanTypeName, principalAmount, request.InstallmentCount, planType.InterestRate
-            );
+            _logger.LogInformation("BNPL Calculation done for PlanType={Plan}, PrincipalAmount ={PrincipalAmount}, Installments={Count}, Rate={Rate}", planType.Bnpl_PlanTypeName, principalAmount, request.InstallmentCount, planType.InterestRate);
 
             return new BNPLInstallmentCalculatorResponseDto
             {
