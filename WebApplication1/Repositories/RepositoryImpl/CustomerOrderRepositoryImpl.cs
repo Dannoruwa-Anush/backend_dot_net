@@ -24,17 +24,25 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<IEnumerable<CustomerOrder>> GetAllAsync() =>
             await _context.CustomerOrders.ToListAsync();
 
+        public async Task<IEnumerable<CustomerOrder>> GetAllWithCustomerDetailsAsync() =>
+            await _context.CustomerOrders
+                .Include(o => o.Customer)
+                    .ThenInclude(ou => ou.User)
+                .ToListAsync();
+
         public async Task<CustomerOrder?> GetByIdAsync(int id) =>
+            await _context.CustomerOrders.FindAsync(id);
+
+        public async Task<CustomerOrder?> GetWithCustomerOrderDetailsByIdAsync(int id) =>
             await _context.CustomerOrders
                 .Include(o => o.Customer)
                     .ThenInclude(ou => ou.User)
                 .Include(o => o.CustomerOrderElectronicItems)
                     .ThenInclude(oi => oi.ElectronicItem)
                 .Include(o => o.BNPL_PLAN!)
-                    .ThenInclude(p => p.BNPL_Installments)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
 
-        public async Task<CustomerOrder?> GetByIdWithAllRelatedAsync(int orderId)
+        public async Task<CustomerOrder?> GetWithFinancialDetailsByIdAsync(int id)
         {
             return await _context.CustomerOrders
                 .Include(o => o.CustomerOrderElectronicItems)
@@ -44,7 +52,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Include(o => o.BNPL_PLAN!)
                     .ThenInclude(p => p.BNPL_PlanSettlementSummaries)
                 .Include(o => o.Cashflows)
-                .FirstOrDefaultAsync(o => o.OrderID == orderId);
+                .FirstOrDefaultAsync(o => o.OrderID == id);
         }
 
         public async Task AddAsync(CustomerOrder customerOrder) =>

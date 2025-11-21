@@ -36,10 +36,10 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<CustomerOrder>> GetAllCustomerOrdersAsync() =>
-            await _repository.GetAllAsync();
+            await _repository.GetAllWithCustomerDetailsAsync();
 
         public async Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id) =>
-            await _repository.GetByIdAsync(id);
+            await _repository.GetWithCustomerOrderDetailsByIdAsync(id);
 
         public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrder customerOrder)
         {
@@ -131,7 +131,7 @@ namespace WebApplication1.Services.ServiceImpl
             try
             {
                 // Fetch order with all related entities in one query
-                var order = await _repository.GetByIdWithAllRelatedAsync(request.OrderID);
+                var order = await _repository.GetWithFinancialDetailsByIdAsync(request.OrderID);
                 if (order == null)
                     throw new Exception("Customer order not found");
 
