@@ -21,9 +21,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<Employee>> GetAllAsync() =>
+            await _context.Employees.ToListAsync();
+
+        public async Task<IEnumerable<Employee>> GetAllWithUserDetailsAsync() =>
             await _context.Employees
                 .Include(em => em.User)
-                .ToListAsync();
+                .ToListAsync();    
 
         public async Task<Employee?> GetByIdAsync(int id) =>
             await _context.Employees.FindAsync(id);

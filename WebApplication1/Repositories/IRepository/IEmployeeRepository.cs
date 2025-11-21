@@ -7,6 +7,7 @@ namespace WebApplication1.Repositories.IRepository
     {
          //CRUD operations
         Task<IEnumerable<Employee>> GetAllAsync();
+        Task<IEnumerable<Employee>> GetAllWithUserDetailsAsync();
         Task<Employee?> GetByIdAsync(int id);
         Task<Employee?> GetWithUserDetailsByIdAsync(int id);
         Task AddAsync(Employee employee);

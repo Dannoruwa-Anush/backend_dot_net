@@ -25,7 +25,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<Employee>> GetAllEmployeesAsync() =>
-            await _repository.GetAllAsync();
+            await _repository.GetAllWithUserDetailsAsync();
 
         public async Task<Employee?> GetEmployeeByIdAsync(int id) =>
             await _repository.GetWithUserDetailsByIdAsync(id);
