@@ -8,8 +8,10 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<Employee>> GetAllEmployeesAsync();
         Task<Employee?> GetEmployeeByIdAsync(int id);
-        Task<Employee> AddEmployeeAsync(Employee employee);
-        Task<Employee> UpdateEmployeeAsync(int id, Employee employee);
+
+        //Single Repository Operations (save immediately)
+        Task<Employee> AddEmployeeWithSaveAsync(Employee employee);
+        Task<Employee> UpdateEmployeeWithSaveAsync(int id, Employee employee);
 
         //Custom Query Operations
         Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? positionId, string? searchKey = null);

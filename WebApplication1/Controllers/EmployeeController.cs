@@ -65,7 +65,7 @@ namespace WebApplication1.Controllers
         {
             // RequestDto -> Model
             var employee = _mapper.Map<Employee>(employeeCreateDto);
-            var created = await _service.AddEmployeeAsync(employee);
+            var created = await _service.AddEmployeeWithSaveAsync(employee);
 
             var responseDto = _mapper.Map<EmployeeResponseDto>(created);
             var response = new ApiResponseDto<EmployeeResponseDto>(201, "Employee created successfully", responseDto);
@@ -81,7 +81,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model
                 var employee = _mapper.Map<Employee>(employeeUpdateDto);
-                var updated = await _service.UpdateEmployeeAsync(id, employee);
+                var updated = await _service.UpdateEmployeeWithSaveAsync(id, employee);
                 
                 var responseDto = _mapper.Map<EmployeeResponseDto>(updated);
                 var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee updated successfully", responseDto);

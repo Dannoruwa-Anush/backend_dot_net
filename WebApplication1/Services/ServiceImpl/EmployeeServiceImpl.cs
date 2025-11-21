@@ -30,7 +30,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Employee?> GetEmployeeByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
         
-        public async Task<Employee> AddEmployeeAsync(Employee employee)
+        public async Task<Employee> AddEmployeeWithSaveAsync(Employee employee)
         {
             await _repository.AddAsync(employee);
             await _unitOfWork.SaveChangesAsync();
@@ -39,7 +39,7 @@ namespace WebApplication1.Services.ServiceImpl
             return employee;
         }
 
-        public async Task<Employee> UpdateEmployeeAsync(int id, Employee employee)
+        public async Task<Employee> UpdateEmployeeWithSaveAsync(int id, Employee employee)
         {
             var existingEmployee = _repository.GetByIdAsync(id);
             if (existingEmployee == null)
