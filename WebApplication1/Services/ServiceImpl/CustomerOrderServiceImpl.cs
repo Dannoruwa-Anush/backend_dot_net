@@ -42,7 +42,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder)
+        public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrder customerOrder)
         {
             // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
@@ -122,7 +122,7 @@ namespace WebApplication1.Services.ServiceImpl
             return items.ToDictionary(x => x.ElectronicItemID);
         }
 
-        public async Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto request)
+        public async Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(CustomerOrderStatusChangeRequestDto request)
         {
             // Current time
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);

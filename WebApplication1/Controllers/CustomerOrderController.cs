@@ -72,7 +72,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model
                 var customerOrder = _mapper.Map<CustomerOrder>(customerCreateDto);
-                var created = await _service.AddCustomerOrderAsync(customerOrder);
+                var created = await _service.CreateCustomerOrderWithTransactionAsync(customerOrder);
 
                 // Model -> ResponseDto
                 var responseDto = _mapper.Map<CustomerOrderResponseDto>(created);
@@ -100,7 +100,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var updatedOrder = await _service.UpdateCustomerOrderStatusAsync(request);
+                var updatedOrder = await _service.ModifyCustomerOrderStatusWithTransactionAsync(request);
 
                 var responseDto = _mapper.Map<CustomerOrderResponseDto>(updatedOrder);
                 var response = new ApiResponseDto<CustomerOrderResponseDto>(

@@ -9,14 +9,16 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<CustomerOrder>> GetAllCustomerOrdersAsync();
         Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id);
-        Task<CustomerOrder> AddCustomerOrderAsync(CustomerOrder customerOrder);
-        Task<CustomerOrder?> UpdateCustomerOrderStatusAsync(CustomerOrderStatusChangeRequestDto requet);
+
+        //Multiple Repository Operations (transactional)
+        Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrder customerOrder);
+        Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(CustomerOrderStatusChangeRequestDto requet);
 
         //Custom Query Operations
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
 
-        // Builds the object without DB Access
+        //Shared Internal Operations Used by Multiple Repositories
         Task<CustomerOrder> BuildCustomerOrderPaymentStatusUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request);
     }
 }
