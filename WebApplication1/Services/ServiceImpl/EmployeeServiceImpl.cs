@@ -28,7 +28,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.GetAllAsync();
 
         public async Task<Employee?> GetEmployeeByIdAsync(int id) =>
-            await _repository.GetByIdAsync(id);
+            await _repository.GetWithUserDetailsByIdAsync(id);
         
         public async Task<Employee> AddEmployeeWithSaveAsync(Employee employee)
         {

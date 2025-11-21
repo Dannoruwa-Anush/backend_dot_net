@@ -26,6 +26,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .ToListAsync();
 
         public async Task<Employee?> GetByIdAsync(int id) =>
+            await _context.Employees.FindAsync(id);
+            
+        public async Task<Employee?> GetWithUserDetailsByIdAsync(int id) =>
             await _context.Employees
                     .Include(em => em.User)
                     .FirstOrDefaultAsync(em => em.EmployeeID == id);
