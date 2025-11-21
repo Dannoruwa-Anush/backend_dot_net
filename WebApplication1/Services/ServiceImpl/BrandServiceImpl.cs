@@ -33,7 +33,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Brand?> GetBrandByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<Brand> AddBrandAsync(Brand brand)
+        public async Task<Brand> AddBrandWithSaveAsync(Brand brand)
         {
             var duplicate = await _repository.ExistsByBrandNameAsync(brand.BrandName);
             if (duplicate)
@@ -46,7 +46,7 @@ namespace WebApplication1.Services.ServiceImpl
             return brand;
         }
 
-        public async Task<Brand> UpdateBrandAsync(int id, Brand brand)
+        public async Task<Brand> UpdateBrandWithSaveAsync(int id, Brand brand)
         {
             var existingBrand = await _repository.GetByIdAsync(id);
             if (existingBrand == null)
@@ -68,7 +68,7 @@ namespace WebApplication1.Services.ServiceImpl
             throw new Exception("Category update failed.");
         }
 
-        public async Task DeleteBrandAsync(int id)
+        public async Task DeleteBrandWithSaveAsync(int id)
         {
             // Check if any ElectronicItems reference this brand
             bool hasItems = await _electronicItemRepository.ExistsByBrandAsync(id);

@@ -8,9 +8,11 @@ namespace WebApplication1.Services.IService
         //CRUD operations
         Task<IEnumerable<Brand>> GetAllBrandsAsync();
         Task<Brand?> GetBrandByIdAsync(int id);
-        Task<Brand> AddBrandAsync(Brand brand);
-        Task<Brand> UpdateBrandAsync(int id, Brand brand);
-        Task DeleteBrandAsync(int id);
+
+        //Single Repository Operations (save immediately)
+        Task<Brand> AddBrandWithSaveAsync(Brand brand);
+        Task<Brand> UpdateBrandWithSaveAsync(int id, Brand brand);
+        Task DeleteBrandWithSaveAsync(int id);
 
         //Custom Query Operations
         Task<PaginationResultDto<Brand>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);

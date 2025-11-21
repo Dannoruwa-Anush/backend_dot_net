@@ -65,7 +65,7 @@ namespace WebApplication1.Controllers
             try
             {   // RequestDto -> Model
                 var brand = _mapper.Map<Brand>(brandCreateDto);
-                var created = await _service.AddBrandAsync(brand);
+                var created = await _service.AddBrandWithSaveAsync(brand);
 
                 // Model -> ResponseDto
                 var responseDto = _mapper.Map<BrandResponseDto>(created);
@@ -92,7 +92,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model
                 var brand = _mapper.Map<Brand>(brandUpdateDto);
-                var updated = await _service.UpdateBrandAsync(id, brand);
+                var updated = await _service.UpdateBrandWithSaveAsync(id, brand);
 
                 // Model -> ResponseDto
                 var responseDto = _mapper.Map<BrandResponseDto>(updated);
@@ -119,7 +119,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                await _service.DeleteBrandAsync(id);
+                await _service.DeleteBrandWithSaveAsync(id);
 
                 var response = new ApiResponseDto<string>(204, "Brand deleted successfully");
                 return Ok(response);
