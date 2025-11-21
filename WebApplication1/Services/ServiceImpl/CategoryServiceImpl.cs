@@ -10,6 +10,7 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICategoryRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
+        
         private readonly IElectronicItemRepository _electronicItemRepository;
 
         //logger: for auditing

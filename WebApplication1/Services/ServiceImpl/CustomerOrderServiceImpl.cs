@@ -14,25 +14,24 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICustomerOrderRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
-        private readonly ICashflowRepository _cashflowRepository;
-        private readonly ICustomerOrderRepository _customerOrderRepository;
+
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
+        private readonly ICashflowRepository _cashflowRepository;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICashflowRepository cashflowRepository, ICustomerOrderRepository customerOrderRepository, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, ICashflowRepository cashflowRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-            _cashflowRepository = cashflowRepository;
-            _customerOrderRepository = customerOrderRepository;
-            _customerRepository = customerRepository;
+            _repository               = repository;
+            _unitOfWork               = unitOfWork;
+            _customerRepository       = customerRepository;
             _electronicItemRepository = electronicItemRepository;
-            _logger = logger;
+            _cashflowRepository       = cashflowRepository;
+            _logger                   = logger;
         }
 
         //CRUD operations
@@ -192,7 +191,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Update order status
                 order.OrderStatus = request.NewOrderStatus;
-                await _customerOrderRepository.UpdateAsync(order.OrderID, order);
+                await _repository.UpdateAsync(order.OrderID, order);
 
                 // No need to call UpdateAsync per entity; EF Core tracks all changes
                 await _unitOfWork.CommitAsync();
@@ -258,7 +257,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var order = await _customerOrderRepository.GetByIdAsync(request.OrderID);
+            var order = await _repository.GetByIdAsync(request.OrderID);
 
             if (order == null)
                 throw new InvalidOperationException("Customer order not found");
