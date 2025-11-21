@@ -67,7 +67,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Nodel   
                 var category = _mapper.Map<Category>(categoryCreateDto);
-                var created = await _service.AddCategoryAsync(category);
+                var created = await _service.AddCategoryWithSaveAsync(category);
 
                 // Model -> ResponseDto   
                 var responseDto = _mapper.Map<CategoryResponseDto>(created);
@@ -93,7 +93,7 @@ namespace WebApplication1.Controllers
             {
                 // RequestDto -> Model   
                 var category = _mapper.Map<Category>(categoryUpdateDto);
-                var updated = await _service.UpdateCategoryAsync(id, category);
+                var updated = await _service.UpdateCategoryWithSaveAsync(id, category);
 
                 // Model -> ResponseDto   
                 var responseDto = _mapper.Map<CategoryResponseDto>(updated);
@@ -120,7 +120,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                await _service.DeleteCategoryAsync(id);
+                await _service.DeleteCategoryWithSaveAsync(id);
 
                 var response = new ApiResponseDto<string>(204, "Category deleted successfully");
                 return Ok(response);

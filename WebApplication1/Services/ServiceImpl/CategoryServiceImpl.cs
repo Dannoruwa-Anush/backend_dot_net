@@ -32,7 +32,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Category?> GetCategoryByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<Category> AddCategoryAsync(Category category)
+        public async Task<Category> AddCategoryWithSaveAsync(Category category)
         {
             var dupliacte = await _repository.ExistsByCategoryNameAsync(category.CategoryName);
             if (dupliacte)
@@ -45,7 +45,7 @@ namespace WebApplication1.Services.ServiceImpl
             return category;
         }
 
-        public async Task<Category> UpdateCategoryAsync(int id, Category category)
+        public async Task<Category> UpdateCategoryWithSaveAsync(int id, Category category)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) 
@@ -67,7 +67,7 @@ namespace WebApplication1.Services.ServiceImpl
             throw new Exception("Category update failed.");
         }
 
-        public async Task DeleteCategoryAsync(int id)
+        public async Task DeleteCategoryWithSaveAsync(int id)
         {
             // Check if any ElectronicItems reference this category
             bool hasItems = await _electronicItemRepository.ExistsByCategoryAsync(id);
