@@ -17,7 +17,6 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //Repositories
-        private readonly ICustomerOrderRepository _customerOrderRepository;
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
         private readonly ICashflowRepository _cashflowRepository;
@@ -39,7 +38,6 @@ namespace WebApplication1.Services.ServiceImpl
         public PaymentServiceImpl(
         IAppUnitOfWork unitOfWork,
 
-        ICustomerOrderRepository customerOrderRepository,
         IBNPL_PlanRepository bNPL_PlanRepository,
         IBNPL_InstallmentRepository bNPL_InstallmentRepository,
         IBNPL_PlanSettlementSummaryRepository bNPL_PlanSettlementSummaryRepository,
@@ -56,7 +54,6 @@ namespace WebApplication1.Services.ServiceImpl
             // Dependency injection
             _unitOfWork = unitOfWork;
 
-            _customerOrderRepository = customerOrderRepository;
             _bNPL_PlanRepository = bNPL_PlanRepository;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
             _bNPL_PlanSettlementSummaryRepository = bNPL_PlanSettlementSummaryRepository;
@@ -92,7 +89,6 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // 2. Update customer order payment status to Fully Paid
                 var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid });
-                await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
                 _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
 
                 // 3. Commit the transaction
@@ -251,7 +247,6 @@ namespace WebApplication1.Services.ServiceImpl
 
             // update customer order based on new state
             var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid });
-            await _customerOrderRepository.UpdateAsync(updatedOrder.OrderID, updatedOrder);
         }
     }
 }

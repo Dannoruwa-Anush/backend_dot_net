@@ -5,6 +5,7 @@ namespace WebApplication1.Utils.Project_Enums
         Pending = 1,
         Shipped = 2,
         Delivered = 3,
-        Cancelled = 4,
+        Cancel_Pending = 4,
+        Cancelled = 5,
     }
 }

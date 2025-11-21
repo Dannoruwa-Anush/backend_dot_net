@@ -64,41 +64,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            bool orderStatusChanged = existing.OrderStatus != updatedOrder.OrderStatus;
             existing.OrderStatus = updatedOrder.OrderStatus;
-            // Update other related fields depending on order status
-            if (orderStatusChanged)
-            {
-                switch (updatedOrder.OrderStatus)
-                {
-                    case OrderStatusEnum.Shipped:
-                        existing.ShippedDate = now;
-                        break;
-
-                    case OrderStatusEnum.Delivered:
-                        existing.DeliveredDate = now;
-                        break;
-
-                    case OrderStatusEnum.Cancelled:
-                        existing.CancelledDate = now;
-                        break;
-                }
-            }
-
-            bool orderPaymentChanged = existing.OrderPaymentStatus != updatedOrder.OrderPaymentStatus;
             existing.OrderPaymentStatus = updatedOrder.OrderPaymentStatus;
-            // Update other related fields depending on payment status
-            if (orderPaymentChanged)
-            {
-                switch (updatedOrder.OrderPaymentStatus)
-                {
-                    case OrderPaymentStatusEnum.Fully_Paid:
-                        existing.PaymentCompletedDate = now;
-                        break;
-                }
-            }
+
+            existing.ShippedDate = updatedOrder.ShippedDate;
+            existing.DeliveredDate = updatedOrder.DeliveredDate;
+            existing.CancelledDate = updatedOrder.CancelledDate;
+            existing.PaymentCompletedDate = updatedOrder.PaymentCompletedDate;
 
             _context.CustomerOrders.Update(existing);
             return existing;
