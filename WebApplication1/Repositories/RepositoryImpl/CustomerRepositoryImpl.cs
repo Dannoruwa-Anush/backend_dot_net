@@ -1,4 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
@@ -21,11 +20,17 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<Customer>> GetAllAsync() =>
+            await _context.Customers.ToListAsync();
+
+        public async Task<IEnumerable<Customer>> GetAllWithUserDeailsAsync() =>
             await _context.Customers
                     .Include(cu => cu.User)
-                    .ToListAsync();
+                    .ToListAsync();            
 
         public async Task<Customer?> GetByIdAsync(int id) =>
+            await _context.Customers.FindAsync(id);
+
+        public async Task<Customer?> GetWithUserDetailsByIdAsync(int id) =>
             await _context.Customers
                     .Include(cu => cu.User)
                     .FirstOrDefaultAsync(cu => cu.CustomerID == id);

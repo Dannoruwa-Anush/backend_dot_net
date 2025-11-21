@@ -25,11 +25,11 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<Customer>> GetAllCustomersAsync() =>
-            await _repository.GetAllAsync();
+            await _repository.GetAllWithUserDeailsAsync();
 
 
         public async Task<Customer?> GetCustomerByIdAsync(int id) =>
-            await _repository.GetByIdAsync(id);
+            await _repository.GetWithUserDetailsByIdAsync(id);
 
         public async Task<Customer> AddCustomerWithSaveAsync(Customer customer)
         {
