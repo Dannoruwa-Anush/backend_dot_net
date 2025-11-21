@@ -138,6 +138,11 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<BNPL_PLAN?> GetByOrderIdAsync(int orderId) =>
             await _context.BNPL_PLANs
-                .FirstOrDefaultAsync(b => b.OrderID == orderId);
+                .FirstOrDefaultAsync(bpl => bpl.OrderID == orderId);
+
+        public async Task<IEnumerable<BNPL_PLAN>> GetAllActiveAsync() =>
+            await _context.BNPL_PLANs
+                .Where(bpl => bpl.Bnpl_Status == BnplStatusEnum.Active)
+                .ToListAsync();
     }
 }
