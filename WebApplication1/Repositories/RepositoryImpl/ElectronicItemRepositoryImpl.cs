@@ -20,16 +20,22 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<ElectronicItem>> GetAllAsync() =>
+            await _context.ElectronicItems.ToListAsync();
+
+        public async Task<IEnumerable<ElectronicItem>> GetAllWithBrandCategoryDetailsAsync() =>
             await _context.ElectronicItems
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
                 .ToListAsync();
 
         public async Task<ElectronicItem?> GetByIdAsync(int id) =>
+            await _context.ElectronicItems.FindAsync(id);
+
+        public async Task<ElectronicItem?> GetWithBrandCategoryDetailsByIdAsync(int id) =>
             await _context.ElectronicItems
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
-                .FirstOrDefaultAsync(e => e.ElectronicItemID == id);
+                .FirstOrDefaultAsync(e => e.ElectronicItemID == id);        
 
         public async Task AddAsync(ElectronicItem electronicItem) =>
             await _context.ElectronicItems.AddAsync(electronicItem);

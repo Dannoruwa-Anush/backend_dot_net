@@ -25,11 +25,11 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsAsync() =>
-            await _repository.GetAllAsync();
+            await _repository.GetAllWithBrandCategoryDetailsAsync();
 
 
         public async Task<ElectronicItem?> GetElectronicItemByIdAsync(int id)=>
-            await _repository.GetByIdAsync(id);
+            await _repository.GetWithBrandCategoryDetailsByIdAsync(id);
         
         public async Task<ElectronicItem> AddElectronicItemWithSaveAsync(ElectronicItem electronicItem)
         {

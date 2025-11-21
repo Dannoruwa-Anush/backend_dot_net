@@ -7,7 +7,9 @@ namespace WebApplication1.Repositories.IRepository
     {
         //CRUD operations
         Task<IEnumerable<ElectronicItem>> GetAllAsync();
+        Task<IEnumerable<ElectronicItem>> GetAllWithBrandCategoryDetailsAsync();
         Task<ElectronicItem?> GetByIdAsync(int id);
+        Task<ElectronicItem?> GetWithBrandCategoryDetailsByIdAsync(int id);
         Task AddAsync(ElectronicItem electronicItem);
         Task<ElectronicItem?> UpdateAsync(int id, ElectronicItem electronicItem);
         Task<bool> DeleteAsync(int id);
