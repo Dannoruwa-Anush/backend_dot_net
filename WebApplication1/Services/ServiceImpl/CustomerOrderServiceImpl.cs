@@ -3,6 +3,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
@@ -15,20 +16,22 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICustomerOrderRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
 
-        private readonly ICustomerRepository _customerRepository;
-        private readonly IElectronicItemRepository _electronicItemRepository;
+        private readonly ICustomerService _customerService;
+        private readonly IElectronicItemService _electronicItemService;
+        private readonly IOrderFinancialService  _orderFinancialService;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerService customerService, IElectronicItemService electronicItemService, IOrderFinancialService orderFinancialService, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
-            _customerRepository = customerRepository;
-            _electronicItemRepository = electronicItemRepository;
+            _customerService = customerService;
+            _electronicItemService = electronicItemService;
+            _orderFinancialService = orderFinancialService;
             _logger = logger;
         }
 
@@ -43,7 +46,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var customer = await _customerRepository.GetByIdAsync(customerOrder.CustomerID)
+                var customer = await _customerService.GetCustomerByIdAsync(customerOrder.CustomerID)
                     ?? throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
 
                 var itemIds = customerOrder.CustomerOrderElectronicItems.Select(i => i.E_ItemID).ToList();
@@ -94,7 +97,7 @@ namespace WebApplication1.Services.ServiceImpl
         //Helper Method : LoadElectronicItemsAsync
         private async Task<Dictionary<int, ElectronicItem>> LoadElectronicItemsAsync(IEnumerable<int> ids)
         {
-            var items = await _electronicItemRepository.GetAllByIdsAsync(ids.ToList());
+            var items = await _electronicItemService.GetAllElectronicItemsByIdsAsync(ids.ToList());
             return items.ToDictionary(x => x.ElectronicItemID);
         }
 
@@ -223,9 +226,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             HandleRestock(order);
 
-            // Need to update assossiated fields (cashflow : refunds, BNPL_Plan : Cancel, Installment : Refund, Snapshot : Cancelled)  
-            // HandleOrderPayment
-            //_paymentService.
+            await _orderFinancialService.ProcessPaymentRefundAsync(order, now);
         }
 
         //Helper Method : Restock

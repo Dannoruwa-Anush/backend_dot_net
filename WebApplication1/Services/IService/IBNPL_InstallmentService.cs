@@ -26,6 +26,6 @@ namespace WebApplication1.Services.IService
         //payment
         Task<(BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)>BuildBnplInstallmentSettlementAsync(PaymentRequestDto request);
 
-        Task BuildBnplInstallmetUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum installmentStatus, DateTime now);
+        Task BuildBnplInstallmetStatusUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum installmentStatus, DateTime now);
     }
 }

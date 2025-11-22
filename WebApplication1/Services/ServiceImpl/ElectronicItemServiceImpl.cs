@@ -90,5 +90,8 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByBrandIdAsync(int brandId)=>
             await _repository.GetAllByBrandAsync(brandId);
+
+        public async Task<List<ElectronicItem>> GetAllElectronicItemsByIdsAsync(List<int> ids) =>
+            await _repository.GetAllByIdsAsync(ids);
     }
 }

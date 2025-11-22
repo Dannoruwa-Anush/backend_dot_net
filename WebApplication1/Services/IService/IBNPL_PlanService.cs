@@ -22,6 +22,6 @@ namespace WebApplication1.Services.IService
         //Shared Internal Operations Used by Multiple Repositories
         Task<BNPL_PLAN> BuildBnpl_PlanAddRequestAsync(BNPL_PLAN bNPL_Plan);
 
-        Task BuildBnplPlanUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now);
+        Task BuildBnplPlanStatusUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now);
     }
 }

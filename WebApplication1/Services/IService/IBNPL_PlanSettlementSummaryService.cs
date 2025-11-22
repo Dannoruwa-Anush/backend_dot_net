@@ -16,6 +16,6 @@ namespace WebApplication1.Services.IService
         //Shared Internal Operations Used by Multiple Repositories
         Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId);
 
-        Task BuildBnplSettlementSummaryUpdateRequestAsync(ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum settlementSummaryStatus, DateTime now);
+        Task BuildBnplSettlementSummaryStatusUpdateRequestAsync(ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum settlementSummaryStatus, DateTime now);
     }
 }

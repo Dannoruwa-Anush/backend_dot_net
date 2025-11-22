@@ -200,7 +200,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.MarkPreviousSnapshotsAsNotLatestAsync(planId);
         }
 
-        public async Task BuildBnplSettlementSummaryUpdateRequestAsync(ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum settlementSummaryStatus, DateTime now)
+        public async Task BuildBnplSettlementSummaryStatusUpdateRequestAsync(ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum settlementSummaryStatus, DateTime now)
         {
             foreach (var snapshot in BNPL_PlanSettlementSummaries)
             {

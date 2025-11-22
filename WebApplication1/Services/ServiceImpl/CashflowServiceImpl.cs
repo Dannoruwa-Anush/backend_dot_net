@@ -72,7 +72,7 @@ namespace WebApplication1.Services.ServiceImpl
             return newCashflow;
         }
 
-        public async Task BuildCashflowOfOrderUpdateRequestAsync(CustomerOrder order, CashflowStatusEnum newStatus, DateTime now)
+        public async Task BuildCashflowStatusUpdateRequestAsync(CustomerOrder order, CashflowStatusEnum newStatus, DateTime now)
         {
             foreach (var cashflow in order.Cashflows)
             {

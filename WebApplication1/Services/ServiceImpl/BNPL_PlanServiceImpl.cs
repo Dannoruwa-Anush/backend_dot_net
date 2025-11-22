@@ -119,7 +119,7 @@ namespace WebApplication1.Services.ServiceImpl
             return bNPL_Plan;
         }
 
-        public async Task BuildBnplPlanUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now)
+        public async Task BuildBnplPlanStatusUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now)
         {
             //plan.Bnpl_RemainingInstallmentCount = remainingInstallmentCount;
             //plan.Bnpl_NextDueDate = nextDueDate;

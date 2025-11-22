@@ -205,7 +205,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.BNPL_Installments.AddRangeAsync(installments);
 
         //Bulk Update
-        public Task UpdateRangeAsync(List<BNPL_Installment> installments)
+        public Task UpdateRangeAsync(ICollection<BNPL_Installment> installments)
         {
             if (installments == null || installments.Count == 0)
                 return Task.CompletedTask;

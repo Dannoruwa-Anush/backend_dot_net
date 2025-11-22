@@ -23,6 +23,6 @@ namespace WebApplication1.Repositories.IRepository
         Task AddRangeAsync(List<BNPL_Installment> installments);
 
         //Bulk Update
-        Task UpdateRangeAsync(List<BNPL_Installment> installments);
+        Task UpdateRangeAsync(ICollection<BNPL_Installment> installments);
     }
 }

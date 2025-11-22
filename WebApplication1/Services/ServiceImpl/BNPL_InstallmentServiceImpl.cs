@@ -292,14 +292,14 @@ namespace WebApplication1.Services.ServiceImpl
             return breakdown;
         }
 
-        public async Task BuildBnplInstallmetUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum installmentStatus, DateTime now)
+        public async Task BuildBnplInstallmetStatusUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum installmentStatus, DateTime now)
         {
             foreach (var installment in installments)
             {
                 installment.Bnpl_Installment_Status = installmentStatus;
                 
             }
-            //await _repository.UpdateRangeAsync(installments); // service call to persist
+            await _repository.UpdateRangeAsync(installments); // service call to persist
         }
     }
 }

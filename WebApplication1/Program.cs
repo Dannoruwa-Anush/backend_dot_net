@@ -18,6 +18,8 @@ using WebApplication1.Services.ServiceImpl.Auth;
 using System.Security.Claims;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.UOW.UOWImpl;
+using WebApplication1.Services.IService.Helper;
+using WebApplication1.Services.ServiceImpl.Helper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,7 +93,8 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<IBNPL_PlanService, BNPL_PlanServiceImpl>()
                 .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>()
                 .AddScoped<IBNPL_PlanSettlementSummaryService, BNPL_PlanSettlementSummaryServiceImpl>()
-                .AddScoped<IPaymentService, PaymentServiceImpl>();
+                .AddScoped<IPaymentService, PaymentServiceImpl>()
+                .AddScoped<IOrderFinancialService, OrderFinancialServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

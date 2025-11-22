@@ -1,15 +1,15 @@
 using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Payment;
-using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
-namespace WebApplication1.Services.ServiceImpl
+namespace WebApplication1.Services.ServiceImpl.Helper
 {
     public class PaymentServiceImpl : IPaymentService
     {
@@ -21,11 +21,11 @@ namespace WebApplication1.Services.ServiceImpl
 
 
         //Service
-        private readonly ICustomerOrderService _customerOrderService;
         private readonly ICashflowService _cashflowService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
         private readonly IBNPL_PlanService _bNPL_PlanService;
+        private readonly IOrderFinancialService _orderFinancialService;
 
         //logger: for auditing
         private readonly ILogger<PaymentServiceImpl> _logger;
@@ -35,24 +35,22 @@ namespace WebApplication1.Services.ServiceImpl
         IAppUnitOfWork unitOfWork,
         IBNPL_InstallmentRepository bNPL_InstallmentRepository,
 
-        ICustomerOrderService customerOrderService,
         ICashflowService cashflowService,
         IBNPL_InstallmentService bNPL_InstallmentService,
         IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
         IBNPL_PlanService bNPL_PlanService,
-
+        IOrderFinancialService orderFinancialService,
         ILogger<PaymentServiceImpl> logger)
         {
             // Dependency injection
             _unitOfWork = unitOfWork;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
 
-            _customerOrderService = customerOrderService;
             _cashflowService = cashflowService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
-
+            _orderFinancialService = orderFinancialService;
             _logger = logger;
         }
 
@@ -70,7 +68,7 @@ namespace WebApplication1.Services.ServiceImpl
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
               
                 // 2. Update customer order payment status to Fully Paid
-                //var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid });
+                //var updatedOrder = await _financialService.ApplyOrderPaymentStatusUpdateAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid });
                
                 // 3. Commit the transaction
                 await _unitOfWork.CommitAsync();
@@ -149,7 +147,7 @@ namespace WebApplication1.Services.ServiceImpl
                     throw new Exception($"Associated BNPL plan not found for OrderID={paymentRequest.OrderId}");
 
                 // 3. Update BNPL status (plan + order)
-                await UpdateBnplPostPaymentStateAsync(plan);
+                //await UpdateBnplPostPaymentStateAsync(plan);
 
                 // 4. Generate settlement snapshot
                 var settlementSnapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(plan.Bnpl_PlanID);
@@ -171,69 +169,19 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        //Helper Method : update Bnpl plan + customer order
-        private async Task UpdateBnplPostPaymentStateAsync(BNPL_PLAN plan)
-        {
-            if (plan == null)
-                throw new ArgumentNullException(nameof(plan));
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            // Get installments of this plan
-            var installments = await _bNPL_InstallmentService.GetAllByPlanIdAsync(plan.Bnpl_PlanID);
-
-            if (installments == null || !installments.Any())
-                throw new Exception($"No installments found for BNPL Plan ID={plan.Bnpl_PlanID}");
-
-            // Define which statuses are considered settled
-            var paidStatuses = new[]
-            {
-                BNPL_Installment_StatusEnum.Paid_OnTime,
-                BNPL_Installment_StatusEnum.Paid_Late
-            };
-
-            // Remaining installments = not fully paid
-            var remainingInstallments = installments!.Count(x => !paidStatuses.Contains(x.Bnpl_Installment_Status));
-
-            plan.Bnpl_RemainingInstallmentCount = remainingInstallments;
-
-            // Next installment due date (if any)
-            plan.Bnpl_NextDueDate = installments!
-                .Where(x => !paidStatuses.Contains(x.Bnpl_Installment_Status))
-                .OrderBy(x => x.Installment_DueDate)
-                .Select(x => x.Installment_DueDate)
-                .FirstOrDefault();
-
-            // If all installments paid : mark completed
-            if (remainingInstallments == 0)
-            {
-                plan.CompletedAt = now;
-                plan.Bnpl_Status = BnplStatusEnum.Completed;
-            }
-
-            // Update plan (only changed fields)
-            //await _bNPL_PlanService.BuildBNPL_PlanUpdateRequestAsync(plan.Bnpl_PlanID, plan);
-            //await _bNPL_PlanRepository.UpdateAsync(plan.Bnpl_PlanID, plan);
-
-            // update customer order based on new state
-            //var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid });
-        }
-////////////////////////////////////////////////////////////////////////////////////////////////////
-/// 
-/// 
         public async Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now)
         {   
             //Cashflow : refunds
-            await _cashflowService.BuildCashflowOfOrderUpdateRequestAsync(order, CashflowStatusEnum.Refunded, now);
+            await _cashflowService.BuildCashflowStatusUpdateRequestAsync(order, CashflowStatusEnum.Refunded, now);
 
             //BNPL_Plan : Cancel
-            await _bNPL_PlanService.BuildBnplPlanUpdateRequestAsync(order.BNPL_PLAN!, BnplStatusEnum.Cancelled, now);
+            await _bNPL_PlanService.BuildBnplPlanStatusUpdateRequestAsync(order.BNPL_PLAN!, BnplStatusEnum.Cancelled, now);
 
             // Installment : Refund
-            await _bNPL_InstallmentService.BuildBnplInstallmetUpdateRequestAsync(order.BNPL_PLAN!.BNPL_Installments, BNPL_Installment_StatusEnum.Refunded, now);
+            await _bNPL_InstallmentService.BuildBnplInstallmetStatusUpdateRequestAsync(order.BNPL_PLAN!.BNPL_Installments, BNPL_Installment_StatusEnum.Refunded, now);
 
             // Snapshot : Cancelled
-            await _bnpl_planSettlementSummaryService.BuildBnplSettlementSummaryUpdateRequestAsync(order.BNPL_PLAN!.BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum.Cancelled, now);
+            await _bnpl_planSettlementSummaryService.BuildBnplSettlementSummaryStatusUpdateRequestAsync(order.BNPL_PLAN!.BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum.Cancelled, now);
         }
     }
 }
