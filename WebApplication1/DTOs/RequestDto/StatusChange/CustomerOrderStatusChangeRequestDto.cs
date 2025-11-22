@@ -8,6 +8,16 @@ namespace WebApplication1.DTOs.RequestDto.StatusChange
     {        
         public int OrderID { get; set; }
 
+        public DateTime? CancellationRequestDate { get; set; }
+
+        [MaxLength(100)]
+        public string? CancellationReason { get; set; } 
+        
+        public bool? CancellationApproved { get; set; } 
+        
+        [MaxLength(100)]
+        public string? CancellationRejectionReason { get; set; }
+
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderStatusEnum))]

@@ -14,7 +14,7 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICustomerOrderRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
-        
+
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
 
@@ -116,7 +116,7 @@ namespace WebApplication1.Services.ServiceImpl
                     return order;
 
                 ValidateOrderStatusTransition(order, request.NewOrderStatus, now);
-                ApplyOrderStatusChanges(order, request.NewOrderStatus, now);
+                await ApplyOrderStatusChangesAsync(order, request.NewOrderStatus, now);
 
                 await _repository.UpdateAsync(order.OrderID, order);
                 await _unitOfWork.CommitAsync();
@@ -153,37 +153,47 @@ namespace WebApplication1.Services.ServiceImpl
                     {
                         var deliveredDate = order.DeliveredDate ?? now;
                         if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
-                            throw new InvalidOperationException("Cannot request cancellation for delivered orders after free trial period.");
+                            throw new InvalidOperationException(
+                                "Cannot request cancellation for delivered orders after free trial period.");
                     }
                     else
                     {
-                        throw new InvalidOperationException("Delivered orders cannot change status except Cancel_Pending within free trial period.");
+                        throw new InvalidOperationException(
+                            "Delivered orders cannot change status except Cancel_Pending within free trial period.");
                     }
                     break;
 
                 case OrderStatusEnum.Cancel_Pending:
-                    if (newStatus != OrderStatusEnum.Cancelled)
-                        throw new InvalidOperationException("Cancel_Pending orders can only move to Cancelled.");
+                    if (newStatus != OrderStatusEnum.Cancelled &&
+                        newStatus != OrderStatusEnum.DeliveredAfterCancellationRejected)
+                    {
+                        throw new InvalidOperationException(
+                            "Cancel_Pending orders can only move to Cancelled (approved) or DeliveredAfterCancellationRejected (rejected).");
+                    }
                     break;
 
                 case OrderStatusEnum.Cancelled:
-                    throw new InvalidOperationException("Cancelled orders cannot change status.");
+                case OrderStatusEnum.DeliveredAfterCancellationRejected:
+                    throw new InvalidOperationException($"{order.OrderStatus} orders cannot change status.");
             }
         }
 
         // Helper Method: Applies status changes to the order
-        private void ApplyOrderStatusChanges(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
+        private async Task ApplyOrderStatusChangesAsync(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
         {
             switch (newStatus)
             {
                 case OrderStatusEnum.Cancel_Pending:
                     order.OrderStatus = OrderStatusEnum.Cancel_Pending;
+                    order.CancellationRequestDate = now;
+                    order.CancellationApproved = null; // pending
                     break;
 
                 case OrderStatusEnum.Cancelled:
                     order.OrderStatus = OrderStatusEnum.Cancelled;
                     order.CancelledDate = now;
-                    HandleCancelOrder(order, now);
+                    order.CancellationApproved = true;
+                    await HandleCancelOrderAsync(order, now);
                     break;
 
                 case OrderStatusEnum.Shipped:
@@ -195,15 +205,26 @@ namespace WebApplication1.Services.ServiceImpl
                     order.OrderStatus = OrderStatusEnum.Delivered;
                     order.DeliveredDate = now;
                     break;
+
+                case OrderStatusEnum.DeliveredAfterCancellationRejected:
+                    order.OrderStatus = OrderStatusEnum.DeliveredAfterCancellationRejected;
+                    order.DeliveredDate = now;
+                    order.CancellationApproved = false;
+                    order.CancellationRejectionReason ??= "Cancellation rejected";
+                    break;
             }
         }
 
         //Helper Method : CancelOrder
-        private void HandleCancelOrder(CustomerOrder order, DateTime now)
+        private async Task HandleCancelOrderAsync(CustomerOrder order, DateTime now)
         {
-           HandleRestock(order);
+            //After cancellation Confirmed : Refund 
+            order.OrderPaymentStatus = OrderPaymentStatusEnum.Refunded;
+
+            HandleRestock(order);
 
             // Need to update assossiated fields (cashflow : refunds, BNPL_Plan : Cancel, Installment : Refund, Snapshot : Cancelled)  
+            // HandleOrderPayment
             //_paymentService.
         }
 
@@ -213,7 +234,7 @@ namespace WebApplication1.Services.ServiceImpl
             foreach (var item in order.CustomerOrderElectronicItems)
                 item.ElectronicItem.QOH += item.Quantity;
         }
-        
+
         //Custom Query Operations
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null) =>
             await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, paymentStatusId, orderStatusId, searchKey);

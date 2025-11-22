@@ -7,5 +7,6 @@ namespace WebApplication1.Utils.Project_Enums
         Delivered = 3,
         Cancel_Pending = 4,
         Cancelled = 5,
+        DeliveredAfterCancellationRejected = 6
     }
 }
