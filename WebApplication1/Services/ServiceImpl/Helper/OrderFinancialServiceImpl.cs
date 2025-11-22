@@ -1,15 +1,13 @@
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
 using WebApplication1.Services.IService.Helper;
-using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl.Helper
 {
     public class OrderFinancialServiceImpl : IOrderFinancialService
     {
-        private readonly IAppUnitOfWork _unitOfWork;
-
         private readonly IBNPL_PlanService _bNPL_PlanService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnplSettlementService;
@@ -17,14 +15,12 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         private readonly ILogger<OrderFinancialServiceImpl> _logger;
 
         public OrderFinancialServiceImpl(
-            IAppUnitOfWork unitOfWork,
             IBNPL_PlanService bNPL_PlanService,
             IBNPL_InstallmentService bNPL_InstallmentService,
             IBNPL_PlanSettlementSummaryService bnplSettlementService,
             ICashflowService cashflowService,
             ILogger<OrderFinancialServiceImpl> logger)
         {
-            _unitOfWork = unitOfWork;
             _bNPL_PlanService = bNPL_PlanService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnplSettlementService = bnplSettlementService;
@@ -32,7 +28,55 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger = logger;
         }
 
-        public async Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now)
+        public async Task BuildPaymentUpdateRequestAsync(CustomerOrder order, OrderPaymentStatusEnum newStatus)
+        {
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            
+            if (order.OrderPaymentStatus == newStatus)
+                return;
+
+            ValidatePaymentStatusTransition(order.OrderPaymentStatus, newStatus);
+
+            if(order.OrderPaymentStatus == OrderPaymentStatusEnum.Refunded)
+            {
+                await BuildPaymentRefundUpdateRequestAsync(order, now);
+            }
+
+            var totalPaid = await _cashflowService.SumCashflowsByOrderAsync(order.OrderID);
+            order.OrderPaymentStatus = totalPaid >= order.TotalAmount
+                ? OrderPaymentStatusEnum.Fully_Paid
+                : newStatus;
+
+            if (order.OrderPaymentStatus == OrderPaymentStatusEnum.Fully_Paid)
+                order.PaymentCompletedDate = now;
+
+            await BuildPaymentOngoingUpdateRequestAsync(order, now);     
+        }
+
+        //Helper method : ValidatePaymentStatusTransition
+        private void ValidatePaymentStatusTransition(OrderPaymentStatusEnum oldStatus, OrderPaymentStatusEnum newStatus)
+        {
+            switch (oldStatus)
+            {
+                case OrderPaymentStatusEnum.Partially_Paid:
+                    if (newStatus != OrderPaymentStatusEnum.Fully_Paid && newStatus != OrderPaymentStatusEnum.Overdue)
+                        throw new InvalidOperationException("Partially paid orders can only move to 'Fully_Paid' or 'Overdue'.");
+                    break;
+                case OrderPaymentStatusEnum.Fully_Paid:
+                    if (newStatus != OrderPaymentStatusEnum.Refunded)
+                        throw new InvalidOperationException("Fully paid orders can only move to 'Refunded'.");
+                    break;
+                case OrderPaymentStatusEnum.Overdue:
+                    if (newStatus != OrderPaymentStatusEnum.Partially_Paid && newStatus != OrderPaymentStatusEnum.Fully_Paid)
+                        throw new InvalidOperationException("Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
+                    break;
+                case OrderPaymentStatusEnum.Refunded:
+                    throw new InvalidOperationException("Refunded orders cannot change payment status.");
+            }
+        }
+
+        //Helper Method : ongoing/ completed
+        private async Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now)
         {
             // Cashflow status
             await _cashflowService.BuildCashflowStatusUpdateRequestAsync(
@@ -58,10 +102,17 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger.LogInformation("Order refund processing complete for OrderID={OrderId}", order.OrderID);
         }
 
-        public async Task ApplyOrderPaymentStatusUpdateAsync(int orderId, OrderPaymentStatusEnum newStatus)
+        //Helper Method : terminate/refund
+        private async Task BuildPaymentOngoingUpdateRequestAsync(CustomerOrder order, DateTime now)
         {
-            // Optional additional logic if needed
-            _logger.LogInformation("Order payment status updated for OrderID={OrderId} to {Status}", orderId, newStatus);
+            if (order.BNPL_PLAN != null)
+            {
+                // BNPL plan
+                await _bNPL_PlanService.BuildBnplOngoingPlanStatusUpdateRequestAsync(
+                    order.BNPL_PLAN, now);
+            }
+
+            _logger.LogInformation("Order refund processing complete for OrderID={OrderId}", order.OrderID);
         }
     }
 }

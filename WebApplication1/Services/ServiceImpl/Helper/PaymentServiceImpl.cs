@@ -2,7 +2,6 @@ using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
-using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
 using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
@@ -14,13 +13,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
     public class PaymentServiceImpl : IPaymentService
     {
         private readonly IAppUnitOfWork _unitOfWork;
-
-        //Repositories
-        private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
-
-
-
-        //Service
+        
+        private readonly ICustomerOrderService _customerOrderService;
         private readonly ICashflowService _cashflowService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
@@ -33,8 +27,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         // Constructor
         public PaymentServiceImpl(
         IAppUnitOfWork unitOfWork,
-        IBNPL_InstallmentRepository bNPL_InstallmentRepository,
 
+        ICustomerOrderService customerOrderService,
         ICashflowService cashflowService,
         IBNPL_InstallmentService bNPL_InstallmentService,
         IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
@@ -44,8 +38,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         {
             // Dependency injection
             _unitOfWork = unitOfWork;
-            _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
 
+            _customerOrderService = customerOrderService;
             _cashflowService = cashflowService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
@@ -60,6 +54,10 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));
 
+            var order = await _customerOrderService.GetCustomerOrderByIdAsync(paymentRequest.OrderId);
+            if(order == null)
+                 throw new Exception("Customer Order not found");
+
             // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -68,7 +66,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
               
                 // 2. Update customer order payment status to Fully Paid
-                //var updatedOrder = await _financialService.ApplyOrderPaymentStatusUpdateAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid });
+                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Fully_Paid);
                
                 // 3. Commit the transaction
                 await _unitOfWork.CommitAsync();
@@ -132,22 +130,23 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         // BNPL : Installment Payment
         public async Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
+            var order = await _customerOrderService.GetCustomerOrderByIdAsync(paymentRequest.OrderId);
+            if(order == null)
+                 throw new Exception("Customer Order not found");
+
             // Begin UoW-managed transaction
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // 1. Apply BNPL installment payment
                 var (paymentResult, updatedInstallments) = await _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(paymentRequest);
-                await _bNPL_InstallmentRepository.UpdateRangeAsync(updatedInstallments);
-                _logger.LogInformation("Applied installment payment: {PaymentResult}", paymentResult);
 
                 // 2. Retrieve associated BNPL plan
                 var plan = await _bNPL_PlanService.GetByOrderIdAsync(paymentRequest.OrderId);
                 if (plan == null)
                     throw new Exception($"Associated BNPL plan not found for OrderID={paymentRequest.OrderId}");
 
-                // 3. Update BNPL status (plan + order)
-                //await UpdateBnplPostPaymentStateAsync(plan);
+                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Fully_Paid);
 
                 // 4. Generate settlement snapshot
                 var settlementSnapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(plan.Bnpl_PlanID);

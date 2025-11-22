@@ -120,6 +120,7 @@ namespace WebApplication1.Services.ServiceImpl
             // Snapshot after modifications
             var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(planId);
             await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
+            
         }
 
         //Shared Internal Operations Used by Multiple Repositories

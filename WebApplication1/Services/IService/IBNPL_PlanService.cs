@@ -23,5 +23,7 @@ namespace WebApplication1.Services.IService
         Task<BNPL_PLAN> BuildBnpl_PlanAddRequestAsync(BNPL_PLAN bNPL_Plan);
 
         Task BuildBnplPlanStatusUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now);
+        
+        Task BuildBnplOngoingPlanStatusUpdateRequestAsync(BNPL_PLAN plan, DateTime now);
     }
 }

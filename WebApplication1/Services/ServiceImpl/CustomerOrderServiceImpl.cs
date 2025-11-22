@@ -196,7 +196,7 @@ namespace WebApplication1.Services.ServiceImpl
                     order.OrderStatus = OrderStatusEnum.Cancelled;
                     order.CancelledDate = now;
                     order.CancellationApproved = true;
-                    await HandleCancelOrderAsync(order, now);
+                    await HandleCancelOrderAsync(order);
                     break;
 
                 case OrderStatusEnum.Shipped:
@@ -219,14 +219,12 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper Method : CancelOrder
-        private async Task HandleCancelOrderAsync(CustomerOrder order, DateTime now)
+        private async Task HandleCancelOrderAsync(CustomerOrder order)
         {
-            //After cancellation Confirmed : Refund 
-            order.OrderPaymentStatus = OrderPaymentStatusEnum.Refunded;
-
             HandleRestock(order);
 
-            await _orderFinancialService.BuildPaymentRefundUpdateRequestAsync(order, now);
+            //After cancellation Confirmed : Refund 
+            await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Refunded);
         }
 
         //Helper Method : Restock
