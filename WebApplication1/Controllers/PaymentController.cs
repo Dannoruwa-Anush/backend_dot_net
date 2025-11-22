@@ -58,5 +58,25 @@ namespace WebApplication1.Controllers
                 ));
             }
         }
+
+        [HttpPost("process-bnpl-installment-payment")]
+        public async Task<IActionResult> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
+        {
+            try
+            {
+                await _service.ProcessBnplInstallmentPaymentAsync(paymentRequest);
+                return Ok(new ApiResponseDto<string>(
+                    200,
+                    "Bnpl installment payment processed and stored."
+                ));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
+        }
     }
 }
