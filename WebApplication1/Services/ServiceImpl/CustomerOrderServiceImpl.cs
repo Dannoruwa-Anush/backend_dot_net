@@ -207,8 +207,10 @@ namespace WebApplication1.Services.ServiceImpl
             foreach (var item in order.CustomerOrderElectronicItems)
                 item.ElectronicItem.QOH += item.Quantity;
 
-            foreach (var cashflow in order.Cashflows)
+            foreach (var cashflow in order.Cashflows){
                 cashflow.CashflowStatus = CashflowStatusEnum.Refunded;
+                cashflow.RefundDate = now;
+            } 
 
             if (order.BNPL_PLAN != null)
             {
