@@ -218,5 +218,22 @@ namespace WebApplication1.Services.ServiceImpl
             // update customer order based on new state
             //var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid });
         }
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// 
+/// 
+        public async Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now)
+        {   
+            //Cashflow : refunds
+            await _cashflowService.BuildCashflowOfOrderUpdateRequestAsync(order, CashflowStatusEnum.Refunded, now);
+
+            //BNPL_Plan : Cancel
+            await _bNPL_PlanService.BuildBnplPlanUpdateRequestAsync(order.BNPL_PLAN!, BnplStatusEnum.Cancelled, now);
+
+            // Installment : Refund
+            await _bNPL_InstallmentService.BuildBnplInstallmetUpdateRequestAsync(order.BNPL_PLAN!.BNPL_Installments, BNPL_Installment_StatusEnum.Refunded, now);
+
+            // Snapshot : Cancelled
+            await _bnpl_planSettlementSummaryService.BuildBnplSettlementSummaryUpdateRequestAsync(order.BNPL_PLAN!.BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum.Cancelled, now);
+        }
     }
 }

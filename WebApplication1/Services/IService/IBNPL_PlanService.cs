@@ -2,6 +2,7 @@ using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.ResponseDto.BnplCal;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {
@@ -20,6 +21,7 @@ namespace WebApplication1.Services.IService
 
         //Shared Internal Operations Used by Multiple Repositories
         Task<BNPL_PLAN> BuildBnpl_PlanAddRequestAsync(BNPL_PLAN bNPL_Plan);
-        //Task<BNPL_PLAN?> BuildBNPL_PlanUpdateRequestAsync(int id, BNPL_PLAN bNPL_Plan);
+
+        Task BuildBnplPlanUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now);
     }
 }

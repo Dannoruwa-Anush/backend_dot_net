@@ -1,6 +1,7 @@
 using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
+using WebApplication1.Models;
 
 namespace WebApplication1.Services.IService
 {
@@ -10,7 +11,7 @@ namespace WebApplication1.Services.IService
         Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request);
         Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest);
         
-        //need to update all associated child fileds : Refund (Order cancel): Payment Complete
-        //Task<CustomerOrder?> BuildPaymentUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request);
+        // Need to update assossiated fields of Order (cashflow : refunds, BNPL_Plan : Cancel, Installment : Refund, Snapshot : Cancelled)  
+        Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now);
     }
 }

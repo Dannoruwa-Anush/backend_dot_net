@@ -119,19 +119,14 @@ namespace WebApplication1.Services.ServiceImpl
             return bNPL_Plan;
         }
 
-        /*
-        public async Task<BNPL_PLAN?> BuildBNPL_PlanUpdateRequestAsync(int id, BNPL_PLAN bNPL_Plan)
+        public async Task BuildBnplPlanUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now)
         {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
-                throw new Exception("BNPL plan not found.");
+            //plan.Bnpl_RemainingInstallmentCount = remainingInstallmentCount;
+            //plan.Bnpl_NextDueDate = nextDueDate;
+            plan.Bnpl_Status = planStatus;
+            plan.CancelledAt = now;
 
-            existing.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_RemainingInstallmentCount;
-            existing.Bnpl_NextDueDate = bNPL_Plan.Bnpl_NextDueDate;
-            existing.Bnpl_Status = bNPL_Plan.Bnpl_Status;
-
-            return existing;            
+            await _repository.UpdateAsync(plan.Bnpl_PlanID, plan);
         }
-        */
     }
 }

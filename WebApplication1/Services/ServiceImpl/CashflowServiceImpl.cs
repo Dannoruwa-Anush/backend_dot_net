@@ -20,7 +20,7 @@ namespace WebApplication1.Services.ServiceImpl
         {
             // Dependency injection
             _repository = repository;
-            _logger     = logger;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -39,17 +39,17 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<decimal> SumCashflowsByOrderAsync(int orderId) =>
             await _repository.SumCashflowsByOrderAsync(orderId);
 
-        // Builds the object without DB Access
+        //Shared Internal Operations Used by Multiple Repositories
         public async Task<Cashflow> BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
         {
             if (paymentRequest == null)
-                throw new ArgumentNullException(nameof(paymentRequest));   
+                throw new ArgumentNullException(nameof(paymentRequest));
 
             // Determine status (default: Paid)
             var status = CashflowStatusEnum.Paid;
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            
+
             // Build reference
             var cashflowRef = $"CF-{paymentRequest.OrderId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
 
@@ -65,11 +65,21 @@ namespace WebApplication1.Services.ServiceImpl
             var duplicate = await _repository.ExistsByCashflowRefAsync(newCashflow.CashflowRef);
             if (duplicate)
                 throw new Exception($"Cash flow with red '{newCashflow.CashflowRef}' already exists.");
-            
+
             await _repository.AddAsync(newCashflow);
 
             _logger.LogInformation("Generated Cashflow record: {CashflowRef}", newCashflow.CashflowRef);
             return newCashflow;
+        }
+
+        public async Task BuildCashflowOfOrderUpdateRequestAsync(CustomerOrder order, CashflowStatusEnum newStatus, DateTime now)
+        {
+            foreach (var cashflow in order.Cashflows)
+            {
+                cashflow.CashflowStatus = newStatus;
+                cashflow.RefundDate = now;
+                await _repository.UpdateAsync(cashflow.CashflowID, cashflow);
+            }
         }
     }
 }

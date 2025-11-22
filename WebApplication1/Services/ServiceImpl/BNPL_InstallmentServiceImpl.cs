@@ -291,5 +291,15 @@ namespace WebApplication1.Services.ServiceImpl
             breakdown.NewStatus = inst.Bnpl_Installment_Status.ToString();
             return breakdown;
         }
+
+        public async Task BuildBnplInstallmetUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum installmentStatus, DateTime now)
+        {
+            foreach (var installment in installments)
+            {
+                installment.Bnpl_Installment_Status = installmentStatus;
+                
+            }
+            //await _repository.UpdateRangeAsync(installments); // service call to persist
+        }
     }
 }

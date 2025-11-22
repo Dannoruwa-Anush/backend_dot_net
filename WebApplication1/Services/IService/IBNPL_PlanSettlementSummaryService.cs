@@ -1,6 +1,7 @@
 using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.Models;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {
@@ -14,5 +15,7 @@ namespace WebApplication1.Services.IService
         
         //Shared Internal Operations Used by Multiple Repositories
         Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId);
+
+        Task BuildBnplSettlementSummaryUpdateRequestAsync(ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum settlementSummaryStatus, DateTime now);
     }
 }
