@@ -226,7 +226,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             HandleRestock(order);
 
-            await _orderFinancialService.ProcessPaymentRefundAsync(order, now);
+            await _orderFinancialService.BuildPaymentRefundUpdateRequestAsync(order, now);
         }
 
         //Helper Method : Restock

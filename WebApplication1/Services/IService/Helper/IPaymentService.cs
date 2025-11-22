@@ -10,8 +10,5 @@ namespace WebApplication1.Services.IService.Helper
         Task ProcessFullPaymentPaymentAsync(PaymentRequestDto paymentRequest);
         Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request);
         Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest);
-        
-        // Need to update assossiated fields of Order (cashflow : refunds, BNPL_Plan : Cancel, Installment : Refund, Snapshot : Cancelled)  
-        Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now);
     }
 }

@@ -5,7 +5,7 @@ namespace WebApplication1.Services.IService.Helper
 {
     public interface IOrderFinancialService
     {
-        Task ProcessPaymentRefundAsync(CustomerOrder order, DateTime now);
+        Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now);
         Task ApplyOrderPaymentStatusUpdateAsync(int orderId, OrderPaymentStatusEnum newStatus);
     }
 }

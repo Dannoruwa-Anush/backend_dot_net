@@ -32,7 +32,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger = logger;
         }
 
-        public async Task ProcessPaymentRefundAsync(CustomerOrder order, DateTime now)
+        public async Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now)
         {
             // Cashflow status
             await _cashflowService.BuildCashflowStatusUpdateRequestAsync(

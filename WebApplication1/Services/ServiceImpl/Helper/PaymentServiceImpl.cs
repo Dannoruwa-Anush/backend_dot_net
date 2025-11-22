@@ -168,20 +168,5 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 throw;
             }
         }
-
-        public async Task BuildPaymentRefundUpdateRequestAsync(CustomerOrder order, DateTime now)
-        {   
-            //Cashflow : refunds
-            await _cashflowService.BuildCashflowStatusUpdateRequestAsync(order, CashflowStatusEnum.Refunded, now);
-
-            //BNPL_Plan : Cancel
-            await _bNPL_PlanService.BuildBnplPlanStatusUpdateRequestAsync(order.BNPL_PLAN!, BnplStatusEnum.Cancelled, now);
-
-            // Installment : Refund
-            await _bNPL_InstallmentService.BuildBnplInstallmetStatusUpdateRequestAsync(order.BNPL_PLAN!.BNPL_Installments, BNPL_Installment_StatusEnum.Refunded, now);
-
-            // Snapshot : Cancelled
-            await _bnpl_planSettlementSummaryService.BuildBnplSettlementSummaryStatusUpdateRequestAsync(order.BNPL_PLAN!.BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum.Cancelled, now);
-        }
     }
 }
