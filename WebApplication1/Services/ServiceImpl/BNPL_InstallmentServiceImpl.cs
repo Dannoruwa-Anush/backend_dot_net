@@ -40,10 +40,10 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_Installment>> GetAllBNPL_InstallmentsAsync() =>
-            await _repository.GetAllAsync();
+            await _repository.GetAllWithBnplDetailsAsync();
 
         public async Task<BNPL_Installment?> GetBNPL_InstallmentByIdAsync(int id) =>
-            await _repository.GetByIdAsync(id);
+            await _repository.GetWithBnplInDetailsByIdAsync(id);
 
         //Custom Query Operations
         public async Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null)
@@ -122,7 +122,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
         }
 
-        //Builds the object without DB Access
+        //Shared Internal Operations Used by Multiple Repositories
         public async Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan)
         {
             if (plan == null)
@@ -162,6 +162,17 @@ namespace WebApplication1.Services.ServiceImpl
                 });
             }
 
+            await _repository.AddRangeAsync(installments);
+
+            if (installments.Any())
+            {
+                _logger.LogInformation("{NoInstallments} installments created for Bnpl planId={PlanId}", installments.Count, installments.First().Bnpl_PlanID);
+            }
+            else
+            {
+                _logger.LogWarning("No installments were created for Bnpl planId={PlanId}", plan.Bnpl_PlanID);
+            }
+            
             return installments;
         }
 

@@ -11,7 +11,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<BNPL_PLAN?> GetByIdAsync(int id);
         Task<BNPL_PLAN?> GetWithPlanTypeCustomerDetailsByIdAsync(int id);
         Task AddAsync(BNPL_PLAN bNPL_Plan);
-        Task<BNPL_PLAN?> UpdateAsync(int id, BNPL_PLAN bNPL_Plan);
+        //Note : Update will be handled by cancel order/ payment
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);

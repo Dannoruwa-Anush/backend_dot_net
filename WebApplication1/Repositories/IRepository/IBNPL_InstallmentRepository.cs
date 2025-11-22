@@ -7,8 +7,9 @@ namespace WebApplication1.Repositories.IRepository
     {
         //CRUD operations
         Task<IEnumerable<BNPL_Installment>> GetAllAsync();
+        Task<IEnumerable<BNPL_Installment>> GetAllWithBnplDetailsAsync();
         Task<BNPL_Installment?> GetByIdAsync(int id);
-        //Task<BNPL_Installment?> UpdateAsync(int id, BNPL_Installment bnpl_installment);
+        Task<BNPL_Installment?> GetWithBnplInDetailsByIdAsync(int id);
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null);

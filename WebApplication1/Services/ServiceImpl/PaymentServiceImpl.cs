@@ -75,17 +75,12 @@ namespace WebApplication1.Services.ServiceImpl
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                _logger.LogInformation("Starting full payment processing for OrderID={OrderId}, Amount={Amount}",
-                    paymentRequest.OrderId, paymentRequest.PaymentAmount);
-
                 // 1. Create a cashflow record
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
-                _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
-
+              
                 // 2. Update customer order payment status to Fully Paid
                 var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = paymentRequest.OrderId, NewPaymentStatus = OrderPaymentStatusEnum.Fully_Paid });
-                _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", paymentRequest.OrderId);
-
+               
                 // 3. Commit the transaction
                 await _unitOfWork.CommitAsync();
                 _logger.LogInformation("Full payment processed successfully for OrderID={OrderId}", paymentRequest.OrderId);
@@ -110,7 +105,7 @@ namespace WebApplication1.Services.ServiceImpl
                 // Calculate BNPL values
                 var bnplCalc = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
 
-                // Create the BNPL plan (no transaction inside)
+                // Create the BNPL plan 
                 var bnpl_plan = await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(new BNPL_PLAN
                 {
                     Bnpl_InitialPayment = request.InitialPayment,
@@ -119,21 +114,16 @@ namespace WebApplication1.Services.ServiceImpl
                     Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
                     OrderID = request.OrderID,
                 });
-                await _bNPL_PlanRepository.AddAsync(bnpl_plan);
 
                 // Generate installments
                 var installments = await _bNPL_InstallmentService.BuildBnplInstallmentBulkAddRequestAsync(bnpl_plan);
-                await _bNPL_InstallmentRepository.AddRangeAsync(installments);
 
                 // Create a cashflow for initial payment
-                var paymentRequest = new PaymentRequestDto
+                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(new PaymentRequestDto
                 {
                     PaymentAmount = request.InitialPayment,
                     OrderId = request.OrderID
-                };
-
-                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
-                _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
+                }, CashflowTypeEnum.BnplInitialPayment);
 
                 // Generate settlement snapshot
                 var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnpl_plan.Bnpl_PlanID);
@@ -179,7 +169,6 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // 5. Generate cashflow record
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
-                _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 6. Commit transaction
                 await _unitOfWork.CommitAsync();
@@ -236,8 +225,8 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             // Update plan (only changed fields)
-            await _bNPL_PlanService.BuildBNPL_PlanUpdateRequestAsync(plan.Bnpl_PlanID, plan);
-            await _bNPL_PlanRepository.UpdateAsync(plan.Bnpl_PlanID, plan);
+            //await _bNPL_PlanService.BuildBNPL_PlanUpdateRequestAsync(plan.Bnpl_PlanID, plan);
+            //await _bNPL_PlanRepository.UpdateAsync(plan.Bnpl_PlanID, plan);
 
             // update customer order based on new state
             var updatedOrder = await _customerOrderService.BuildCustomerOrderPaymentStatusUpdateRequestAsync(new CustomerOrderPaymentStatusChangeRequestDto { OrderID = plan.OrderID, NewPaymentStatus = OrderPaymentStatusEnum.Partially_Paid });

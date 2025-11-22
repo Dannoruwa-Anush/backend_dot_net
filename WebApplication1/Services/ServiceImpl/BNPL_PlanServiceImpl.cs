@@ -93,7 +93,7 @@ namespace WebApplication1.Services.ServiceImpl
             };
         }
 
-        //Builds the object without DB Access
+        //Shared Internal Operations Used by Multiple Repositories
         public async Task<BNPL_PLAN> BuildBnpl_PlanAddRequestAsync(BNPL_PLAN bNPL_Plan)
         {
             // Validate inputs
@@ -113,9 +113,13 @@ namespace WebApplication1.Services.ServiceImpl
             bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
             bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
 
+            await _repository.AddAsync(bNPL_Plan);
+
+            _logger.LogInformation("Bnpl plan created: Id={Id}, OrderId={OrderId}", bNPL_Plan.Bnpl_PlanID, bNPL_Plan.OrderID);
             return bNPL_Plan;
         }
 
+        /*
         public async Task<BNPL_PLAN?> BuildBNPL_PlanUpdateRequestAsync(int id, BNPL_PLAN bNPL_Plan)
         {
             var existing = await _repository.GetByIdAsync(id);
@@ -128,5 +132,6 @@ namespace WebApplication1.Services.ServiceImpl
 
             return existing;            
         }
+        */
     }
 }

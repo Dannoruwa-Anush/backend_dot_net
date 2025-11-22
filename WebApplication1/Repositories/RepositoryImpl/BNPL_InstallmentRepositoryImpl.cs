@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
@@ -23,6 +22,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_Installment>> GetAllAsync() =>
+            await _context.BNPL_Installments.ToListAsync();
+
+        public async Task<IEnumerable<BNPL_Installment>> GetAllWithBnplDetailsAsync() =>
             await _context.BNPL_Installments
                     .Include(bpt => bpt.BNPL_PLAN!)
                         .ThenInclude(ip => ip.BNPL_PlanType)
@@ -31,12 +33,17 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ToListAsync();
 
         public async Task<BNPL_Installment?> GetByIdAsync(int id) =>
+            await _context.BNPL_Installments.FindAsync(id);
+
+        public async Task<BNPL_Installment?> GetWithBnplInDetailsByIdAsync(int id) =>
             await _context.BNPL_Installments
                 .Include(i => i.BNPL_PLAN!)
                     .ThenInclude(ip => ip.BNPL_PlanType)
                 .Include(i => i.BNPL_PLAN!)
                     .ThenInclude(io => io.CustomerOrder)
                         .ThenInclude(ioc => ioc!.Customer)
+                .Include(i => i.BNPL_PLAN!)
+                        .ThenInclude(isn => isn.BNPL_PlanSettlementSummaries)           
                 .FirstOrDefaultAsync(i => i.InstallmentID == id);
 
         //Custom Query Operations

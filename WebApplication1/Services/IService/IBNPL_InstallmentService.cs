@@ -19,7 +19,7 @@ namespace WebApplication1.Services.IService
         //OverDueInstallments
         Task ApplyLateInterestForAllPlansAsync();
 
-        //Builds the object without DB Access
+        //Shared Internal Operations Used by Multiple Repositories
         Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan);
 
         //payment

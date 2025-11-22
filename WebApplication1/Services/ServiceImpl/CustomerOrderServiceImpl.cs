@@ -250,6 +250,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (existingOrder.OrderPaymentStatus == OrderPaymentStatusEnum.Fully_Paid)
                 existingOrder.PaymentCompletedDate = now;
 
+             _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", existingOrder.OrderID);
             return await _repository.UpdateAsync(existingOrder.OrderID, existingOrder);
         }
 

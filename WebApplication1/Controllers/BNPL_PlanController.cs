@@ -13,6 +13,9 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class BNPL_PlanController : ControllerBase
     {
+        //Note: All bnpl plan creation and updating process will be handled by PaymentController/ CustomerOrderController : cancel
+        //Note: This controller is only for list down all bnpl plans
+
         private readonly IBNPL_PlanService _service;
 
         private readonly IMapper _mapper;

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
-using WebApplication1.Models;
 using WebApplication1.Services.IService;
 
 namespace WebApplication1.Controllers

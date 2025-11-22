@@ -12,11 +12,15 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICashflowRepository _repository;
 
+        //logger: for auditing
+        private readonly ILogger<CategoryServiceImpl> _logger;
+
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository)
+        public CashflowServiceImpl(ICashflowRepository repository, ILogger<CategoryServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _logger     = logger;
         }
 
         //CRUD operations
@@ -64,6 +68,7 @@ namespace WebApplication1.Services.ServiceImpl
             
             await _repository.AddAsync(newCashflow);
 
+            _logger.LogInformation("Generated Cashflow record: {CashflowRef}", newCashflow.CashflowRef);
             return newCashflow;
         }
     }
