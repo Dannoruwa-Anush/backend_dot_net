@@ -1,5 +1,4 @@
 using WebApplication1.DTOs.RequestDto.BnplCal;
-using WebApplication1.DTOs.RequestDto.Custom;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
@@ -19,7 +18,6 @@ namespace WebApplication1.Services.ServiceImpl
         //Repositories
         private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
-        private readonly ICashflowRepository _cashflowRepository;
         private readonly IBNPL_PlanSettlementSummaryRepository _bNPL_PlanSettlementSummaryRepository;
 
 
@@ -41,7 +39,6 @@ namespace WebApplication1.Services.ServiceImpl
         IBNPL_PlanRepository bNPL_PlanRepository,
         IBNPL_InstallmentRepository bNPL_InstallmentRepository,
         IBNPL_PlanSettlementSummaryRepository bNPL_PlanSettlementSummaryRepository,
-        ICashflowRepository cashflowRepository,
 
         ICustomerOrderService customerOrderService,
         ICashflowService cashflowService,
@@ -57,7 +54,6 @@ namespace WebApplication1.Services.ServiceImpl
             _bNPL_PlanRepository = bNPL_PlanRepository;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
             _bNPL_PlanSettlementSummaryRepository = bNPL_PlanSettlementSummaryRepository;
-            _cashflowRepository = cashflowRepository;
 
 
             _customerOrderService = customerOrderService;
@@ -83,8 +79,7 @@ namespace WebApplication1.Services.ServiceImpl
                     paymentRequest.OrderId, paymentRequest.PaymentAmount);
 
                 // 1. Create a cashflow record
-                var cashflow = _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
-                await _cashflowRepository.AddAsync(cashflow);
+                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 2. Update customer order payment status to Fully Paid
@@ -137,8 +132,8 @@ namespace WebApplication1.Services.ServiceImpl
                     OrderId = request.OrderID
                 };
 
-                var cashflow = _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
-                await _cashflowRepository.AddAsync(cashflow);
+                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
+                _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // Generate settlement snapshot
                 var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnpl_plan.Bnpl_PlanID);
@@ -183,8 +178,7 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Generated settlement snapshot for PlanID={PlanId}", plan.Bnpl_PlanID);
 
                 // 5. Generate cashflow record
-                var cashflow = _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
-                await _cashflowRepository.AddAsync(cashflow);
+                var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
                 _logger.LogInformation("Generated Cashflow record: {CashflowRef}", cashflow.CashflowRef);
 
                 // 6. Commit transaction

@@ -134,32 +134,6 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        public async Task<CustomerOrder?> BuildCustomerOrderPaymentStatusUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request)
-        {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-
-            var existingOrder = await _repository.GetByIdAsync(request.OrderID)
-                ?? throw new InvalidOperationException("Customer order not found");
-
-            if (existingOrder.OrderPaymentStatus == request.NewPaymentStatus)
-                return existingOrder;
-
-            ValidatePaymentStatusTransition(existingOrder.OrderPaymentStatus, request.NewPaymentStatus);
-
-            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            existingOrder.OrderPaymentStatus = totalPaid >= existingOrder.TotalAmount
-                ? OrderPaymentStatusEnum.Fully_Paid
-                : request.NewPaymentStatus;
-
-            if (existingOrder.OrderPaymentStatus == OrderPaymentStatusEnum.Fully_Paid)
-                existingOrder.PaymentCompletedDate = now;
-
-            return await _repository.UpdateAsync(existingOrder.OrderID, existingOrder);
-        }
-
         //Helper Method : ValidateOrderStatusTransition
         private void ValidateOrderStatusTransition(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
         {
@@ -199,12 +173,15 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        //Helper Method : ApplyOrderStatusChanges
         // Helper Method: Applies status changes to the order
         private void ApplyOrderStatusChanges(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
         {
             switch (newStatus)
             {
+                case OrderStatusEnum.Cancel_Pending:
+                    order.OrderStatus = OrderStatusEnum.Cancel_Pending;
+                    break;
+
                 case OrderStatusEnum.Cancelled:
                     order.OrderStatus = OrderStatusEnum.Cancelled;
                     CancelOrder(order, now); // performs restock, refunds, cancel BNPL, sets CancelledDate
@@ -245,6 +222,33 @@ namespace WebApplication1.Services.ServiceImpl
                 foreach (var snapshot in plan.BNPL_PlanSettlementSummaries)
                     snapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;
             }
+        }
+
+        //Shared Internal Operations Used by Multiple Repositories
+        public async Task<CustomerOrder?> BuildCustomerOrderPaymentStatusUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var existingOrder = await _repository.GetByIdAsync(request.OrderID)
+                ?? throw new InvalidOperationException("Customer order not found");
+
+            if (existingOrder.OrderPaymentStatus == request.NewPaymentStatus)
+                return existingOrder;
+
+            ValidatePaymentStatusTransition(existingOrder.OrderPaymentStatus, request.NewPaymentStatus);
+
+            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            existingOrder.OrderPaymentStatus = totalPaid >= existingOrder.TotalAmount
+                ? OrderPaymentStatusEnum.Fully_Paid
+                : request.NewPaymentStatus;
+
+            if (existingOrder.OrderPaymentStatus == OrderPaymentStatusEnum.Fully_Paid)
+                existingOrder.PaymentCompletedDate = now;
+
+            return await _repository.UpdateAsync(existingOrder.OrderID, existingOrder);
         }
 
         //Helper method : ValidatePaymentStatusTransition

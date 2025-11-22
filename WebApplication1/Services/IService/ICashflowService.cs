@@ -15,7 +15,7 @@ namespace WebApplication1.Services.IService
         Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null);
         Task<decimal> SumCashflowsByOrderAsync(int orderId);
 
-        //Builds the object without DB Access
-        Cashflow BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType);
+        //Shared Internal Operations Used by Multiple Repositories
+        Task<Cashflow> BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType);
     }
 }

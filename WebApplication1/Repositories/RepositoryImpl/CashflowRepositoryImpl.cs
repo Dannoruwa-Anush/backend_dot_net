@@ -1,10 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
-using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.RepositoryImpl
@@ -31,49 +29,25 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(Cashflow cashflow) =>
             await _context.Cashflows.AddAsync(cashflow);
 
-        public async Task<Cashflow?> UpdateAsync(int id, Cashflow cashflow)
-        {
-            var existing = await _context.Cashflows.FindAsync(id);
-            if (existing == null)
-                return null;
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            
-            bool statusChanged = existing.CashflowStatus != cashflow.CashflowStatus;
-            existing.CashflowStatus = cashflow.CashflowStatus;
-            // Update other related fields depending on status
-            if (statusChanged)
-            {
-                switch (existing.CashflowStatus)
-                {
-                    case CashflowStatusEnum.Refunded:
-                        existing.RefundDate = now;
-                        break;
-                }
-            }
-
-            _context.Cashflows.Update(existing);
-            return existing;
-        }
-
         //Custom Query Operations
         public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
         {
             // Start query
             var query = _context.Cashflows
-                .Include(t => t.CustomerOrder) // include for OrderID search
+                .Include(cf => cf.CustomerOrder) // include for OrderID search
                 .AsQueryable();
 
             // Apply filters
             query = ApplyCashflowStatusFilter(query, cashflowStatusId);
             query = ApplyCashflowSearch(query, searchKey);
 
+            query = query.OrderByDescending(cf => cf.CashflowDate);
+
             // Total count after filtering
             var totalCount = await query.CountAsync();
 
             // Pagination
             var items = await query
-                .OrderByDescending(t => t.CashflowDate)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -93,7 +67,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (cashflowStatusId.HasValue)
             {
                 var status = (CashflowStatusEnum)cashflowStatusId.Value;
-                query = query.Where(t => t.CashflowStatus == status);
+                query = query.Where(cf => cf.CashflowStatus == status);
             }
             return query;
         }
@@ -105,19 +79,25 @@ namespace WebApplication1.Repositories.RepositoryImpl
             {
                 searchKey = searchKey.Trim().ToLower();
 
-                query = query.Where(t =>
-                    t.OrderID.ToString().Contains(searchKey) ||
-                    t.CreatedAt.ToString("yyyy-MM-dd").Contains(searchKey)
+                query = query.Where(cf =>
+                    cf.OrderID.ToString().Contains(searchKey) ||
+                    cf.CreatedAt.ToString("yyyy-MM-dd").Contains(searchKey)
                 );
             }
             return query;
         }
 
+       public async Task<bool> ExistsByCashflowRefAsync(string cashflowRef)
+        {
+            return await _context.Cashflows
+                .AnyAsync(cf => cf.CashflowRef.ToLower() == cashflowRef.ToLower());
+        }
+
         public async Task<decimal> SumCashflowsByOrderAsync(int orderId)
         {
             return await _context.Cashflows
-                .Where(x => x.OrderID == orderId && x.CashflowStatus == CashflowStatusEnum.Paid)
-                .SumAsync(x => x.AmountPaid);
+                .Where(cf => cf.OrderID == orderId && cf.CashflowStatus == CashflowStatusEnum.Paid)
+                .SumAsync(cf => cf.AmountPaid);
         }
     }
 }

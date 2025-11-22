@@ -36,10 +36,10 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.SumCashflowsByOrderAsync(orderId);
 
         // Builds the object without DB Access
-        public Cashflow BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
+        public async Task<Cashflow> BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType)
         {
             if (paymentRequest == null)
-                throw new ArgumentNullException(nameof(paymentRequest));
+                throw new ArgumentNullException(nameof(paymentRequest));   
 
             // Determine status (default: Paid)
             var status = CashflowStatusEnum.Paid;
@@ -57,7 +57,13 @@ namespace WebApplication1.Services.ServiceImpl
                 CashflowStatus = status,
                 CashflowRef = cashflowRef
             };
+
+            var duplicate = await _repository.ExistsByCashflowRefAsync(newCashflow.CashflowRef);
+            if (duplicate)
+                throw new Exception($"Cash flow with red '{newCashflow.CashflowRef}' already exists.");
             
+            await _repository.AddAsync(newCashflow);
+
             return newCashflow;
         }
     }

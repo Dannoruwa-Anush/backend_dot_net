@@ -167,6 +167,8 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<Cashflow>(entity =>
             {
+                entity.HasIndex(c => c.CashflowRef).IsUnique();
+
                 entity.Property(p => p.AmountPaid)
                       .HasColumnType("decimal(18,2)");
             });
