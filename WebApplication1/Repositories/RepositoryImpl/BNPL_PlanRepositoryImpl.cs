@@ -38,6 +38,22 @@ namespace WebApplication1.Repositories.RepositoryImpl
                         .ThenInclude(bplC => bplC!.Customer)
                     .FirstOrDefaultAsync(bpl => bpl.Bnpl_PlanID == id);
 
+        public async Task<BNPL_PLAN?> UpdateAsync(int id, BNPL_PLAN bNPL_Plan)
+        {
+            var existing = await _context.BNPL_PLANs.FindAsync(id);
+            if (existing == null)
+                return null;
+
+            existing.Bnpl_RemainingInstallmentCount = bNPL_Plan.Bnpl_RemainingInstallmentCount;
+            existing.Bnpl_NextDueDate = bNPL_Plan.Bnpl_NextDueDate;
+            existing.CompletedAt = bNPL_Plan.CompletedAt;
+            existing.CancelledAt = bNPL_Plan.CancelledAt;  
+            existing.Bnpl_Status = bNPL_Plan.Bnpl_Status;
+
+            _context.BNPL_PLANs.Update(existing);
+            return existing;
+        }
+
         public async Task AddAsync(BNPL_PLAN bNPL_Plan) =>
             await _context.BNPL_PLANs.AddAsync(bNPL_Plan);
 
