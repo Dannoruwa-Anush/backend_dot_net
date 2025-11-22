@@ -17,20 +17,18 @@ namespace WebApplication1.Services.ServiceImpl
         
         private readonly ICustomerRepository _customerRepository;
         private readonly IElectronicItemRepository _electronicItemRepository;
-        private readonly ICashflowRepository _cashflowRepository;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, ICashflowRepository cashflowRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerRepository customerRepository, IElectronicItemRepository electronicItemRepository, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _customerRepository = customerRepository;
             _electronicItemRepository = electronicItemRepository;
-            _cashflowRepository = cashflowRepository;
             _logger = logger;
         }
 
@@ -184,7 +182,8 @@ namespace WebApplication1.Services.ServiceImpl
 
                 case OrderStatusEnum.Cancelled:
                     order.OrderStatus = OrderStatusEnum.Cancelled;
-                    CancelOrder(order, now); // performs restock, refunds, cancel BNPL, sets CancelledDate
+                    order.CancelledDate = now;
+                    HandleCancelOrder(order, now);
                     break;
 
                 case OrderStatusEnum.Shipped:
@@ -200,82 +199,21 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper Method : CancelOrder
-        private void CancelOrder(CustomerOrder order, DateTime now)
+        private void HandleCancelOrder(CustomerOrder order, DateTime now)
         {
-            order.CancelledDate = now;
+           HandleRestock(order);
 
+            // Need to update assossiated fields (cashflow : refunds, BNPL_Plan : Cancel, Installment : Refund, Snapshot : Cancelled)  
+            //_paymentService.
+        }
+
+        //Helper Method : Restock
+        private void HandleRestock(CustomerOrder order)
+        {
             foreach (var item in order.CustomerOrderElectronicItems)
                 item.ElectronicItem.QOH += item.Quantity;
-
-            foreach (var cashflow in order.Cashflows){
-                cashflow.CashflowStatus = CashflowStatusEnum.Refunded;
-                cashflow.RefundDate = now;
-            } 
-
-            if (order.BNPL_PLAN != null)
-            {
-                var plan = order.BNPL_PLAN;
-                plan.Bnpl_Status = BnplStatusEnum.Cancelled;
-                plan.CancelledAt = now;
-
-                foreach (var installment in plan.BNPL_Installments)
-                    installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Refunded;
-
-                foreach (var snapshot in plan.BNPL_PlanSettlementSummaries)
-                    snapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;
-            }
         }
-
-        //Shared Internal Operations Used by Multiple Repositories
-        public async Task<CustomerOrder?> BuildCustomerOrderPaymentStatusUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request)
-        {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-
-            var existingOrder = await _repository.GetByIdAsync(request.OrderID)
-                ?? throw new InvalidOperationException("Customer order not found");
-
-            if (existingOrder.OrderPaymentStatus == request.NewPaymentStatus)
-                return existingOrder;
-
-            ValidatePaymentStatusTransition(existingOrder.OrderPaymentStatus, request.NewPaymentStatus);
-
-            var totalPaid = await _cashflowRepository.SumCashflowsByOrderAsync(request.OrderID);
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            existingOrder.OrderPaymentStatus = totalPaid >= existingOrder.TotalAmount
-                ? OrderPaymentStatusEnum.Fully_Paid
-                : request.NewPaymentStatus;
-
-            if (existingOrder.OrderPaymentStatus == OrderPaymentStatusEnum.Fully_Paid)
-                existingOrder.PaymentCompletedDate = now;
-
-             _logger.LogInformation("Updated customer order payment status to Fully Paid for OrderID={OrderId}", existingOrder.OrderID);
-            return await _repository.UpdateAsync(existingOrder.OrderID, existingOrder);
-        }
-
-        //Helper method : ValidatePaymentStatusTransition
-        private void ValidatePaymentStatusTransition(OrderPaymentStatusEnum oldStatus, OrderPaymentStatusEnum newStatus)
-        {
-            switch (oldStatus)
-            {
-                case OrderPaymentStatusEnum.Partially_Paid:
-                    if (newStatus != OrderPaymentStatusEnum.Fully_Paid && newStatus != OrderPaymentStatusEnum.Overdue)
-                        throw new InvalidOperationException("Partially paid orders can only move to 'Fully_Paid' or 'Overdue'.");
-                    break;
-                case OrderPaymentStatusEnum.Fully_Paid:
-                    if (newStatus != OrderPaymentStatusEnum.Refunded)
-                        throw new InvalidOperationException("Fully paid orders can only move to 'Refunded'.");
-                    break;
-                case OrderPaymentStatusEnum.Overdue:
-                    if (newStatus != OrderPaymentStatusEnum.Partially_Paid && newStatus != OrderPaymentStatusEnum.Fully_Paid)
-                        throw new InvalidOperationException("Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
-                    break;
-                case OrderPaymentStatusEnum.Refunded:
-                    throw new InvalidOperationException("Refunded orders cannot change payment status.");
-            }
-        }
-
+        
         //Custom Query Operations
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null) =>
             await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, paymentStatusId, orderStatusId, searchKey);

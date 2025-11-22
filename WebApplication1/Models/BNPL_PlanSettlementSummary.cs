@@ -33,8 +33,6 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPayableSettlement { get; set; }
 
-        public DateTime? RefundDate { get; set; }
-
         [EnumDataType(typeof(BNPL_PlanSettlementSummary_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_PlanSettlementSummary_StatusEnum Bnpl_PlanSettlementSummary_Status { get; set; } = BNPL_PlanSettlementSummary_StatusEnum.Active;

@@ -18,8 +18,6 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal TotalPayableSettlement { get; set; }
 
-        public DateTime? RefundDate { get; set; }
-
         public BNPL_PlanSettlementSummary_StatusEnum Bnpl_PlanSettlementSummary_Status { get; set; } = BNPL_PlanSettlementSummary_StatusEnum.Active;
         
         public bool IsLatest { get; set; } = true;

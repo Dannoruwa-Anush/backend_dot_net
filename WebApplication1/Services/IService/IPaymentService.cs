@@ -9,7 +9,8 @@ namespace WebApplication1.Services.IService
         Task ProcessFullPaymentPaymentAsync(PaymentRequestDto paymentRequest);
         Task ProcessBnplInitialPaymentAsync(BNPLInstallmentCalculatorRequestDto request);
         Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest);
-        //cancel payment
-        //refund payment
+        
+        //need to update all associated child fileds : Refund (Order cancel): Payment Complete
+        //Task<CustomerOrder?> BuildPaymentUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request);
     }
 }

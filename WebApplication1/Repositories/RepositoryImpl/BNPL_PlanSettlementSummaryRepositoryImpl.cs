@@ -27,7 +27,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
-            existing.RefundDate = bNPL_PlanSettlementSummary.RefundDate;
             existing.Bnpl_PlanSettlementSummary_Status = bNPL_PlanSettlementSummary.Bnpl_PlanSettlementSummary_Status;
             existing.IsLatest = bNPL_PlanSettlementSummary.IsLatest;
 
