@@ -32,21 +32,22 @@ builder.Services.AddControllers();
 builder.Services.AddAutoMapper(
     typeof(PaginationAutoMappingProfiles), //This is a generic AutoMapper
 
-    typeof(BrandAutoMapperProfile),
-    typeof(CategoryAutoMapperProfiles),
-    typeof(CustomerAutoMapperProfiles),
-    typeof(BNPL_InstallmentAutoMapperProfiles),
-    typeof(BNPL_PlanAutoMapperProfiles),
-
     typeof(AuthAutoMapperProfile),
     typeof(UserAutoMappingProfile),
-
     typeof(EmployeeAutoMappingProfile),
+    typeof(CustomerAutoMapperProfiles),
+
+    typeof(BrandAutoMapperProfile),
+    typeof(CategoryAutoMapperProfiles),
+    typeof(ElectronicItemAutoMapperProfiles),
     typeof(CustomerOrderAutoMapperProfiles),
     typeof(CustomerOrderElectronicItemAutoMapperProfiles),
-    typeof(ElectronicItemAutoMapperProfiles),
+    
     typeof(CashflowAutoMapperProfiles),
-    typeof(BNPL_PlanTypeAutoMapperProfiles)
+    typeof(BNPL_PlanTypeAutoMapperProfiles),
+    typeof(BNPL_PlanAutoMapperProfiles),
+    typeof(BNPL_InstallmentAutoMapperProfiles),
+    typeof(BNPL_PlanSettlementSummaryAutoMapperProfile)
 );
 
 //--------------------[EF Core - MySQL]-------------

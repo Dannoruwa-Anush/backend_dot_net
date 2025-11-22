@@ -16,9 +16,7 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //Repositories
-        private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
-        private readonly IBNPL_PlanSettlementSummaryRepository _bNPL_PlanSettlementSummaryRepository;
 
 
 
@@ -35,10 +33,7 @@ namespace WebApplication1.Services.ServiceImpl
         // Constructor
         public PaymentServiceImpl(
         IAppUnitOfWork unitOfWork,
-
-        IBNPL_PlanRepository bNPL_PlanRepository,
         IBNPL_InstallmentRepository bNPL_InstallmentRepository,
-        IBNPL_PlanSettlementSummaryRepository bNPL_PlanSettlementSummaryRepository,
 
         ICustomerOrderService customerOrderService,
         ICashflowService cashflowService,
@@ -50,11 +45,7 @@ namespace WebApplication1.Services.ServiceImpl
         {
             // Dependency injection
             _unitOfWork = unitOfWork;
-
-            _bNPL_PlanRepository = bNPL_PlanRepository;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
-            _bNPL_PlanSettlementSummaryRepository = bNPL_PlanSettlementSummaryRepository;
-
 
             _customerOrderService = customerOrderService;
             _cashflowService = cashflowService;
@@ -127,11 +118,9 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Generate settlement snapshot
                 var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnpl_plan.Bnpl_PlanID);
-                await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
                
                 // Commit
                 await _unitOfWork.CommitAsync();
-
                 _logger.LogInformation("BNPL initial payment processed successfully for OrderID={OrderId}", request.OrderID);
             }
             catch (Exception ex)
@@ -164,8 +153,6 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // 4. Generate settlement snapshot
                 var settlementSnapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(plan.Bnpl_PlanID);
-                await _bNPL_PlanSettlementSummaryRepository.AddAsync(settlementSnapshot);
-                _logger.LogInformation("Generated settlement snapshot for PlanID={PlanId}", plan.Bnpl_PlanID);
 
                 // 5. Generate cashflow record
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);

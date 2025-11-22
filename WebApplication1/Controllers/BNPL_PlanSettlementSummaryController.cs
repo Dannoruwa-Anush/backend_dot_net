@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
-using WebApplication1.Models;
 using WebApplication1.Services.IService;
 
 namespace WebApplication1.Controllers
@@ -26,9 +25,20 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
 
-        //CRUD operations
-
         //Custom Query Operations
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetByOrderId(int orderId)
+        {
+            var bnpl_snapshot = await _service.GetLatestSnapshotWithOrderDetailsAsync(orderId);
+            if (bnpl_snapshot == null)
+                return NotFound(new ApiResponseDto<string>(404, "Bnpl latest snapshot not found"));
+
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<BNPL_PlanSettlementSummaryResponseDto>(bnpl_snapshot);
+            var response = new ApiResponseDto<BNPL_PlanSettlementSummaryResponseDto>(200, "Bnpl latest snapshot retrieved successfully", responseDtos);
+
+            return Ok(response);
+        }
 
         //Installment Paymenr Simulator
         [HttpPost("bnpl-snapshot-payment-simulate")]

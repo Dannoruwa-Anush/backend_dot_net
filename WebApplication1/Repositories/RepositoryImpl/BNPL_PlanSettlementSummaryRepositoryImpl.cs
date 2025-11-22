@@ -41,5 +41,15 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .OrderByDescending(s => s.CreatedAt)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotWithOrderDetailsAsync(int orderId)
+        {
+            return await _context.BNPL_PlanSettlementSummaries
+                .Include(s => s.BNPL_PLAN)
+                    .ThenInclude(so => so!.CustomerOrder)
+                .Where(s => s.BNPL_PLAN!.CustomerOrder!.OrderID == orderId && s.IsLatest)
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
     }
 }

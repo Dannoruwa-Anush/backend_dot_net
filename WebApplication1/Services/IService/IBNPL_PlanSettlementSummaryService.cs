@@ -6,13 +6,13 @@ namespace WebApplication1.Services.IService
 {
     public interface IBNPL_PlanSettlementSummaryService
     {
-        //CRUD operations
-
         //Custom Query Operations
+        Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotWithOrderDetailsAsync(int orderId);
         
         //simulator
         Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request);
-        //Builds the object without DB Access
+        
+        //Shared Internal Operations Used by Multiple Repositories
         Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId);
     }
 }

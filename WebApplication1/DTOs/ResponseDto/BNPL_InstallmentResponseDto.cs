@@ -28,6 +28,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 
+        // Include simplified info about FK: Bnpl_Plan
         public BNPL_PlanResponseDto? BNPL_PlanResponseDto { get; set; }
     }
 }

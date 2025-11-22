@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Services.IService;
@@ -38,6 +39,24 @@ namespace WebApplication1.Controllers
             }
         }
         
-        //bnpl_ installment pay
+        [HttpPost("process-bnpl-initial-payment")]
+        public async Task<IActionResult> ProcessBnplInitialPayment(BNPLInstallmentCalculatorRequestDto request)
+        {
+            try
+            {
+                await _service.ProcessBnplInitialPaymentAsync(request);
+                return Ok(new ApiResponseDto<string>(
+                    200,
+                    "Bnpl initial payment processed and stored."
+                ));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
+        }
     }
 }

@@ -11,19 +11,26 @@ namespace WebApplication1.Services.ServiceImpl
     public class BNPL_PlanSettlementSummaryServiceImpl : IBNPL_PlanSettlementSummaryService
     {
         private readonly IBNPL_PlanSettlementSummaryRepository _repository;
+        
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
+        
+        // logger: for auditing
+        private readonly ILogger<BNPL_PlanSettlementSummaryServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanSettlementSummaryServiceImpl(IBNPL_PlanSettlementSummaryRepository repository, IBNPL_InstallmentRepository bNPL_InstallmentRepository, ICustomerOrderRepository customerOrderRepository)
+        public BNPL_PlanSettlementSummaryServiceImpl(IBNPL_PlanSettlementSummaryRepository repository, IBNPL_InstallmentRepository bNPL_InstallmentRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanSettlementSummaryServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
             _customerOrderRepository = customerOrderRepository;
+            _logger = logger;
         }
 
         //Custom Query Operations
+        public Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotWithOrderDetailsAsync(int orderId) =>
+            _repository.GetLatestSnapshotWithOrderDetailsAsync(orderId);
 
         //simulator : Main Driver
         public async Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request)
@@ -119,7 +126,7 @@ namespace WebApplication1.Services.ServiceImpl
             });
         }
 
-        //Builds the object without DB Access
+        //Shared Internal Operations Used by Multiple Repositories
         public async Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId)
         {
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -130,7 +137,9 @@ namespace WebApplication1.Services.ServiceImpl
             // Mark previously-latest summaries as not latest (staged only)
             await MarkOldSnapshotsAsync(planId);
 
-            // No SaveChanges() here. That is handled by caller.
+            await _repository.AddAsync(snapshot);
+
+            _logger.LogInformation("Bnpl latest installment snapshot created: SettlementID={SettlementId}, PlanId={PlanId}", snapshot.SettlementID, snapshot.Bnpl_PlanID);
             return snapshot;
         }
 
