@@ -200,6 +200,23 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .ToListAsync();
         }
 
+        public async Task<List<BNPL_Installment>> GetAllUnsettledInstallmentByPlanIdAsync(int planId)
+        {
+            var excludedStatuses = new[]
+            {
+                BNPL_Installment_StatusEnum.Refunded,
+                BNPL_Installment_StatusEnum.Paid_OnTime,
+                BNPL_Installment_StatusEnum.Paid_Late
+            };
+
+            return await _context.BNPL_Installments
+                .Where(i =>
+                    i.Bnpl_PlanID == planId &&
+                    !excludedStatuses.Contains(i.Bnpl_Installment_Status)
+                )
+                .ToListAsync();
+        }
+
         //Bulk insert
         public async Task AddRangeAsync(List<BNPL_Installment> installments) =>
             await _context.BNPL_Installments.AddRangeAsync(installments);

@@ -46,6 +46,9 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<BNPL_PLAN?> GetByOrderIdAsync(int OrderId) =>
             await _repository.GetByOrderIdAsync(OrderId);
 
+        public async Task<BNPL_PLAN?> GetByPlanTypeIdAsync(int planTypeId) =>
+            await _repository.GetByPlanTypeIdAsync(planTypeId);    
+
         //calculator
         public async Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
         {

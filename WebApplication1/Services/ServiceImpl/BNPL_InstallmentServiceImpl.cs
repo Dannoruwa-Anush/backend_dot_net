@@ -58,6 +58,9 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId) =>
             await _repository.GetAllByPlanIdAsync(planId);
 
+        public async Task<List<BNPL_Installment>> GetAllUnsettledInstallmentByPlanIdAsync(int planId) =>
+            await _repository.GetAllUnsettledInstallmentByPlanIdAsync(planId);    
+
         //Handle : Overdue Installments (LateIntrest + Arreas)
         public async Task ApplyLateInterestForAllPlansAsync()
         {

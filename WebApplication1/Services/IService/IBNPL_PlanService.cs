@@ -15,6 +15,7 @@ namespace WebApplication1.Services.IService
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);
         Task<BNPL_PLAN?> GetByOrderIdAsync(int OrderId);
+        Task<BNPL_PLAN?> GetByPlanTypeIdAsync(int planTypeId);
 
         //calculator
         Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request);

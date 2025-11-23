@@ -112,6 +112,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.BNPL_PLANs
                 .FirstOrDefaultAsync(bpl => bpl.OrderID == orderId);
 
+        public async Task<BNPL_PLAN?> GetByPlanTypeIdAsync(int planTypeId) =>
+            await _context.BNPL_PLANs
+                .FirstOrDefaultAsync(bpl => bpl.Bnpl_PlanTypeID == planTypeId);
+
         public async Task<IEnumerable<BNPL_PLAN>> GetAllActiveAsync() =>
             await _context.BNPL_PLANs
                 .Where(bpl => bpl.Bnpl_Status == BnplStatusEnum.Active)

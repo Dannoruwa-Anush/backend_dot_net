@@ -16,6 +16,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);
         Task<bool> ExistsByBnplPlanTypeAsync(int bnplPlanTypeId);
         Task<BNPL_PLAN?> GetByOrderIdAsync(int OrderId);
+        Task<BNPL_PLAN?> GetByPlanTypeIdAsync(int planTypeId);
         Task<IEnumerable<BNPL_PLAN>> GetAllActiveAsync();
     }
 }

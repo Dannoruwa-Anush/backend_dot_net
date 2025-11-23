@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Services.IService.Helper;
@@ -19,55 +18,15 @@ namespace WebApplication1.Controllers
             _service = service;
         }
 
-        [HttpPost("process-full-payment")]
-        public async Task<IActionResult> ProcessFullPaymentPayment(PaymentRequestDto paymentRequest)
+        [HttpPost("process-payment")]
+        public async Task<IActionResult> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
             try
             {
-                await _service.ProcessFullPaymentPaymentAsync(paymentRequest);
+                await _service.ProcessPaymentAsync(paymentRequest);
                 return Ok(new ApiResponseDto<string>(
                     200,
-                    "Full payment processed and stored."
-                ));
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiResponseDto<string>(
-                    500,
-                    "An internal server error occurred. Please try again later."
-                ));
-            }
-        }
-        
-        [HttpPost("process-bnpl-initial-payment")]
-        public async Task<IActionResult> ProcessBnplInitialPayment(BNPLInstallmentCalculatorRequestDto request)
-        {
-            try
-            {
-                await _service.ProcessBnplInitialPaymentAsync(request);
-                return Ok(new ApiResponseDto<string>(
-                    200,
-                    "Bnpl initial payment processed and stored."
-                ));
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiResponseDto<string>(
-                    500,
-                    "An internal server error occurred. Please try again later."
-                ));
-            }
-        }
-
-        [HttpPost("process-bnpl-installment-payment")]
-        public async Task<IActionResult> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
-        {
-            try
-            {
-                await _service.ProcessBnplInstallmentPaymentAsync(paymentRequest);
-                return Ok(new ApiResponseDto<string>(
-                    200,
-                    "Bnpl installment payment processed and stored."
+                    "Payment processed and stored."
                 ));
             }
             catch (Exception)
