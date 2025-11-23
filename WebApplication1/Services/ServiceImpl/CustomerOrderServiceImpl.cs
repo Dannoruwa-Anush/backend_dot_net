@@ -223,8 +223,11 @@ namespace WebApplication1.Services.ServiceImpl
         {
             HandleRestock(order);
 
-            //After cancellation Confirmed : Refund 
-            await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Refunded);
+            if(order.OrderPaymentStatus != OrderPaymentStatusEnum.Pending)
+            {
+                //After cancellation Confirmed : Refund 
+                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Refunded);   
+            }
         }
 
         //Helper Method : Restock
