@@ -43,7 +43,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(io => io.CustomerOrder)
                         .ThenInclude(ioc => ioc!.Customer)
                 .Include(i => i.BNPL_PLAN!)
-                        .ThenInclude(isn => isn.BNPL_PlanSettlementSummaries)           
+                        .ThenInclude(isn => isn.BNPL_PlanSettlementSummaries)
                 .FirstOrDefaultAsync(i => i.InstallmentID == id);
 
         //Custom Query Operations
@@ -207,44 +207,14 @@ namespace WebApplication1.Repositories.RepositoryImpl
         //Bulk Update
         public Task UpdateRangeAsync(ICollection<BNPL_Installment> installments)
         {
-            if (installments == null || installments.Count == 0)
-                return Task.CompletedTask;
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            //update record by record
             foreach (var updated in installments)
             {
-                var existingChangeTracker = _context.BNPL_Installments
-                    .Local
-                    .FirstOrDefault(x => x.InstallmentID == updated.InstallmentID);
+                var existing = _context.BNPL_Installments.Local
+                    .FirstOrDefault(x => x.InstallmentID == updated.InstallmentID)
+                    ?? _context.BNPL_Installments
+                         .First(x => x.InstallmentID == updated.InstallmentID);
 
-                var dbEntity = existingChangeTracker ??
-                               _context.BNPL_Installments
-                                   .First(x => x.InstallmentID == updated.InstallmentID);
-
-                bool baseChanged = dbEntity.AmountPaid_AgainstBase != updated.AmountPaid_AgainstBase;
-                bool arrearsChanged = dbEntity.AmountPaid_AgainstArrears != updated.AmountPaid_AgainstArrears;
-                bool lateChanged = dbEntity.AmountPaid_AgainstLateInterest != updated.AmountPaid_AgainstLateInterest;
-
-                // Copy all new values
-                _context.Entry(dbEntity).CurrentValues.SetValues(updated);
-
-                if (baseChanged || arrearsChanged || lateChanged)
-                    dbEntity.LastPaymentDate = now;
-
-                if (updated.LateInterest > 0 && updated.LateInterest != dbEntity.LateInterest)
-                    dbEntity.LastLateInterestAppliedDate = now;
-
-                if (dbEntity.Bnpl_Installment_Status != updated.Bnpl_Installment_Status)
-                {
-                    dbEntity.Bnpl_Installment_Status = updated.Bnpl_Installment_Status;
-
-                    if (updated.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Refunded)
-                        dbEntity.RefundDate = now;
-                }
-
-                _context.BNPL_Installments.Update(dbEntity);
+                _context.Entry(existing).CurrentValues.SetValues(updated);
             }
 
             return Task.CompletedTask;

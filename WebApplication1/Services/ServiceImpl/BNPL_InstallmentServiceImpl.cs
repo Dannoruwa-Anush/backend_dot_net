@@ -62,7 +62,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task ApplyLateInterestForAllPlansAsync()
         {
             var activePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
-            if (activePlans == null || !activePlans.Any()) 
+            if (activePlans == null || !activePlans.Any())
                 throw new Exception("ACtive plans not found");
 
             // Use single transaction for all plans
@@ -78,7 +78,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                 await _unitOfWork.CommitAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to apply late interest for plans");
@@ -115,12 +115,12 @@ namespace WebApplication1.Services.ServiceImpl
                 }
             }
 
-            await _repository.UpdateRangeAsync(overdueInstallments);
+            await BuildBnplInstallmetStatusUpdateRequestAsync(overdueInstallments, BNPL_Installment_StatusEnum.Overdue, today);
 
             // Snapshot after modifications
             var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(planId);
             await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
-            
+
         }
 
         //Shared Internal Operations Used by Multiple Repositories
@@ -173,7 +173,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 _logger.LogWarning("No installments were created for Bnpl planId={PlanId}", plan.Bnpl_PlanID);
             }
-            
+
             return installments;
         }
 
@@ -293,14 +293,27 @@ namespace WebApplication1.Services.ServiceImpl
             return breakdown;
         }
 
-        public async Task BuildBnplInstallmetStatusUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum installmentStatus, DateTime now)
+        public async Task BuildBnplInstallmetStatusUpdateRequestAsync(ICollection<BNPL_Installment> installments, BNPL_Installment_StatusEnum newStatus, DateTime now)
         {
             foreach (var installment in installments)
             {
-                installment.Bnpl_Installment_Status = installmentStatus;
-                
+                bool baseChanged = installment.AmountPaid_AgainstBase > 0;
+                bool arrearsChanged = installment.AmountPaid_AgainstArrears > 0;
+                bool lateChanged = installment.AmountPaid_AgainstLateInterest > 0;
+
+                if (baseChanged || arrearsChanged || lateChanged)
+                    installment.LastPaymentDate = now;
+
+                if (installment.LateInterest > 0)
+                    installment.LastLateInterestAppliedDate = now;
+
+                installment.Bnpl_Installment_Status = newStatus;
+
+                if (newStatus == BNPL_Installment_StatusEnum.Refunded)
+                    installment.RefundDate = now;
             }
-            await _repository.UpdateRangeAsync(installments); // service call to persist
+
+            await _repository.UpdateRangeAsync(installments);
         }
     }
 }
