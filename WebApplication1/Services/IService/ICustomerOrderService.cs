@@ -12,7 +12,7 @@ namespace WebApplication1.Services.IService
 
         //Multiple Repository Operations (transactional)
         Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrder customerOrder);
-        Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(CustomerOrderStatusChangeRequestDto requet);
+        Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto requet);
 
         //Custom Query Operations
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);

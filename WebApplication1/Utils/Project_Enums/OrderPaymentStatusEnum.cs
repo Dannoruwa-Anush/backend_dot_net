@@ -5,6 +5,7 @@ namespace WebApplication1.Utils.Project_Enums
         Partially_Paid = 0,
         Fully_Paid = 1,
         Overdue = 2,
-        Refunded = 3
+        Refunded = 3,
+        Pending = 4
     }
 }

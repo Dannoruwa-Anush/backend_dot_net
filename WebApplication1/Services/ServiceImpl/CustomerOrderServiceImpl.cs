@@ -78,7 +78,7 @@ namespace WebApplication1.Services.ServiceImpl
                 customerOrder.TotalAmount = totalAmount;
                 customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
-                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Pending;
 
                 await _repository.AddAsync(customerOrder);
                 await _unitOfWork.CommitAsync();
@@ -102,7 +102,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         // Update : Order Status
-        public async Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(CustomerOrderStatusChangeRequestDto request)
+        public async Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -112,7 +112,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var order = await _repository.GetWithFinancialDetailsByIdAsync(request.OrderID)
+                var order = await _repository.GetWithFinancialDetailsByIdAsync(orderId)
                     ?? throw new InvalidOperationException("Customer order not found");
 
                 if (order.OrderStatus == request.NewOrderStatus)
@@ -130,7 +130,7 @@ namespace WebApplication1.Services.ServiceImpl
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, "Failed to update customer order status for OrderID={OrderID}", request.OrderID);
+                _logger.LogError(ex, "Failed to update customer order status for OrderID={OrderID}", orderId);
                 throw;
             }
         }

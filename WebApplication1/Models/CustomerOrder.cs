@@ -43,7 +43,7 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderPaymentStatusEnum))]
-        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
+        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Pending;
 
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         //FK

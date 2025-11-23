@@ -6,10 +6,6 @@ namespace WebApplication1.DTOs.RequestDto.StatusChange
 {
     public class CustomerOrderStatusChangeRequestDto
     {        
-        public int OrderID { get; set; }
-
-        public DateTime? CancellationRequestDate { get; set; }
-
         [MaxLength(100)]
         public string? CancellationReason { get; set; } 
         
@@ -21,6 +17,6 @@ namespace WebApplication1.DTOs.RequestDto.StatusChange
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderStatusEnum))]
-        public OrderStatusEnum NewOrderStatus { get; set; } = OrderStatusEnum.Pending;
+        public OrderStatusEnum NewOrderStatus { get; set; }
     }
 }
