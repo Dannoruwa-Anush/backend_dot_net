@@ -18,7 +18,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         private readonly ICustomerService _customerService;
         private readonly IElectronicItemService _electronicItemService;
-        private readonly IOrderFinancialService  _orderFinancialService;
+        private readonly IOrderFinancialService _orderFinancialService;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
@@ -136,51 +136,43 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper Method : ValidateOrderStatusTransition
-        private void ValidateOrderStatusTransition(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
+        private void ValidateOrderStatusTransition(CustomerOrder existingOrder, OrderStatusEnum newStatus, DateTime now)
         {
-            switch (order.OrderStatus)
+            // Dictionary defining valid transitions
+            var validTransitions = new Dictionary<OrderStatusEnum, List<OrderStatusEnum>>
+    {
+        { OrderStatusEnum.Pending, new List<OrderStatusEnum> { OrderStatusEnum.Shipped, OrderStatusEnum.Delivered, OrderStatusEnum.Cancel_Pending } },
+        { OrderStatusEnum.Shipped, new List<OrderStatusEnum> { OrderStatusEnum.Delivered } },
+        { OrderStatusEnum.Cancel_Pending, new List<OrderStatusEnum> { OrderStatusEnum.Cancelled, OrderStatusEnum.DeliveredAfterCancellationRejected } }
+    };
+
+            // Add additional validations for special cases
+            if (existingOrder.OrderStatus == OrderStatusEnum.Delivered)
             {
-                case OrderStatusEnum.Pending:
-                case OrderStatusEnum.Shipped:
-                    if (newStatus != OrderStatusEnum.Shipped &&
-                        newStatus != OrderStatusEnum.Delivered &&
-                        newStatus != OrderStatusEnum.Cancel_Pending)
-                    {
-                        throw new InvalidOperationException(
-                            $"{order.OrderStatus} orders can only move to Shipped, Delivered, or Cancel_Pending.");
-                    }
-                    break;
-
-                case OrderStatusEnum.Delivered:
-                    if (newStatus == OrderStatusEnum.Cancel_Pending)
-                    {
-                        var deliveredDate = order.DeliveredDate ?? now;
-                        if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
-                            throw new InvalidOperationException(
-                                "Cannot request cancellation for delivered orders after free trial period.");
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException(
-                            "Delivered orders cannot change status except Cancel_Pending within free trial period.");
-                    }
-                    break;
-
-                case OrderStatusEnum.Cancel_Pending:
-                    if (newStatus != OrderStatusEnum.Cancelled &&
-                        newStatus != OrderStatusEnum.DeliveredAfterCancellationRejected)
-                    {
-                        throw new InvalidOperationException(
-                            "Cancel_Pending orders can only move to Cancelled (approved) or DeliveredAfterCancellationRejected (rejected).");
-                    }
-                    break;
-
-                case OrderStatusEnum.Cancelled:
-                case OrderStatusEnum.DeliveredAfterCancellationRejected:
-                    throw new InvalidOperationException($"{order.OrderStatus} orders cannot change status.");
+                if (newStatus == OrderStatusEnum.Cancel_Pending)
+                {
+                    var deliveredDate = existingOrder.DeliveredDate ?? now;
+                    if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
+                        throw new InvalidOperationException("Cannot request cancellation for delivered orders after free trial period.");
+                }
+                else if (!validTransitions[existingOrder.OrderStatus].Contains(newStatus))
+                {
+                    throw new InvalidOperationException("Delivered orders can only change to Cancel_Pending within the free trial period.");
+                }
+            }
+            else if (existingOrder.OrderStatus == OrderStatusEnum.Cancelled || existingOrder.OrderStatus == OrderStatusEnum.DeliveredAfterCancellationRejected)
+            {
+                throw new InvalidOperationException($"{existingOrder.OrderStatus} orders cannot change status.");
+            }
+            else
+            {
+                if (!validTransitions.ContainsKey(existingOrder.OrderStatus) || !validTransitions[existingOrder.OrderStatus].Contains(newStatus))
+                {
+                    throw new InvalidOperationException($"{existingOrder.OrderStatus} orders cannot move to {newStatus}.");
+                }
             }
         }
-
+        
         // Helper Method: Applies status changes to the order
         private async Task ApplyOrderStatusChangesAsync(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
         {
@@ -223,10 +215,10 @@ namespace WebApplication1.Services.ServiceImpl
         {
             HandleRestock(order);
 
-            if(order.OrderPaymentStatus != OrderPaymentStatusEnum.Pending)
+            if (order.OrderPaymentStatus != OrderPaymentStatusEnum.Pending)
             {
                 //After cancellation Confirmed : Refund 
-                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Refunded);   
+                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Refunded);
             }
         }
 
