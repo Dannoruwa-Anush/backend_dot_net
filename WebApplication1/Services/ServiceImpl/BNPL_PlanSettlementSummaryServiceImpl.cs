@@ -137,8 +137,6 @@ namespace WebApplication1.Services.ServiceImpl
             // Mark previously-latest summaries as not latest (staged only)
             await MarkOldSnapshotsAsync(planId);
 
-            await _repository.AddAsync(snapshot);
-
             _logger.LogInformation("Bnpl latest installment snapshot created: SettlementID={SettlementId}, PlanId={PlanId}", snapshot.SettlementID, snapshot.Bnpl_PlanID);
             return snapshot;
         }

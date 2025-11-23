@@ -10,7 +10,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<IEnumerable<BNPL_PLAN>> GetAllWithBnplPlanAsync();
         Task<BNPL_PLAN?> GetByIdAsync(int id);
         Task<BNPL_PLAN?> GetWithPlanTypeCustomerDetailsByIdAsync(int id);
-        Task AddAsync(BNPL_PLAN bNPL_Plan);
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_PLAN>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? planStatusId = null, string? searchKey = null);

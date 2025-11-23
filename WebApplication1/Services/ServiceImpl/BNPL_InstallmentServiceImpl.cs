@@ -121,9 +121,7 @@ namespace WebApplication1.Services.ServiceImpl
             await BuildBnplInstallmetStatusUpdateRequestAsync(overdueInstallments, BNPL_Installment_StatusEnum.Overdue, today);
 
             // Snapshot after modifications
-            var snapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(planId);
-            await _bNPL_PlanSettlementSummaryRepository.AddAsync(snapshot);
-
+            await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(planId);
         }
 
         //Shared Internal Operations Used by Multiple Repositories
@@ -166,7 +164,7 @@ namespace WebApplication1.Services.ServiceImpl
                 });
             }
 
-            await _repository.AddRangeAsync(installments);
+            //await _repository.AddRangeAsync(installments);
 
             if (installments.Any())
             {
@@ -316,7 +314,7 @@ namespace WebApplication1.Services.ServiceImpl
                     installment.RefundDate = now;
             }
 
-            await _repository.UpdateRangeAsync(installments);
+            //await _repository.UpdateRangeAsync(installments);
         }
     }
 }

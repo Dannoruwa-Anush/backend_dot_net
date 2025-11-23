@@ -3,7 +3,6 @@ using WebApplication1.Data;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
-using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Repositories.RepositoryImpl
@@ -215,26 +214,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     !excludedStatuses.Contains(i.Bnpl_Installment_Status)
                 )
                 .ToListAsync();
-        }
-
-        //Bulk insert
-        public async Task AddRangeAsync(List<BNPL_Installment> installments) =>
-            await _context.BNPL_Installments.AddRangeAsync(installments);
-
-        //Bulk Update
-        public Task UpdateRangeAsync(ICollection<BNPL_Installment> installments)
-        {
-            foreach (var updated in installments)
-            {
-                var existing = _context.BNPL_Installments.Local
-                    .FirstOrDefault(x => x.InstallmentID == updated.InstallmentID)
-                    ?? _context.BNPL_Installments
-                         .First(x => x.InstallmentID == updated.InstallmentID);
-
-                _context.Entry(existing).CurrentValues.SetValues(updated);
-            }
-
-            return Task.CompletedTask;
         }
     }
 }
