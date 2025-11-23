@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251113042426_Refactor_CustomerOrderEItem_CompositeKey")]
-    partial class Refactor_CustomerOrderEItem_CompositeKey
+    [Migration("20251123024057_snapshot_table_modification")]
+    partial class snapshot_table_modification
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,10 +33,13 @@ namespace WebApplication1.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InstallmentID"));
 
-                    b.Property<decimal>("AmountPaid")
+                    b.Property<decimal>("AmountPaid_AgainstArrears")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("ArrearsCarried")
+                    b.Property<decimal>("AmountPaid_AgainstBase")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AmountPaid_AgainstLateInterest")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Bnpl_Installment_Status")
@@ -56,6 +59,9 @@ namespace WebApplication1.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("Installment_DueDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastLateInterestAppliedDate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("LastPaymentDate")
@@ -78,7 +84,8 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("InstallmentID");
 
-                    b.HasIndex("Bnpl_PlanID");
+                    b.HasIndex("Bnpl_PlanID", "InstallmentNo")
+                        .IsUnique();
 
                     b.ToTable("BNPL_Installments");
                 });
@@ -94,7 +101,10 @@ namespace WebApplication1.Migrations
                     b.Property<decimal>("Bnpl_AmountPerInstallment")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("Bnpl_NextDueDate")
+                    b.Property<decimal>("Bnpl_InitialPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("Bnpl_NextDueDate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Bnpl_PlanTypeID")
@@ -138,6 +148,57 @@ namespace WebApplication1.Migrations
                     b.ToTable("BNPL_PLANs");
                 });
 
+            modelBuilder.Entity("WebApplication1.Models.BNPL_PlanSettlementSummary", b =>
+                {
+                    b.Property<int>("SettlementID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SettlementID"));
+
+                    b.Property<int>("Bnpl_PlanID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Bnpl_PlanSettlementSummary_Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CurrentInstallmentNo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InstallmentBaseAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsLatest")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("TotalCurrentArrears")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalCurrentLateInterest")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalCurrentOverPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalPayableSettlement")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("SettlementID");
+
+                    b.HasIndex("Bnpl_PlanID");
+
+                    b.ToTable("BNPL_PlanSettlementSummaries");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.BNPL_PlanType", b =>
                 {
                     b.Property<int>("Bnpl_PlanTypeID")
@@ -164,13 +225,16 @@ namespace WebApplication1.Migrations
                     b.Property<decimal>("InterestRate")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<decimal>("LatePayInterestRate")
+                    b.Property<decimal>("LatePayInterestRatePerDay")
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Bnpl_PlanTypeID");
+
+                    b.HasIndex("Bnpl_PlanTypeName")
+                        .IsUnique();
 
                     b.ToTable("BNPL_PlanTypes");
                 });
@@ -238,6 +302,9 @@ namespace WebApplication1.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("CashflowID");
+
+                    b.HasIndex("CashflowRef")
+                        .IsUnique();
 
                     b.HasIndex("OrderID");
 
@@ -321,6 +388,20 @@ namespace WebApplication1.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("OrderID"));
+
+                    b.Property<bool?>("CancellationApproved")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("CancellationRejectionReason")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("CancellationRequestDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("CancelledDate")
                         .HasColumnType("datetime(6)");
@@ -540,6 +621,17 @@ namespace WebApplication1.Migrations
                     b.Navigation("CustomerOrder");
                 });
 
+            modelBuilder.Entity("WebApplication1.Models.BNPL_PlanSettlementSummary", b =>
+                {
+                    b.HasOne("WebApplication1.Models.BNPL_PLAN", "BNPL_PLAN")
+                        .WithMany("BNPL_PlanSettlementSummaries")
+                        .HasForeignKey("Bnpl_PlanID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BNPL_PLAN");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.Cashflow", b =>
                 {
                     b.HasOne("WebApplication1.Models.CustomerOrder", "CustomerOrder")
@@ -623,6 +715,8 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("WebApplication1.Models.BNPL_PLAN", b =>
                 {
                     b.Navigation("BNPL_Installments");
+
+                    b.Navigation("BNPL_PlanSettlementSummaries");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.BNPL_PlanType", b =>

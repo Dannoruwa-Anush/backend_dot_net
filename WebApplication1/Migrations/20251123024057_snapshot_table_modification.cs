@@ -7,124 +7,87 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WebApplication1.Migrations
 {
     /// <inheritdoc />
-    public partial class newTablesAdded : Migration
+    public partial class snapshot_table_modification : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_Customers_Email",
-                table: "Customers");
-
-            migrationBuilder.DropColumn(
-                name: "Email",
-                table: "Customers");
-
-            migrationBuilder.RenameColumn(
-                name: "BrandId",
-                table: "Brands",
-                newName: "BrandID");
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Customers",
-                type: "datetime(6)",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Customers",
-                type: "datetime(6)",
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "UserID",
-                table: "Customers",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Categories",
-                type: "datetime(6)",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Categories",
-                type: "datetime(6)",
-                nullable: true);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Brands",
-                type: "datetime(6)",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Brands",
-                type: "datetime(6)",
-                nullable: true);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "CreatedAt",
-                table: "BNPL_PlanTypes",
-                type: "datetime(6)",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "InterestRate",
-                table: "BNPL_PlanTypes",
-                type: "decimal(5,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "LatePayInterestRate",
-                table: "BNPL_PlanTypes",
-                type: "decimal(5,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "BNPL_PlanTypes",
-                type: "datetime(6)",
-                nullable: true);
+            migrationBuilder.AlterDatabase()
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "CustomerOrders",
+                name: "BNPL_PlanTypes",
                 columns: table => new
                 {
-                    OrderID = table.Column<int>(type: "int", nullable: false)
+                    Bnpl_PlanTypeID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    OrderDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ShippedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DeliveredDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    CancelledDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    OrderStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
-                    PaymentCompletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    OrderPaymentStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
-                    CustomerID = table.Column<int>(type: "int", nullable: false),
+                    Bnpl_PlanTypeName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Bnpl_DurationDays = table.Column<int>(type: "int", nullable: false),
+                    InterestRate = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    LatePayInterestRatePerDay = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    Bnpl_Description = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CustomerOrders", x => x.OrderID);
-                    table.ForeignKey(
-                        name: "FK_CustomerOrders_Customers_CustomerID",
-                        column: x => x.CustomerID,
-                        principalTable: "Customers",
-                        principalColumn: "CustomerID",
-                        onDelete: ReferentialAction.Restrict);
+                    table.PrimaryKey("PK_BNPL_PlanTypes", x => x.Bnpl_PlanTypeID);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Brands",
+                columns: table => new
+                {
+                    BrandID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    BrandName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Brands", x => x.BrandID);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    CategoryID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    CategoryName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.CategoryID);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    UserID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Email = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Password = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Role = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.UserID);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -164,22 +127,91 @@ namespace WebApplication1.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Users",
+                name: "Customers",
                 columns: table => new
                 {
-                    UserID = table.Column<int>(type: "int", nullable: false)
+                    CustomerID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Email = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                    CustomerName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Password = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                    PhoneNo = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Role = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    Address = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserID = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.UserID);
+                    table.PrimaryKey("PK_Customers", x => x.CustomerID);
+                    table.ForeignKey(
+                        name: "FK_Customers_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Employees",
+                columns: table => new
+                {
+                    EmployeeID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    EmployeeName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Position = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    UserID = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Employees", x => x.EmployeeID);
+                    table.ForeignKey(
+                        name: "FK_Employees_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "CustomerOrders",
+                columns: table => new
+                {
+                    OrderID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ShippedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeliveredDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CancelledDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CancellationRequestDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CancellationReason = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CancellationApproved = table.Column<bool>(type: "tinyint(1)", nullable: true),
+                    CancellationRejectionReason = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    OrderStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    PaymentCompletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    OrderPaymentStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    CustomerID = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerOrders", x => x.OrderID);
+                    table.ForeignKey(
+                        name: "FK_CustomerOrders_Customers_CustomerID",
+                        column: x => x.CustomerID,
+                        principalTable: "Customers",
+                        principalColumn: "CustomerID",
+                        onDelete: ReferentialAction.Restrict);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -189,11 +221,12 @@ namespace WebApplication1.Migrations
                 {
                     Bnpl_PlanID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Bnpl_InitialPayment = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Bnpl_AmountPerInstallment = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Bnpl_TotalInstallmentCount = table.Column<int>(type: "int", nullable: false),
                     Bnpl_RemainingInstallmentCount = table.Column<int>(type: "int", nullable: false),
                     Bnpl_StartDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Bnpl_NextDueDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Bnpl_NextDueDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Bnpl_Status = table.Column<string>(type: "nvarchar(20)", nullable: false),
@@ -254,7 +287,6 @@ namespace WebApplication1.Migrations
                 {
                     E_ItemID = table.Column<int>(type: "int", nullable: false),
                     OrderID = table.Column<int>(type: "int", nullable: false),
-                    OrderItemID = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SubTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -280,31 +312,6 @@ namespace WebApplication1.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Employees",
-                columns: table => new
-                {
-                    EmployeeID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    EmployeeName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Position = table.Column<string>(type: "nvarchar(20)", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Employees", x => x.EmployeeID);
-                    table.ForeignKey(
-                        name: "FK_Employees_Users_UserID",
-                        column: x => x.UserID,
-                        principalTable: "Users",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Restrict);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "BNPL_Installments",
                 columns: table => new
                 {
@@ -314,12 +321,14 @@ namespace WebApplication1.Migrations
                     Installment_BaseAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Installment_DueDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     OverPaymentCarried = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ArrearsCarried = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LateInterest = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalDueAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    AmountPaid = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AmountPaid_AgainstBase = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AmountPaid_AgainstArrears = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AmountPaid_AgainstLateInterest = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LastPaymentDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     RefundDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    LastLateInterestAppliedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Bnpl_Installment_Status = table.Column<string>(type: "nvarchar(30)", nullable: false),
                     Bnpl_PlanID = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -337,22 +346,41 @@ namespace WebApplication1.Migrations
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Customers_PhoneNo",
-                table: "Customers",
-                column: "PhoneNo",
-                unique: true);
+            migrationBuilder.CreateTable(
+                name: "BNPL_PlanSettlementSummaries",
+                columns: table => new
+                {
+                    SettlementID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    CurrentInstallmentNo = table.Column<int>(type: "int", nullable: false),
+                    TotalCurrentArrears = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalCurrentLateInterest = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    InstallmentBaseAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalCurrentOverPayment = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalPayableSettlement = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Bnpl_PlanSettlementSummary_Status = table.Column<string>(type: "nvarchar(30)", nullable: false),
+                    IsLatest = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
+                    Bnpl_PlanID = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BNPL_PlanSettlementSummaries", x => x.SettlementID);
+                    table.ForeignKey(
+                        name: "FK_BNPL_PlanSettlementSummaries_BNPL_PLANs_Bnpl_PlanID",
+                        column: x => x.Bnpl_PlanID,
+                        principalTable: "BNPL_PLANs",
+                        principalColumn: "Bnpl_PlanID",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Customers_UserID",
-                table: "Customers",
-                column: "UserID",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BNPL_Installments_Bnpl_PlanID",
+                name: "IX_BNPL_Installments_Bnpl_PlanID_InstallmentNo",
                 table: "BNPL_Installments",
-                column: "Bnpl_PlanID");
+                columns: new[] { "Bnpl_PlanID", "InstallmentNo" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BNPL_PLANs_Bnpl_PlanTypeID",
@@ -366,9 +394,38 @@ namespace WebApplication1.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_BNPL_PlanSettlementSummaries_Bnpl_PlanID",
+                table: "BNPL_PlanSettlementSummaries",
+                column: "Bnpl_PlanID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BNPL_PlanTypes_Bnpl_PlanTypeName",
+                table: "BNPL_PlanTypes",
+                column: "Bnpl_PlanTypeName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Brands_BrandName",
+                table: "Brands",
+                column: "BrandName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Cashflows_CashflowRef",
+                table: "Cashflows",
+                column: "CashflowRef",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Cashflows_OrderID",
                 table: "Cashflows",
                 column: "OrderID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_CategoryName",
+                table: "Categories",
+                column: "CategoryName",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerOrderElectronicItems_E_ItemID",
@@ -379,6 +436,18 @@ namespace WebApplication1.Migrations
                 name: "IX_CustomerOrders_CustomerID",
                 table: "CustomerOrders",
                 column: "CustomerID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_PhoneNo",
+                table: "Customers",
+                column: "PhoneNo",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_UserID",
+                table: "Customers",
+                column: "UserID",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ElectronicItems_BrandID",
@@ -407,25 +476,16 @@ namespace WebApplication1.Migrations
                 table: "Users",
                 column: "Email",
                 unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Customers_Users_UserID",
-                table: "Customers",
-                column: "UserID",
-                principalTable: "Users",
-                principalColumn: "UserID",
-                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Customers_Users_UserID",
-                table: "Customers");
-
             migrationBuilder.DropTable(
                 name: "BNPL_Installments");
+
+            migrationBuilder.DropTable(
+                name: "BNPL_PlanSettlementSummaries");
 
             migrationBuilder.DropTable(
                 name: "Cashflows");
@@ -443,82 +503,22 @@ namespace WebApplication1.Migrations
                 name: "ElectronicItems");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "BNPL_PlanTypes");
 
             migrationBuilder.DropTable(
                 name: "CustomerOrders");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Customers_PhoneNo",
-                table: "Customers");
+            migrationBuilder.DropTable(
+                name: "Brands");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Customers_UserID",
-                table: "Customers");
+            migrationBuilder.DropTable(
+                name: "Categories");
 
-            migrationBuilder.DropColumn(
-                name: "CreatedAt",
-                table: "Customers");
+            migrationBuilder.DropTable(
+                name: "Customers");
 
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "Customers");
-
-            migrationBuilder.DropColumn(
-                name: "UserID",
-                table: "Customers");
-
-            migrationBuilder.DropColumn(
-                name: "CreatedAt",
-                table: "Categories");
-
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "Categories");
-
-            migrationBuilder.DropColumn(
-                name: "CreatedAt",
-                table: "Brands");
-
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "Brands");
-
-            migrationBuilder.DropColumn(
-                name: "CreatedAt",
-                table: "BNPL_PlanTypes");
-
-            migrationBuilder.DropColumn(
-                name: "InterestRate",
-                table: "BNPL_PlanTypes");
-
-            migrationBuilder.DropColumn(
-                name: "LatePayInterestRate",
-                table: "BNPL_PlanTypes");
-
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "BNPL_PlanTypes");
-
-            migrationBuilder.RenameColumn(
-                name: "BrandID",
-                table: "Brands",
-                newName: "BrandId");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Email",
-                table: "Customers",
-                type: "varchar(255)",
-                maxLength: 255,
-                nullable: false,
-                defaultValue: "")
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Customers_Email",
-                table: "Customers",
-                column: "Email",
-                unique: true);
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }
