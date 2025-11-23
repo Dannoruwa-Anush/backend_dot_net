@@ -11,10 +11,10 @@ namespace WebApplication1.Services.ServiceImpl
     public class BNPL_PlanSettlementSummaryServiceImpl : IBNPL_PlanSettlementSummaryService
     {
         private readonly IBNPL_PlanSettlementSummaryRepository _repository;
-        
+
         private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
-        
+
         // logger: for auditing
         private readonly ILogger<BNPL_PlanSettlementSummaryServiceImpl> _logger;
 
@@ -127,75 +127,71 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Shared Internal Operations Used by Multiple Repositories
+        // Single plan (for payment processing)
         public async Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId)
         {
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            // Build the new staged settlement snapshot
-            var snapshot = await BuildSettlementSnapshotAsync(planId, today);
-
-            // Mark previously-latest summaries as not latest (staged only)
-            await MarkOldSnapshotsAsync(planId);
-
-            _logger.LogInformation("Bnpl latest installment snapshot created: SettlementID={SettlementId}, PlanId={PlanId}", snapshot.SettlementID, snapshot.Bnpl_PlanID);
-            return snapshot;
+            return (await BuildSettlementGenerateRequestBatchAsync(new List<int> { planId }, today)).First();
         }
 
-        // Helper method : Create snapshot
-        private async Task<BNPL_PlanSettlementSummary> BuildSettlementSnapshotAsync(int planId, DateTime asOfDate)
+        // Batch version (for late interest updates or bulk operations)
+        public async Task<List<BNPL_PlanSettlementSummary>> BuildSettlementGenerateRequestBatchAsync(List<int> planIds, DateTime asOfDate)
         {
-            var unsettled = await GetUnsettledInstallmentsAsync(planId, asOfDate);
+            if (planIds == null || !planIds.Any())
+                return new List<BNPL_PlanSettlementSummary>();
 
-            var totals = CalculateSettlementValues(unsettled);
+            // Fetch all unsettled installments for all plans
+            var allInstallments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentsForPlansAsync(planIds, asOfDate);
 
-            return new BNPL_PlanSettlementSummary
+            var snapshots = new List<BNPL_PlanSettlementSummary>();
+
+            foreach (var planId in planIds)
             {
-                Bnpl_PlanID = planId,
-                CurrentInstallmentNo = unsettled.Max(i => i.InstallmentNo),
-                InstallmentBaseAmount = totals.TotalBaseAmount,
-                TotalCurrentLateInterest = totals.TotalLateInterest,
-                TotalCurrentOverPayment = totals.TotalOverPayment,
-                TotalCurrentArrears = totals.TotalArrears,
-                TotalPayableSettlement = totals.TotalPayable,
+                var installments = allInstallments.Where(i => i.Bnpl_PlanID == planId).ToList();
+                if (!installments.Any())
+                {
+                    _logger.LogInformation("No unsettled installments found for PlanId={PlanId}", planId);
+                    continue;
+                }
 
-                Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
-                IsLatest = true,
-            };
+                var totals = CalculateSettlementValues(installments);
+
+                var snapshot = new BNPL_PlanSettlementSummary
+                {
+                    Bnpl_PlanID = planId,
+                    CurrentInstallmentNo = installments.Max(i => i.InstallmentNo),
+                    InstallmentBaseAmount = totals.TotalBaseAmount,
+                    TotalCurrentLateInterest = totals.TotalLateInterest,
+                    TotalCurrentOverPayment = totals.TotalOverPayment,
+                    TotalCurrentArrears = totals.TotalArrears,
+                    TotalPayableSettlement = totals.TotalPayable,
+                    Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
+                    IsLatest = true,
+                };
+
+                snapshots.Add(snapshot);
+            }
+
+            if (snapshots.Any())
+            {
+                // Mark old snapshots as not latest in batch
+                await _repository.MarkPreviousSnapshotsAsNotLatestBatchAsync(snapshots.Select(s => s.Bnpl_PlanID).ToList());
+
+                _logger.LogInformation("Snapshots created for {Count} plans", snapshots.Count);
+            }
+
+            return snapshots;
         }
 
-        // Helper method : Get All Unsettled Installments
-        private async Task<List<BNPL_Installment>> GetUnsettledInstallmentsAsync(int planId, DateTime asOfDate)
-        {
-            var unsettled = await _bNPL_InstallmentRepository
-                .GetAllUnsettledInstallmentUpToDateAsync(planId, asOfDate);
-
-            if (unsettled == null || !unsettled.Any())
-                throw new Exception("No unsettled installments found");
-
-            return unsettled.ToList();
-        }
-
-        // Helper method : Get accumulated settlements
         private (decimal TotalBaseAmount, decimal TotalLateInterest, decimal TotalOverPayment, decimal TotalArrears, decimal TotalPayable) CalculateSettlementValues(List<BNPL_Installment> installments)
         {
             var baseAmount = installments.Sum(i => i.Installment_BaseAmount);
             var lateInterest = installments.Sum(i => i.LateInterest);
             var overPayment = installments.Sum(i => i.OverPaymentCarried);
-
-            // Arrears = Remaining base + arrears carried (late not included)
             var arrears = installments.Sum(i => i.RemainingBalance);
-
-            // Total amount currently payable
             var payable = arrears + lateInterest - overPayment;
 
             return (baseAmount, lateInterest, overPayment, arrears, payable);
-        }
-
-        // Helper method : Mark previous snapshot as IsLatested = false
-        private async Task MarkOldSnapshotsAsync(int planId)
-        {
-            // Only stage updates, no SaveChanges inside
-            await _repository.MarkPreviousSnapshotsAsNotLatestAsync(planId);
         }
     }
 }

@@ -199,6 +199,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .ToListAsync();
         }
 
+        public async Task<List<BNPL_Installment>> GetAllUnsettledInstallmentsForPlansAsync(List<int> planIds, DateTime asOfDate)
+        {
+            if (planIds == null || !planIds.Any())
+                return new List<BNPL_Installment>();
+
+            return await _context.BNPL_Installments
+                .Where(i => planIds.Contains(i.Bnpl_PlanID)
+                            && i.TotalPaid < i.TotalDueAmount
+                            && i.Installment_DueDate <= asOfDate)
+                .ToListAsync();
+        }
+
         public async Task<List<BNPL_Installment>> GetAllUnsettledInstallmentByPlanIdAsync(int planId)
         {
             var excludedStatuses = new[]

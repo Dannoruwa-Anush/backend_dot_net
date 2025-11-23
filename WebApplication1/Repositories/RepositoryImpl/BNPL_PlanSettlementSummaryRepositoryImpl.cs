@@ -18,18 +18,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
         // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //Custom Query Operations
-        public async Task MarkPreviousSnapshotsAsNotLatestAsync(int planId)
-        {
-            var previousSnapshots = await _context.BNPL_PlanSettlementSummaries
-                .Where(s => s.Bnpl_PlanID == planId && s.IsLatest)
-                .ToListAsync();
-
-            foreach (var snapshot in previousSnapshots)
-            {
-                snapshot.IsLatest = false;
-            }
-        }
-
         public async Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotAsync(int planId)
         {
             return await _context.BNPL_PlanSettlementSummaries
@@ -46,6 +34,33 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Where(s => s.BNPL_PLAN!.CustomerOrder!.OrderID == orderId && s.IsLatest)
                 .OrderByDescending(s => s.CreatedAt)
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task MarkPreviousSnapshotsAsNotLatestAsync(int planId)
+        {
+            var previousSnapshots = await _context.BNPL_PlanSettlementSummaries
+                .Where(s => s.Bnpl_PlanID == planId && s.IsLatest)
+                .ToListAsync();
+
+            foreach (var snapshot in previousSnapshots)
+            {
+                snapshot.IsLatest = false;
+            }
+        }
+
+        public async Task MarkPreviousSnapshotsAsNotLatestBatchAsync(List<int> planIds)
+        {
+            if (planIds == null || !planIds.Any())
+                return;
+
+            var previousSnapshots = await _context.BNPL_PlanSettlementSummaries
+                .Where(s => planIds.Contains(s.Bnpl_PlanID) && s.IsLatest)
+                .ToListAsync();
+
+            foreach (var snapshot in previousSnapshots)
+            {
+                snapshot.IsLatest = false;
+            }
         }
     }
 }
