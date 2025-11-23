@@ -199,16 +199,5 @@ namespace WebApplication1.Services.ServiceImpl
             // Only stage updates, no SaveChanges inside
             await _repository.MarkPreviousSnapshotsAsNotLatestAsync(planId);
         }
-
-        public async Task BuildBnplSettlementSummaryStatusUpdateRequestAsync(ICollection<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries, BNPL_PlanSettlementSummary_StatusEnum settlementSummaryStatus, DateTime now)
-        {
-            foreach (var snapshot in BNPL_PlanSettlementSummaries)
-            {
-                snapshot.Bnpl_PlanSettlementSummary_Status = settlementSummaryStatus;
-                //snapshot.IsLatest = ///
-                
-                await _repository.UpdateAsync(snapshot.SettlementID, snapshot);
-            }
-        }
     }
 }

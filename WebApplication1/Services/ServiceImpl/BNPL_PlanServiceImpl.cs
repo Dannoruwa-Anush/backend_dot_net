@@ -119,40 +119,5 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Bnpl plan created: Id={Id}, OrderId={OrderId}", bNPL_Plan.Bnpl_PlanID, bNPL_Plan.OrderID);
             return bNPL_Plan;
         }
-
-        public async Task BuildBnplPlanStatusUpdateRequestAsync(BNPL_PLAN plan, BnplStatusEnum planStatus, DateTime now)
-        {
-            plan.Bnpl_Status = planStatus;
-            plan.CancelledAt = now;
-
-            await _repository.UpdateAsync(plan.Bnpl_PlanID, plan);
-        }
-
-        public async Task BuildBnplOngoingPlanStatusUpdateRequestAsync(BNPL_PLAN plan, DateTime now)
-        {
-            var paidStatuses = new[]
-            {
-                BNPL_Installment_StatusEnum.Paid_OnTime,
-                BNPL_Installment_StatusEnum.Paid_Late
-            };
-
-            var remainingInstallments = plan.BNPL_Installments!.Count(x => !paidStatuses.Contains(x.Bnpl_Installment_Status));
-            plan.Bnpl_RemainingInstallmentCount = remainingInstallments;
-
-            plan.Bnpl_NextDueDate = plan.BNPL_Installments!
-                .Where(x => !paidStatuses.Contains(x.Bnpl_Installment_Status))
-                .OrderBy(x => x.Installment_DueDate)
-                .Select(x => x.Installment_DueDate)
-                .FirstOrDefault();
-
-            // If all installments paid : mark completed
-            if (remainingInstallments == 0)
-            {
-                plan.CompletedAt = now;
-                plan.Bnpl_Status = BnplStatusEnum.Completed;
-            }
-
-            await _repository.UpdateAsync(plan.Bnpl_PlanID, plan);
-        }
     }
 }

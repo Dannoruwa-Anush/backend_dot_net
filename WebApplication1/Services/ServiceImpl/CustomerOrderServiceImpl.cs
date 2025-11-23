@@ -3,7 +3,6 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
-using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
@@ -18,20 +17,18 @@ namespace WebApplication1.Services.ServiceImpl
 
         private readonly ICustomerService _customerService;
         private readonly IElectronicItemService _electronicItemService;
-        private readonly IOrderFinancialService _orderFinancialService;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerService customerService, IElectronicItemService electronicItemService, IOrderFinancialService orderFinancialService, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerService customerService, IElectronicItemService electronicItemService, ILogger<CustomerOrderServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _customerService = customerService;
             _electronicItemService = electronicItemService;
-            _orderFinancialService = orderFinancialService;
             _logger = logger;
         }
 
@@ -101,6 +98,13 @@ namespace WebApplication1.Services.ServiceImpl
             return items.ToDictionary(x => x.ElectronicItemID);
         }
 
+        //Custom Query Operations
+        public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null) =>
+            await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, paymentStatusId, orderStatusId, searchKey);
+
+        public async Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null) =>
+            await _repository.GetAllByCustomerWithPaginationAsync(customerId, pageNumber, pageSize, orderStatusId, searchKey);
+
         // Update : Order Status
         public async Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto request)
         {
@@ -118,8 +122,10 @@ namespace WebApplication1.Services.ServiceImpl
                 if (order.OrderStatus == request.NewOrderStatus)
                     return order;
 
+                //validation
                 ValidateOrderStatusTransition(order, request.NewOrderStatus, now);
-                await ApplyOrderStatusChangesAsync(order, request.NewOrderStatus, now);
+
+                ApplyOrderStatusChangesAsync(order, request.NewOrderStatus, now);
 
                 await _repository.UpdateAsync(order.OrderID, order);
                 await _unitOfWork.CommitAsync();
@@ -140,11 +146,11 @@ namespace WebApplication1.Services.ServiceImpl
         {
             // Dictionary defining valid transitions
             var validTransitions = new Dictionary<OrderStatusEnum, List<OrderStatusEnum>>
-    {
-        { OrderStatusEnum.Pending, new List<OrderStatusEnum> { OrderStatusEnum.Shipped, OrderStatusEnum.Delivered, OrderStatusEnum.Cancel_Pending } },
-        { OrderStatusEnum.Shipped, new List<OrderStatusEnum> { OrderStatusEnum.Delivered } },
-        { OrderStatusEnum.Cancel_Pending, new List<OrderStatusEnum> { OrderStatusEnum.Cancelled, OrderStatusEnum.DeliveredAfterCancellationRejected } }
-    };
+            {
+                { OrderStatusEnum.Pending, new List<OrderStatusEnum> { OrderStatusEnum.Shipped, OrderStatusEnum.Delivered, OrderStatusEnum.Cancel_Pending } },
+                { OrderStatusEnum.Shipped, new List<OrderStatusEnum> { OrderStatusEnum.Delivered } },
+                { OrderStatusEnum.Cancel_Pending, new List<OrderStatusEnum> { OrderStatusEnum.Cancelled, OrderStatusEnum.DeliveredAfterCancellationRejected } }
+            };
 
             // Add additional validations for special cases
             if (existingOrder.OrderStatus == OrderStatusEnum.Delivered)
@@ -172,9 +178,9 @@ namespace WebApplication1.Services.ServiceImpl
                 }
             }
         }
-        
+
         // Helper Method: Applies status changes to the order
-        private async Task ApplyOrderStatusChangesAsync(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
+        private void ApplyOrderStatusChangesAsync(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
         {
             switch (newStatus)
             {
@@ -188,7 +194,7 @@ namespace WebApplication1.Services.ServiceImpl
                     order.OrderStatus = OrderStatusEnum.Cancelled;
                     order.CancelledDate = now;
                     order.CancellationApproved = true;
-                    await HandleCancelOrderAsync(order);
+                    HandleCancelOrderAsync(order);
                     break;
 
                 case OrderStatusEnum.Shipped:
@@ -211,15 +217,88 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper Method : CancelOrder
-        private async Task HandleCancelOrderAsync(CustomerOrder order)
+        private void HandleCancelOrderAsync(CustomerOrder order)
+        {
+            switch (order.OrderPaymentStatus)
+            {
+                case OrderPaymentStatusEnum.Pending:
+                    // No payments - just cancel order
+                    HandleRestock(order);
+                    break;
+
+                case OrderPaymentStatusEnum.Fully_Paid:
+                    // Full pay (no Bnpl) - refund : cashflow
+                    HandleFullyPaidCancellationAsync(order);
+                    break;
+
+                case OrderPaymentStatusEnum.Partially_Paid:
+                    // Partial pay (Bnpl) - refund : cashflow, cancel : Bnpl, Refund : bnpl installemts, Cancel : bnpl_snapshot
+                    HandlePartiallyPaidCancellationAsync(order);
+                    break;
+
+                default:
+                    throw new InvalidOperationException(
+                        $"Unsupported payment status for cancellation: {order.OrderPaymentStatus}");
+            }
+        }
+
+        //Helper Method : Cancel full pay (no Bnpl) - refund : cashflow
+        private void HandleFullyPaidCancellationAsync(CustomerOrder order)
         {
             HandleRestock(order);
 
-            if (order.OrderPaymentStatus != OrderPaymentStatusEnum.Pending)
+            // Refund all cashflows
+            foreach (var cf in order.Cashflows)
             {
-                //After cancellation Confirmed : Refund 
-                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Refunded);
+                cf.CashflowStatus = CashflowStatusEnum.Refunded;
+                cf.RefundDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
             }
+
+            // Update order payment status to refunded
+            order.OrderPaymentStatus = OrderPaymentStatusEnum.Refunded;
+        }
+
+        //Helper Method : Cancel partial pay (Bnpl) - refund : cashflow, cancel : Bnpl, Refund : bnpl installemts, Cancel : bnpl_snapshot
+        private void HandlePartiallyPaidCancellationAsync(CustomerOrder order)
+        {
+            HandleRestock(order);
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // Refund cashflows
+            foreach (var cf in order.Cashflows)
+            {
+                if (cf.CashflowStatus != CashflowStatusEnum.Refunded)
+                {
+                    cf.CashflowStatus = CashflowStatusEnum.Refunded;
+                    cf.RefundDate = now;
+                }
+            }
+
+            // Cancel BNPL plan
+            if (order.BNPL_PLAN != null)
+            {
+                //Bnpl plan
+                order.BNPL_PLAN.Bnpl_Status = BnplStatusEnum.Cancelled;
+                order.BNPL_PLAN.CancelledAt = now;
+
+                // Mark installments as refunded
+                foreach (var inst in order.BNPL_PLAN.BNPL_Installments)
+                {
+                    inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Refunded;
+                    inst.RefundDate = now;
+                }
+
+                // Cancel settlement snapshots
+                foreach (var summary in order.BNPL_PLAN.BNPL_PlanSettlementSummaries)
+                {
+                    summary.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;
+                    summary.IsLatest = false;
+                }
+            }
+
+            // Update order payment status to refunded
+            order.OrderPaymentStatus = OrderPaymentStatusEnum.Refunded;
         }
 
         //Helper Method : Restock
@@ -228,12 +307,5 @@ namespace WebApplication1.Services.ServiceImpl
             foreach (var item in order.CustomerOrderElectronicItems)
                 item.ElectronicItem.QOH += item.Quantity;
         }
-
-        //Custom Query Operations
-        public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null) =>
-            await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, paymentStatusId, orderStatusId, searchKey);
-
-        public async Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null) =>
-            await _repository.GetAllByCustomerWithPaginationAsync(customerId, pageNumber, pageSize, orderStatusId, searchKey);
     }
 }

@@ -6,7 +6,6 @@ namespace WebApplication1.Repositories.IRepository
     {
         //CRUD operations
         Task AddAsync(BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary);
-        Task<BNPL_PlanSettlementSummary?> UpdateAsync(int id, BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary);
 
         //Custom Query Operations
         Task MarkPreviousSnapshotsAsNotLatestAsync(int planId);

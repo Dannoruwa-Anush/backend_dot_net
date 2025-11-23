@@ -19,7 +19,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
         private readonly IBNPL_PlanService _bNPL_PlanService;
-        private readonly IOrderFinancialService _orderFinancialService;
 
         //logger: for auditing
         private readonly ILogger<PaymentServiceImpl> _logger;
@@ -33,7 +32,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         IBNPL_InstallmentService bNPL_InstallmentService,
         IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
         IBNPL_PlanService bNPL_PlanService,
-        IOrderFinancialService orderFinancialService,
         ILogger<PaymentServiceImpl> logger)
         {
             // Dependency injection
@@ -44,7 +42,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
-            _orderFinancialService = orderFinancialService;
             _logger = logger;
         }
 
@@ -66,7 +63,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
               
                 // 2. Update customer order payment status to Fully Paid
-                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Fully_Paid);
+                //await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Fully_Paid);
                
                 // 3. Commit the transaction
                 await _unitOfWork.CommitAsync();
@@ -146,7 +143,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 if (plan == null)
                     throw new Exception($"Associated BNPL plan not found for OrderID={paymentRequest.OrderId}");
 
-                await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Fully_Paid);
+                //await _orderFinancialService.BuildPaymentUpdateRequestAsync(order, OrderPaymentStatusEnum.Fully_Paid);
 
                 // 4. Generate settlement snapshot
                 var settlementSnapshot = await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(plan.Bnpl_PlanID);

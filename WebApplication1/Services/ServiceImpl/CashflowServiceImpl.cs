@@ -71,15 +71,5 @@ namespace WebApplication1.Services.ServiceImpl
             _logger.LogInformation("Generated Cashflow record: {CashflowRef}", newCashflow.CashflowRef);
             return newCashflow;
         }
-
-        public async Task BuildCashflowStatusUpdateRequestAsync(CustomerOrder order, CashflowStatusEnum newStatus, DateTime now)
-        {
-            foreach (var cashflow in order.Cashflows)
-            {
-                cashflow.CashflowStatus = newStatus;
-                cashflow.RefundDate = now;
-                await _repository.UpdateAsync(cashflow.CashflowID, cashflow);
-            }
-        }
     }
 }

@@ -29,19 +29,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(Cashflow cashflow) =>
             await _context.Cashflows.AddAsync(cashflow);
 
-        public async Task<Cashflow?> UpdateAsync(int id, Cashflow cashflow)
-        {
-            var existing = await _context.Cashflows.FindAsync(id);
-            if (existing == null)
-                return null;
-
-            existing.CashflowStatus = cashflow.CashflowStatus;
-            existing.RefundDate = cashflow.RefundDate;   
-
-            _context.Cashflows.Update(existing);
-            return existing;
-        }
-
         //Custom Query Operations
         public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
         {

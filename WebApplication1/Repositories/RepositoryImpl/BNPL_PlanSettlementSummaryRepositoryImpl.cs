@@ -21,19 +21,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary) =>
             await _context.BNPL_PlanSettlementSummaries.AddAsync(bNPL_PlanSettlementSummary);
 
-        public async Task<BNPL_PlanSettlementSummary?> UpdateAsync(int id, BNPL_PlanSettlementSummary bNPL_PlanSettlementSummary)
-        {
-            var existing = await _context.BNPL_PlanSettlementSummaries.FindAsync(id);
-            if (existing == null)
-                return null;
-
-            existing.Bnpl_PlanSettlementSummary_Status = bNPL_PlanSettlementSummary.Bnpl_PlanSettlementSummary_Status;
-            existing.IsLatest = bNPL_PlanSettlementSummary.IsLatest;
-
-            _context.BNPL_PlanSettlementSummaries.Update(existing);
-            return existing;
-        }
-
         //Custom Query Operations
         public async Task MarkPreviousSnapshotsAsNotLatestAsync(int planId)
         {
