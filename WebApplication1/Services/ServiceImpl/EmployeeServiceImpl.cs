@@ -41,7 +41,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Employee> UpdateEmployeeWithSaveAsync(int id, Employee employee)
         {
-            var existingEmployee = _repository.GetByIdAsync(id);
+            var existingEmployee = await _repository.GetByIdAsync(id);
             if (existingEmployee == null)
                 throw new Exception("Employee not found");
 

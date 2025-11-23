@@ -13,10 +13,10 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICashflowRepository _repository;
 
         //logger: for auditing
-        private readonly ILogger<CategoryServiceImpl> _logger;
+        private readonly ILogger<CashflowServiceImpl> _logger;
 
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository, ILogger<CategoryServiceImpl> logger)
+        public CashflowServiceImpl(ICashflowRepository repository, ILogger<CashflowServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
