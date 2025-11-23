@@ -176,7 +176,8 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 // Mark old snapshots as not latest in batch
                 await _repository.MarkPreviousSnapshotsAsNotLatestBatchAsync(snapshots.Select(s => s.Bnpl_PlanID).ToList());
-
+                
+                await _repository.AddRangeAsync(snapshots);
                 _logger.LogInformation("Snapshots created for {Count} plans", snapshots.Count);
             }
 

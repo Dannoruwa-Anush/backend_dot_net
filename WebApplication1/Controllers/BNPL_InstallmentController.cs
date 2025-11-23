@@ -105,31 +105,6 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
-
-        //Installment Paymenr Simulator
-        /*
-        [HttpPost("bnpl-installmant-payment-simulate")]
-        public async Task<IActionResult> SimulateBnplInstallmentPayment([FromBody] BnplInstallmentPaymentSimulationRequestDto request)
-        {
-            try
-            {
-                var result = await _service.SimulateBnplInstallmentPaymentAsync(request);
-                var response = new ApiResponseDto<object>(
-                    200,
-                    "Payment simulation successful",
-                    result
-                );
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponseDto<string>(
-                    400,
-                    ex.Message
-                ));
-            }
-        }
-        */
         
         //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
         [HttpPost("apply-late-interest")]

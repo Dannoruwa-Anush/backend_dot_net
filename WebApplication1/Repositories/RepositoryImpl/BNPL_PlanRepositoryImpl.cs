@@ -37,6 +37,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .Include(bpl => bpl.CustomerOrder)
                         .ThenInclude(bplC => bplC!.Customer)
                     .FirstOrDefaultAsync(bpl => bpl.Bnpl_PlanID == id);
+        
+        public async Task AddAsync(BNPL_PLAN bNPL_PLAN) =>
+            await _context.BNPL_PLANs.AddAsync(bNPL_PLAN);
 
         //Custom Query Operations
         public async Task<bool> ExistsByBnplPlanTypeAsync(int bnplPlanTypeId)

@@ -179,6 +179,8 @@ namespace WebApplication1.Services.ServiceImpl
                 });
             }
 
+            await _repository.AddRangeAsync(installments);
+
             if (installments.Any())
             {
                 _logger.LogInformation("{NoInstallments} installments created for Bnpl planId={PlanId}", installments.Count, installments.First().Bnpl_PlanID);
