@@ -45,7 +45,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger = logger;
         }
 
-        public async Task<BnplInstallmentPaymentResultDto?> ProcessPaymentAsync(PaymentRequestDto paymentRequest, BNPLInstallmentCalculatorRequestDto? initialBnplRequest = null)
+        public async Task<BnplInstallmentPaymentResultDto?> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));
@@ -66,6 +66,23 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 }
                 else if (order.BNPL_PLAN == null)
                 {
+                    if (!paymentRequest.InitialPayment.HasValue)
+                        throw new Exception("Initial payment is required for BNPL.");
+
+                    if (!paymentRequest.Bnpl_PlanTypeID.HasValue)
+                        throw new Exception("BNPL plan type is required.");
+
+                    if (!paymentRequest.InstallmentCount.HasValue)
+                        throw new Exception("Installment count is required.");
+        
+                    var initialBnplRequest = new BNPLInstallmentCalculatorRequestDto
+                    {
+                        OrderID = paymentRequest.OrderId,
+                        InitialPayment = paymentRequest.InitialPayment.Value,
+                        Bnpl_PlanTypeID = paymentRequest.Bnpl_PlanTypeID.Value,
+                        InstallmentCount = paymentRequest.InstallmentCount.Value
+                    };
+
                     // BNPL Initial Payment
                     if (initialBnplRequest == null)
                         throw new InvalidOperationException("Initial BNPL request required for first installment.");

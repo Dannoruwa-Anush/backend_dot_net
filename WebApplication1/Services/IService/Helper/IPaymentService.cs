@@ -6,6 +6,6 @@ namespace WebApplication1.Services.IService.Helper
 {
     public interface IPaymentService
     {
-        Task<BnplInstallmentPaymentResultDto?> ProcessPaymentAsync(PaymentRequestDto paymentRequest, BNPLInstallmentCalculatorRequestDto? initialBnplRequest = null);
+        Task<BnplInstallmentPaymentResultDto?> ProcessPaymentAsync(PaymentRequestDto paymentRequest);
     }
 }
