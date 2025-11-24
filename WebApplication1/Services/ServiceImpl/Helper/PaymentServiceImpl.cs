@@ -45,133 +45,131 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger = logger;
         }
 
-        public async Task<BnplInstallmentPaymentResultDto?> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
+        //Full payment
+        public async Task<bool> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest)
         {
-            if (paymentRequest == null)
-                throw new ArgumentNullException(nameof(paymentRequest));
-
             var order = await _customerOrderService.GetCustomerOrderByIdAsync(paymentRequest.OrderId);
             if (order == null)
-                throw new InvalidOperationException("Customer order not found.");
+                throw new Exception("Order not found");
 
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                BnplInstallmentPaymentResultDto? paymentResult = null;
+                ValidatePaymentStatusTransition(order.OrderPaymentStatus, OrderPaymentStatusEnum.Fully_Paid);
 
-                if (order.OrderPaymentStatus == OrderPaymentStatusEnum.Pending)
-                {
-                    // Full Payment
-                    await HandleFullPaymentAsync(order, paymentRequest);
-                }
-                else if (order.BNPL_PLAN == null)
-                {
-                    if (!paymentRequest.Bnpl_PlanTypeID.HasValue)
-                        throw new Exception("BNPL plan type is required.");
+                // Cashflow only staged (no save)
+                await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
 
-                    if (!paymentRequest.InstallmentCount.HasValue)
-                        throw new Exception("Installment count is required.");
-        
-                    var initialBnplRequest = new BNPLInstallmentCalculatorRequestDto
-                    {
-                        OrderID = paymentRequest.OrderId,
-                        InitialPayment = paymentRequest.PaymentAmount,
-                        Bnpl_PlanTypeID = paymentRequest.Bnpl_PlanTypeID.Value,
-                        InstallmentCount = paymentRequest.InstallmentCount.Value
-                    };
-
-                    // BNPL Initial Payment
-                    if (initialBnplRequest == null)
-                        throw new InvalidOperationException("Initial BNPL request required for first installment.");
-
-                    await HandleBnplInitialPaymentAsync(order, paymentRequest, initialBnplRequest);
-                }
-                else
-                {
-                    // BNPL Installment Payment
-                    paymentResult = await HandleBnplInstallmentPaymentAsync(order, paymentRequest);
-                }
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
 
                 await _unitOfWork.CommitAsync();
-                return paymentResult;
+                return true;
             }
-            catch (Exception ex)
+            catch
             {
                 await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, "Failed to process payment for OrderID={OrderId}", paymentRequest.OrderId);
                 throw;
             }
         }
 
-        //Helper : FullPayment
-        private async Task HandleFullPaymentAsync(CustomerOrder order, PaymentRequestDto paymentRequest)
+        //Bnpl initial payment
+        public async Task<BNPL_PLAN> ProcessInitialBnplPaymentAsync(BnplInitialPaymentRequestDto request)
         {
-            ValidatePaymentStatusTransition(order.OrderPaymentStatus, OrderPaymentStatusEnum.Fully_Paid);
+            var order = await _customerOrderService.GetCustomerOrderByIdAsync(request.OrderId);
+            if (order == null)
+                throw new Exception("Order not found");
 
-            // Create cashflow
-            await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
-
-            // Update order
-            order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
-
-            _logger.LogInformation("Full payment processed for OrderID={OrderId}", order.OrderID);
-        }
-
-        //Helper : Bnpl Initial Payment (Bnpl_plan will be created after the initial payment)
-        private async Task HandleBnplInitialPaymentAsync(CustomerOrder order, PaymentRequestDto paymentRequest, BNPLInstallmentCalculatorRequestDto initialBnplRequest)
-        {
-            var bnplCalc = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(initialBnplRequest);
-
-            // Create BNPL plan
-            var bnplPlan = await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(new BNPL_PLAN
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                Bnpl_InitialPayment = initialBnplRequest.InitialPayment,
-                Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
-                Bnpl_TotalInstallmentCount = initialBnplRequest.InstallmentCount,
-                Bnpl_PlanTypeID = initialBnplRequest.Bnpl_PlanTypeID,
-                OrderID = initialBnplRequest.OrderID,
-            });
+                var bnplCalc = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(
+                    new BNPLInstallmentCalculatorRequestDto
+                    {
+                        OrderID = request.OrderId,
+                        InitialPayment = request.InitialPayment,
+                        Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
+                        InstallmentCount = request.InstallmentCount
+                    });
 
-            // Create installments
-            await _bNPL_InstallmentService.BuildBnplInstallmentBulkAddRequestAsync(bnplPlan);
+                // Create BNPL plan (AddAsync only)
+                var bnplPlan = await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(
+                    new BNPL_PLAN
+                    {
+                        Bnpl_InitialPayment = request.InitialPayment,
+                        Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
+                        Bnpl_TotalInstallmentCount = request.InstallmentCount,
+                        Bnpl_PlanTypeID = request.Bnpl_PlanTypeID,
+                        OrderID = request.OrderId,
+                    });
 
-            // Cashflow for initial payment
-            await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
+                // Generate installments
+                await _bNPL_InstallmentService.BuildBnplInstallmentBulkAddRequestAsync(bnplPlan);
 
-            // Generate settlement snapshot
-            await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnplPlan.Bnpl_PlanID);
+                // Cashflow (initial)
+                await _cashflowService.BuildCashflowAddRequestAsync(
+                    new PaymentRequestDto
+                    {
+                        OrderId = request.OrderId,
+                        PaymentAmount = request.InitialPayment
+                    },
+                    CashflowTypeEnum.BnplInitialPayment);
 
-            // Update order
-            order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+                // Create initial “snapshot”
+                await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnplPlan.Bnpl_PlanID);
 
-            _logger.LogInformation("BNPL initial payment processed for OrderID={OrderId}", order.OrderID);
+                // Update order payment status
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+
+                await _unitOfWork.CommitAsync();
+                return bnplPlan;
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
 
-        //Hepler
-        private async Task<BnplInstallmentPaymentResultDto> HandleBnplInstallmentPaymentAsync(CustomerOrder order, PaymentRequestDto paymentRequest)
+        //Bnpl installment payment
+        public async Task<BnplInstallmentPaymentResultDto?> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
-            // Apply installment payment
-            var (paymentResult, updatedInstallments) = await _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(paymentRequest);
+            var order = await _customerOrderService.GetCustomerOrderByIdAsync(paymentRequest.OrderId);
+            if (order?.BNPL_PLAN == null)
+                throw new Exception("BNPL plan not found");
 
-            // Create cashflow
-            await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var (paymentResult, updatedInstallments) =
+                    await _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(paymentRequest);
 
-            // Update BNPL plan & order status
-            await UpdateBnplPlanAfterPaymentAsync(order);
+                // Create cashflow
+                await _cashflowService.BuildCashflowAddRequestAsync(
+                    paymentRequest,
+                    CashflowTypeEnum.BnplInstallmentPayment);
 
-            // Generate settlement snapshot
-            await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(order.BNPL_PLAN!.Bnpl_PlanID);
+                // Recalculate order & plan status
+                await UpdateBnplPlanStatusAsync(order);
 
-            _logger.LogInformation("BNPL installment payment processed for OrderID={OrderId}", order.OrderID);
+                // Create new snapshot
+                await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(order.BNPL_PLAN.Bnpl_PlanID);
 
-            return paymentResult;
+                await _unitOfWork.CommitAsync();
+                return paymentResult;
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
 
-        //Helper : Update Bnpl plan 
-        private async Task UpdateBnplPlanAfterPaymentAsync(CustomerOrder order)
+        //Helper : Bnpl plan status upadate
+        private async Task UpdateBnplPlanStatusAsync(CustomerOrder order)
         {
             var plan = order.BNPL_PLAN!;
-            var installments = await _bNPL_InstallmentService.GetAllUnsettledInstallmentByPlanIdAsync(plan.Bnpl_PlanID);
+            var installments = await _bNPL_InstallmentService
+                .GetAllUnsettledInstallmentByPlanIdAsync(plan.Bnpl_PlanID);
 
             var remaining = installments.Count(i => i.TotalPaid < i.TotalDueAmount);
 
@@ -180,17 +178,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 plan.Bnpl_RemainingInstallmentCount = 0;
                 plan.Bnpl_NextDueDate = null;
 
-                foreach (var inst in installments)
-                {
-                    if (inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
-                        inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late)
-                    {
-                        inst.Bnpl_Installment_Status = inst.Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow)
-                            ? BNPL_Installment_StatusEnum.Paid_Late
-                            : BNPL_Installment_StatusEnum.Paid_OnTime;
-                    }
-                }
-
                 ValidatePaymentStatusTransition(order.OrderPaymentStatus, OrderPaymentStatusEnum.Fully_Paid);
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
             }
@@ -198,12 +185,11 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             {
                 plan.Bnpl_RemainingInstallmentCount = remaining;
 
-                var nextInstallment = installments
+                plan.Bnpl_NextDueDate = installments
                     .Where(i => i.TotalPaid < i.TotalDueAmount)
                     .OrderBy(i => i.Installment_DueDate)
-                    .FirstOrDefault();
-
-                plan.Bnpl_NextDueDate = nextInstallment?.Installment_DueDate;
+                    .First()
+                    .Installment_DueDate;
 
                 if (order.OrderPaymentStatus != OrderPaymentStatusEnum.Partially_Paid)
                 {
@@ -212,7 +198,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 }
             }
         }
-
+        
         //Helper : ValidatePaymentStatus
         private void ValidatePaymentStatusTransition(OrderPaymentStatusEnum oldStatus, OrderPaymentStatusEnum newStatus)
         {
