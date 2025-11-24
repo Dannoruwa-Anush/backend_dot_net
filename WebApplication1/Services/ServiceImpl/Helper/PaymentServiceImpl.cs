@@ -66,9 +66,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 }
                 else if (order.BNPL_PLAN == null)
                 {
-                    if (!paymentRequest.InitialPayment.HasValue)
-                        throw new Exception("Initial payment is required for BNPL.");
-
                     if (!paymentRequest.Bnpl_PlanTypeID.HasValue)
                         throw new Exception("BNPL plan type is required.");
 
@@ -78,7 +75,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     var initialBnplRequest = new BNPLInstallmentCalculatorRequestDto
                     {
                         OrderID = paymentRequest.OrderId,
-                        InitialPayment = paymentRequest.InitialPayment.Value,
+                        InitialPayment = paymentRequest.PaymentAmount,
                         Bnpl_PlanTypeID = paymentRequest.Bnpl_PlanTypeID.Value,
                         InstallmentCount = paymentRequest.InstallmentCount.Value
                     };
