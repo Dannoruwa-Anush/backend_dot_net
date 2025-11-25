@@ -58,6 +58,7 @@ namespace WebApplication1.Controllers
             try
             {
                 var createdBnplPlan = await _service.ProcessInitialBnplPaymentAsync(paymentRequest);
+                
                 // Model -> ResponseDto   
                 var responseDto = _mapper.Map<BNPL_PlanResponseDto>(createdBnplPlan);
                 var response = new ApiResponseDto<BNPL_PlanResponseDto>(200, "Initial Bnpl Payment processed and bnpl plan created.", responseDto);

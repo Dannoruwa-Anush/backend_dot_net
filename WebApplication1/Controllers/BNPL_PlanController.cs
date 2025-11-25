@@ -94,7 +94,8 @@ namespace WebApplication1.Controllers
             try
             {
                 var result = await _service.CalculateBNPL_PlanAmountPerInstallmentAsync(request);
-
+                
+                // ResultResponse -> ResponseDto  
                 var responseDtos = _mapper.Map<BNPLInstallmentCalculatorResponseDto>(result);
                 var response = new ApiResponseDto<BNPLInstallmentCalculatorResponseDto>(
                     200,
