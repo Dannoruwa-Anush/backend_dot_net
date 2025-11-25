@@ -1,7 +1,6 @@
 using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {
@@ -14,7 +13,6 @@ namespace WebApplication1.Services.IService
         Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request);
         
         //Shared Internal Operations Used by Multiple Repositories
-        Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments);
-        Task<List<BNPL_PlanSettlementSummary>> BuildSettlementGenerateRequestBatchAsync(List<int> planIds, DateTime asOfDate);
+        Task<BNPL_PlanSettlementSummary?> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments);
     }
 }

@@ -5,6 +5,7 @@ namespace WebApplication1.Repositories.IRepository
     public interface IBNPL_PlanSettlementSummaryRepository
     {
         //CRUD Operations
+        Task AddAsync(BNPL_PlanSettlementSummary snapshots);
         Task AddRangeAsync(List<BNPL_PlanSettlementSummary> snapshots);
 
         //Custom Query Operations

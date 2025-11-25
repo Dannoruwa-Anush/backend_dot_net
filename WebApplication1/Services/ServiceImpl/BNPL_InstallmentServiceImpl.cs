@@ -67,7 +67,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task ApplyLateInterestForAllPlansAsync()
         {
             var existingActivePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
-            if (existingActivePlans == null || !existingActivePlans.Any())
+            if (!existingActivePlans.Any())
             {
                 _logger.LogInformation("No active BNPL plans found.");
                 return;
@@ -77,22 +77,27 @@ namespace WebApplication1.Services.ServiceImpl
             try
             {
                 var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                var plansWithChanges = new List<int>();
 
-                // Step 1: Apply late interest for all overdue installments
                 foreach (var plan in existingActivePlans)
                 {
-                    bool updatedInstallments = await ApplyLateInterestToPlanAsync(plan.Bnpl_PlanID, today);
-                    if (updatedInstallments)
-                        plansWithChanges.Add(plan.Bnpl_PlanID);
-                }
+                    // Check if interest was applied
+                    var interestAppliedInstallments = await ApplyLateInterestToPlanAsync(plan.Bnpl_PlanID, today);
 
-                // Step 2: Generate snapshots for all updated plans in batch
-                if (plansWithChanges.Any())
-                {
-                    await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestBatchAsync(plansWithChanges, today);
+                    if (interestAppliedInstallments != null)
+                    {
+                        // Create snapshot
+                        await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(interestAppliedInstallments);
 
-                    _logger.LogInformation("Snapshots generated for {Count} plans", plansWithChanges.Count);
+                        _logger.LogInformation(
+                            $"Snapshot created for Plan={plan.Bnpl_PlanID}"
+                        );
+                    }
+                    else
+                    {
+                        _logger.LogInformation(
+                            $"No late interest applied, skipping snapshot for Plan={plan.Bnpl_PlanID}"
+                        );
+                    }
                 }
 
                 await _unitOfWork.CommitAsync();
@@ -105,22 +110,21 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        // Returns true if any installment was updated
-        private async Task<bool> ApplyLateInterestToPlanAsync(int planId, DateTime today)
+        // Helper method : to apply interest
+        private async Task<List<BNPL_Installment>?> ApplyLateInterestToPlanAsync(int planId, DateTime today)
         {
-            var existingOverdueInstallments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentsForPlansAsync(new List<int> { planId }, today);
+            var overdueInstallments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
 
-            if (!existingOverdueInstallments.Any())
-                return false;
+            if (!overdueInstallments.Any())
+                return null;
 
             var existingBnplPlan = await _bNPL_PlanRepository.GetByIdAsync(planId);
             if (existingBnplPlan == null)
                 throw new Exception($"BNPL plan {planId} not found.");
 
             decimal lateInterestRatePerDay = existingBnplPlan.BNPL_PlanType!.LatePayInterestRatePerDay;
-            bool updated = false;
 
-            foreach (var inst in existingOverdueInstallments)
+            foreach (var inst in overdueInstallments)
             {
                 if (inst.Installment_DueDate < today && inst.TotalPaid < inst.TotalDueAmount)
                 {
@@ -130,13 +134,10 @@ namespace WebApplication1.Services.ServiceImpl
                     inst.LateInterest += lateInterest;
                     inst.LastLateInterestAppliedDate = today;
                     inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
-
-                    updated = true;
-                    _logger.LogInformation("Applied late interest {Interest} to InstallmentId={Id} for PlanId={PlanId}", lateInterest, inst.InstallmentID, planId);
                 }
             }
 
-            return updated;
+            return overdueInstallments;
         }
 
         //Shared Internal Operations Used by Multiple Repositories

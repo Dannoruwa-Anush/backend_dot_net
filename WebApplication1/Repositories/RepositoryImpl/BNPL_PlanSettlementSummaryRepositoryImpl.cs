@@ -18,6 +18,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
         // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD Operations
+        public async Task AddAsync(BNPL_PlanSettlementSummary snapshots) =>
+            await _context.BNPL_PlanSettlementSummaries.AddAsync(snapshots);
+
         public async Task AddRangeAsync(List<BNPL_PlanSettlementSummary> snapshots) =>
             await _context.BNPL_PlanSettlementSummaries.AddRangeAsync(snapshots);
 

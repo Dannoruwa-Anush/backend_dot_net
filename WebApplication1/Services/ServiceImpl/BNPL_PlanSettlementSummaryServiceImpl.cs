@@ -3,7 +3,6 @@ using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
-using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
@@ -12,18 +11,16 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly IBNPL_PlanSettlementSummaryRepository _repository;
 
-        private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
 
         // logger: for auditing
         private readonly ILogger<BNPL_PlanSettlementSummaryServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanSettlementSummaryServiceImpl(IBNPL_PlanSettlementSummaryRepository repository, IBNPL_InstallmentRepository bNPL_InstallmentRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanSettlementSummaryServiceImpl> logger)
+        public BNPL_PlanSettlementSummaryServiceImpl(IBNPL_PlanSettlementSummaryRepository repository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanSettlementSummaryServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
-            _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
             _customerOrderRepository = customerOrderRepository;
             _logger = logger;
         }
@@ -128,66 +125,46 @@ namespace WebApplication1.Services.ServiceImpl
 
         //Shared Internal Operations Used by Multiple Repositories
         // Single plan (for payment processing)
-        public async Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments)
+        public async Task<BNPL_PlanSettlementSummary?> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments)
         {
-            var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            
-            
-            
-            return null;
-            //return (await BuildSettlementGenerateRequestBatchAsync(new List<int> { planId }, today)).First();
+            // Filter unsettled installments
+            var unsettledInstallments = plan_Installments
+                .Where(i =>
+                    i.RemainingBalance > 0 ||
+                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending ||
+                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.PartiallyPaid_OnTime ||
+                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.PartiallyPaid_Late ||
+                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Overdue
+                )
+                .OrderBy(i => i.InstallmentNo)
+                .ToList();
+
+            if (unsettledInstallments == null || !unsettledInstallments.Any())
+                return null;
+
+            // Calculate totals
+            var totals = CalculateSettlementValues(unsettledInstallments);
+
+            // Create the settlement snapshot
+            var snapshot = new BNPL_PlanSettlementSummary
+            {
+                Bnpl_PlanID = unsettledInstallments.First().Bnpl_PlanID,
+                CurrentInstallmentNo = unsettledInstallments.Max(i => i.InstallmentNo),
+                InstallmentBaseAmount = totals.TotalBaseAmount,
+                TotalCurrentLateInterest = totals.TotalLateInterest,
+                TotalCurrentOverPayment = totals.TotalOverPayment,
+                TotalCurrentArrears = totals.TotalArrears,
+                TotalPayableSettlement = totals.TotalPayable,
+                Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
+                IsLatest = true,
+            };
+
+            await _repository.AddAsync(snapshot);
+            _logger.LogInformation("Snapshot created: Bnpl_Plan={Bnp}", unsettledInstallments.First().Bnpl_PlanID);
+            return snapshot;
         }
 
-        // Batch version (for late interest updates or bulk operations)
-        public async Task<List<BNPL_PlanSettlementSummary>> BuildSettlementGenerateRequestBatchAsync(List<int> planIds, DateTime asOfDate)
-        {
-            if (planIds == null || !planIds.Any())
-                return new List<BNPL_PlanSettlementSummary>();
-
-            // Fetch all unsettled installments for all plans
-            var allInstallments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentsForPlansAsync(planIds, asOfDate);
-
-            var snapshots = new List<BNPL_PlanSettlementSummary>();
-
-            foreach (var planId in planIds)
-            {
-                var installments = allInstallments.Where(i => i.Bnpl_PlanID == planId).ToList();
-                if (!installments.Any())
-                {
-                    _logger.LogInformation("No unsettled installments found for PlanId={PlanId}", planId);
-                    continue;
-                }
-
-                var totals = CalculateSettlementValues(installments);
-
-                var snapshot = new BNPL_PlanSettlementSummary
-                {
-                    Bnpl_PlanID = planId,
-                    CurrentInstallmentNo = installments.Max(i => i.InstallmentNo),
-                    InstallmentBaseAmount = totals.TotalBaseAmount,
-                    TotalCurrentLateInterest = totals.TotalLateInterest,
-                    TotalCurrentOverPayment = totals.TotalOverPayment,
-                    TotalCurrentArrears = totals.TotalArrears,
-                    TotalPayableSettlement = totals.TotalPayable,
-                    Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
-                    IsLatest = true,
-                };
-
-                snapshots.Add(snapshot);
-            }
-
-            if (snapshots.Any())
-            {
-                // Mark old snapshots as not latest in batch
-                await _repository.MarkPreviousSnapshotsAsNotLatestBatchAsync(snapshots.Select(s => s.Bnpl_PlanID).ToList());
-                
-                await _repository.AddRangeAsync(snapshots);
-                _logger.LogInformation("Snapshots created for {Count} plans", snapshots.Count);
-            }
-
-            return snapshots;
-        }
-
+        //Helper method : to calculate accumulated values
         private (decimal TotalBaseAmount, decimal TotalLateInterest, decimal TotalOverPayment, decimal TotalArrears, decimal TotalPayable) CalculateSettlementValues(List<BNPL_Installment> installments)
         {
             var baseAmount = installments.Sum(i => i.Installment_BaseAmount);
