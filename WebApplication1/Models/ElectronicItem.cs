@@ -33,7 +33,7 @@ namespace WebApplication1.Models
         public IFormFile? ImageFile { get; set; }
 
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
         
         //******* [Start: Brand (1) — ElectronicItems (M)] ****
         //FK

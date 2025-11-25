@@ -23,7 +23,7 @@ namespace WebApplication1.Models
         public decimal SubTotal { get; set; }
 
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 
         //******* [Start: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ******
         //FK

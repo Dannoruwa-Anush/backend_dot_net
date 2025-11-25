@@ -29,7 +29,7 @@ namespace WebApplication1.Models
         public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
         
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 
         //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
         //FK

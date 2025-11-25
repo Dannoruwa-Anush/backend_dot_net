@@ -46,7 +46,7 @@ namespace WebApplication1.Models
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Pending;
 
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 
         //******* [Start: Customer (1) — CustomerOrder (M)] ****
         //FK

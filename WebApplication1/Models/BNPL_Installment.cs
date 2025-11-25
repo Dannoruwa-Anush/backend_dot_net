@@ -53,7 +53,7 @@ namespace WebApplication1.Models
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
         
         // Derived convenience fields
         [NotMapped]

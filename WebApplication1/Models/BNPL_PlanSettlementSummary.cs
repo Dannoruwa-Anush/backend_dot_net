@@ -40,7 +40,7 @@ namespace WebApplication1.Models
         public bool IsLatest { get; set; } = true;
 
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
         
         //******* [Start: BNPL_PLAN (1) — BNPL_PlanSettlementSummary (M)] ****
         //FK

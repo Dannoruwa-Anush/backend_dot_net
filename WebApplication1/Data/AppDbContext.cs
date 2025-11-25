@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 using WebApplication1.Models.Base;
@@ -71,8 +72,7 @@ namespace WebApplication1.Data
                 entity.Property(i => i.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();
+                    .IsConcurrencyToken();
 
                 // (1) — (M) CustomerOrderElectronicItem
                 entity.HasMany(i => i.CustomerOrderElectronicItems)
@@ -136,8 +136,7 @@ namespace WebApplication1.Data
                 entity.Property(o => o.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();     
+                    .IsConcurrencyToken();   
 
                 // (1) — (M) Cashflow
                 entity.HasMany(o => o.Cashflows)
@@ -176,8 +175,7 @@ namespace WebApplication1.Data
                 entity.Property(oi => oi.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();       
+                    .IsConcurrencyToken();    
             });
 
             // -------------------------------------------------------------
@@ -193,8 +191,7 @@ namespace WebApplication1.Data
                 entity.Property(c => c.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();  
+                    .IsConcurrencyToken();
             });
 
             // -------------------------------------------------------------
@@ -227,8 +224,7 @@ namespace WebApplication1.Data
                 entity.Property(p => p.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();    
+                    .IsConcurrencyToken();
 
                 // (1) — (M) BNPL_Installment
                 entity.HasMany(p => p.BNPL_Installments)
@@ -278,8 +274,7 @@ namespace WebApplication1.Data
                 entity.Property(i => i.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();   
+                    .IsConcurrencyToken();
             });
 
             // -------------------------------------------------------------
@@ -308,8 +303,7 @@ namespace WebApplication1.Data
                 entity.Property(i => i.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken()
-                    .ValueGeneratedOnAddOrUpdate();    
+                    .IsConcurrencyToken();  
             });
         }
         //-------- [End: configure model] -------------
@@ -321,6 +315,7 @@ namespace WebApplication1.Data
         {
             ApplySriLankaTimeZone();
             ApplyTimestamps();
+            ApplyRowVersion(); 
             return base.SaveChanges();
         }
 
@@ -328,9 +323,11 @@ namespace WebApplication1.Data
         {
             ApplySriLankaTimeZone();
             ApplyTimestamps();
+            ApplyRowVersion(); 
             return await base.SaveChangesAsync(cancellationToken);
         }
 
+        //Helper method : Time Zone
         private void ApplySriLankaTimeZone()
         {
             var entries = ChangeTracker.Entries()
@@ -351,6 +348,7 @@ namespace WebApplication1.Data
             }
         }
 
+        //Helper method : Time Stamp
         private void ApplyTimestamps()
         {
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -372,5 +370,23 @@ namespace WebApplication1.Data
             }
         }
         //-------- [End: Intercept DateTime + Auto Timestamp] -----------
+
+
+        //-------- [Start: Concurrency Handle - RowVersion] -------------
+        //Helper method : Concurrency
+        private void ApplyRowVersion()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e =>
+                    (e.State == EntityState.Added || e.State == EntityState.Modified) &&
+                    e.Properties.Any(p => p.Metadata.Name == "RowVersion")
+                );
+
+            foreach (var entry in entries)
+            {
+                entry.Property("RowVersion").CurrentValue = RandomNumberGenerator.GetBytes(8);
+            }
+        }
+        //-------- [End: Concurrency Handle - RowVersion] ---------------
     }
 }
