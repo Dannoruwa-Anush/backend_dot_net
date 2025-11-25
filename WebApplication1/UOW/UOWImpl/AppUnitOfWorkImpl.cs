@@ -1,3 +1,5 @@
+using System.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Data;
 using WebApplication1.UOW.IUOW;
@@ -27,8 +29,18 @@ namespace WebApplication1.UOW.UOWImpl
             SaveChangesAsync() : EF Core method
             When to use : Single Repository operations
         */
-        public Task<int> SaveChangesAsync() => 
-            _context.SaveChangesAsync();
+        public async Task<int> SaveChangesAsync()
+        {
+            try
+            {
+                return await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await HandleConcurrency(ex);
+                throw new DBConcurrencyException("Data was changed by another user.");
+            }
+        }
 
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
@@ -49,10 +61,21 @@ namespace WebApplication1.UOW.UOWImpl
             if (_transaction == null)
                 throw new InvalidOperationException("No active transaction. Call BeginTransactionAsync() first.");
 
-            await _context.SaveChangesAsync();
-            await _transaction.CommitAsync();
-            await _transaction.DisposeAsync();
-            _transaction = null;
+            try
+            {
+                await _context.SaveChangesAsync();
+                await _transaction.CommitAsync();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await HandleConcurrency(ex);
+                throw new DBConcurrencyException("Data was changed by another user.");
+            }
+            finally
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
         }
 
         public async Task RollbackAsync()
@@ -69,6 +92,24 @@ namespace WebApplication1.UOW.UOWImpl
         {
             if (_transaction != null)
                 await _transaction.DisposeAsync();
+        }
+
+        //Helper : to handle concurrency
+        private async Task HandleConcurrency(DbUpdateConcurrencyException ex)
+        {
+            foreach (var entry in ex.Entries)
+            {
+                var databaseValues = await entry.GetDatabaseValuesAsync();
+
+                if (databaseValues == null)
+                {
+                    // Row has been deleted
+                    throw new Exception("Record was deleted by another user.");
+                }
+
+                // Update the OriginalValues to reflect DB state
+                entry.OriginalValues.SetValues(databaseValues);
+            }
         }
     }
 }
