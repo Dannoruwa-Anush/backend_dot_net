@@ -67,11 +67,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
 
                 await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Full payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", order.OrderID, paymentRequest.PaymentAmount);
                 return true;
             }
-            catch
+            catch(Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Failed to process full payment for OrderID={OrderID}", paymentRequest.OrderId);
                 throw;
             }
         }
@@ -125,11 +128,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
 
                 await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Bnpl initial payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", order.OrderID, request.InitialPayment);
                 return bnplPlan;
             }
-            catch
+            catch(Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Failed to process bnpl initial payment for OrderID={OrderID}", request.OrderId);
                 throw;
             }
         }
@@ -159,11 +165,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(order.BNPL_PLAN.Bnpl_PlanID);
 
                 await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Installment payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", order.OrderID, paymentRequest.PaymentAmount);
                 return paymentResult;
             }
-            catch
+            catch(Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Failed to process bnpl installment payment for OrderID={OrderID}", paymentRequest.OrderId);
                 throw;
             }
         }
