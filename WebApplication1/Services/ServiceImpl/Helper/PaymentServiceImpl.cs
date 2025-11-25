@@ -52,6 +52,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (order == null)
                 throw new Exception("Order not found");
 
+            if (paymentRequest.PaymentAmount != order.TotalAmount)
+                throw new Exception("Full payment must match the total order amount");  
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
