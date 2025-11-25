@@ -20,6 +20,7 @@ using WebApplication1.UOW.IUOW;
 using WebApplication1.UOW.UOWImpl;
 using WebApplication1.Services.IService.Helper;
 using WebApplication1.Services.ServiceImpl.Helper;
+using WebApplication1.AutoMapperProfiles.BnplCal;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +50,10 @@ builder.Services.AddAutoMapper(
     typeof(BNPL_PlanTypeAutoMapperProfiles),
     typeof(BNPL_PlanAutoMapperProfiles),
     typeof(BNPL_InstallmentAutoMapperProfiles),
-    typeof(BNPL_PlanSettlementSummaryAutoMapperProfile)
+    typeof(BNPL_PlanSettlementSummaryAutoMapperProfile),
+
+    //Helpers
+    typeof(BNPLInstallmentCalculatorAutoMapperProfile)
 );
 
 //--------------------[EF Core - MySQL]-------------

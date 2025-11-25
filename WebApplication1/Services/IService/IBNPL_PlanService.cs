@@ -18,7 +18,7 @@ namespace WebApplication1.Services.IService
         Task<BNPL_PLAN?> GetByPlanTypeIdAsync(int planTypeId);
 
         //calculator
-        Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request);
+        Task<BNPLInstallmentCalculatorResultDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request);
 
         //Shared Internal Operations Used by Multiple Repositories
         Task<BNPL_PLAN> BuildBnpl_PlanAddRequestAsync(BNPL_PLAN bNPL_Plan);

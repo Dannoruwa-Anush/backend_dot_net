@@ -50,7 +50,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.GetByPlanTypeIdAsync(planTypeId);    
 
         //calculator
-        public async Task<BNPLInstallmentCalculatorResponseDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
+        public async Task<BNPLInstallmentCalculatorResultDto> CalculateBNPL_PlanAmountPerInstallmentAsync(BNPLInstallmentCalculatorRequestDto request)
         {
             var planType = await _bnpl_PlanTypeRepository.GetByIdAsync(request.Bnpl_PlanTypeID);
             if (planType == null)
@@ -85,12 +85,9 @@ namespace WebApplication1.Services.ServiceImpl
 
             _logger.LogInformation("BNPL Calculation done for PlanType={Plan}, PrincipalAmount ={PrincipalAmount}, Installments={Count}, Rate={Rate}", planType.Bnpl_PlanTypeName, principalAmount, request.InstallmentCount, planType.InterestRate);
 
-            return new BNPLInstallmentCalculatorResponseDto
+            return new BNPLInstallmentCalculatorResultDto
             {
-                InterestRate = planType.InterestRate,
-                LatePayInterestRate = planType.LatePayInterestRatePerDay,
-                PlanTypeName = planType.Bnpl_PlanTypeName,
-                Description = planType.Bnpl_Description,
+                BNPL_PlanType = planType,
                 AmountPerInstallment = Math.Round(monthlyInstallment, 2),
                 TotalPayable = Math.Round(totalRepaymentAmount, 2),
                 TotalInterestAmount = Math.Round(totalInterestAmount, 2)

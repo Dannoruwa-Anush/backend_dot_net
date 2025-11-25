@@ -1,8 +1,10 @@
+using WebApplication1.Models;
+
 namespace WebApplication1.DTOs.ResponseDto.BnplCal{
-    public class BNPLInstallmentCalculatorResponseDto
+    public class BNPLInstallmentCalculatorResultDto
     {
         // Include simplified info about Bnpl_PlanType
-        public required BNPL_PlanTypeResponseDto BNPL_PlanTypeResponseDto { get; set; }
+        public required BNPL_PlanType BNPL_PlanType { get; set; }
 
         // Calculated Values
         public decimal AmountPerInstallment { get; set; }

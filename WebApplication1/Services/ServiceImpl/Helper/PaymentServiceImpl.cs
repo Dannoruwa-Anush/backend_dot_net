@@ -60,9 +60,10 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             {
                 ValidatePaymentStatusTransition(order.OrderPaymentStatus, OrderPaymentStatusEnum.Fully_Paid);
 
-                // Cashflow only staged (no save)
+                // Create a cashflow
                 await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
 
+                // Update order payment status
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
 
                 await _unitOfWork.CommitAsync();
@@ -94,7 +95,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                         InstallmentCount = request.InstallmentCount
                     });
 
-                // Create BNPL plan (AddAsync only)
+                // Create a BNPL plan
                 var bnplPlan = await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(
                     new BNPL_PLAN
                     {
@@ -105,10 +106,10 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                         OrderID = request.OrderId,
                     });
 
-                // Generate installments
+                // Generate installments for selected bnpl plan
                 await _bNPL_InstallmentService.BuildBnplInstallmentBulkAddRequestAsync(bnplPlan);
 
-                // Cashflow (initial)
+                // Create the initial cashflow
                 await _cashflowService.BuildCashflowAddRequestAsync(
                     new PaymentRequestDto
                     {
@@ -117,7 +118,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     },
                     CashflowTypeEnum.BnplInitialPayment);
 
-                // Create initial “snapshot”
+                // Create the initial snapshot
                 await _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestAsync(bnplPlan.Bnpl_PlanID);
 
                 // Update order payment status
