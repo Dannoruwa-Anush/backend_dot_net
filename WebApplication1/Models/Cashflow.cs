@@ -28,6 +28,9 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(CashflowStatusEnum))]
         public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
         
+        [ConcurrencyCheck]
+        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+
         //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
         //FK
         public int OrderID { get; set; }

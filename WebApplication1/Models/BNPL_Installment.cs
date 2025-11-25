@@ -52,6 +52,9 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_Installment_StatusEnum Bnpl_Installment_Status { get; set; } = BNPL_Installment_StatusEnum.Pending;
 
+        [ConcurrencyCheck]
+        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+        
         // Derived convenience fields
         [NotMapped]
         public decimal TotalPaid => AmountPaid_AgainstBase + AmountPaid_AgainstArrears + AmountPaid_AgainstLateInterest;

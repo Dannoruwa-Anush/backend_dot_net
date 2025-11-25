@@ -68,6 +68,12 @@ namespace WebApplication1.Data
                 entity.Property(i => i.Price)
                       .HasColumnType("decimal(18,2)");
 
+                entity.Property(i => i.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();
+
                 // (1) — (M) CustomerOrderElectronicItem
                 entity.HasMany(i => i.CustomerOrderElectronicItems)
                       .WithOne(oi => oi.ElectronicItem)
@@ -127,6 +133,12 @@ namespace WebApplication1.Data
                 entity.Property(o => o.TotalAmount)
                       .HasColumnType("decimal(18,2)");
 
+                entity.Property(o => o.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();     
+
                 // (1) — (M) Cashflow
                 entity.HasMany(o => o.Cashflows)
                       .WithOne(p => p.CustomerOrder)
@@ -160,6 +172,12 @@ namespace WebApplication1.Data
 
                 entity.Property(oi => oi.SubTotal)
                        .HasColumnType("decimal(18,2)");
+
+                entity.Property(oi => oi.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();       
             });
 
             // -------------------------------------------------------------
@@ -169,8 +187,14 @@ namespace WebApplication1.Data
             {
                 entity.HasIndex(c => c.CashflowRef).IsUnique();
 
-                entity.Property(p => p.AmountPaid)
+                entity.Property(c => c.AmountPaid)
                       .HasColumnType("decimal(18,2)");
+
+                entity.Property(c => c.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();  
             });
 
             // -------------------------------------------------------------
@@ -199,6 +223,12 @@ namespace WebApplication1.Data
 
                 entity.Property(p => p.Bnpl_AmountPerInstallment)
                       .HasColumnType("decimal(18,2)");
+
+                entity.Property(p => p.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();    
 
                 // (1) — (M) BNPL_Installment
                 entity.HasMany(p => p.BNPL_Installments)
@@ -244,6 +274,12 @@ namespace WebApplication1.Data
 
                 entity.Property(i => i.AmountPaid_AgainstLateInterest)
                       .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();   
             });
 
             // -------------------------------------------------------------
@@ -267,7 +303,13 @@ namespace WebApplication1.Data
                       .HasColumnType("decimal(18,2)");  
 
                 entity.Property(i => i.IsLatest)
-                    .HasDefaultValue(true);    
+                    .HasDefaultValue(true);  
+
+                entity.Property(i => i.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate();    
             });
         }
         //-------- [End: configure model] -------------

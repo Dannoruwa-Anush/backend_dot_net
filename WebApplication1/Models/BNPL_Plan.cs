@@ -38,6 +38,9 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(BnplStatusEnum))]
         public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Active;
 
+        [ConcurrencyCheck]
+        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+
         //******* [Start: BNPL_PlanType (1) — BNPL_PLAN (M)] ****
         //FK
         public int Bnpl_PlanTypeID { get; set; }

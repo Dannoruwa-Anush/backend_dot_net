@@ -22,6 +22,9 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubTotal { get; set; }
 
+        [ConcurrencyCheck]
+        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
+
         //******* [Start: ElectronicItems (1) — CustomerOrderElectronicItem(M)] ******
         //FK
         public int E_ItemID { get; set; }

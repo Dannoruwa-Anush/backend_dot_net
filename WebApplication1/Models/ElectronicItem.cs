@@ -31,6 +31,9 @@ namespace WebApplication1.Models
         // Not mapped to DB — only for file upload
         [NotMapped]
         public IFormFile? ImageFile { get; set; }
+
+        [ConcurrencyCheck]
+        public byte[] RowVersion { get; set; }  = Array.Empty<byte>(); // for optimistic concurrency.
         
         //******* [Start: Brand (1) — ElectronicItems (M)] ****
         //FK
