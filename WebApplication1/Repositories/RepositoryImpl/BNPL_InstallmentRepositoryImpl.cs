@@ -208,9 +208,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 return new List<BNPL_Installment>();
 
             return await _context.BNPL_Installments
-                .Where(i => planIds.Contains(i.Bnpl_PlanID)
-                            && i.TotalPaid < i.TotalDueAmount
-                            && i.Installment_DueDate <= asOfDate)
+                .Where(i => planIds.Contains(i.Bnpl_PlanID) && i.Installment_DueDate <= asOfDate)
+                .Select(i => new
+                {
+                    Installment = i,
+                    TotalPaidComputed = i.AmountPaid_AgainstBase
+                                        + i.AmountPaid_AgainstArrears
+                                        + i.AmountPaid_AgainstLateInterest
+                })
+                .Where(x => x.TotalPaidComputed < x.Installment.TotalDueAmount)
+                .Select(x => x.Installment)
                 .ToListAsync();
         }
 
