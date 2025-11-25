@@ -99,6 +99,9 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Custom Query Operations
+        public async Task<CustomerOrder?> GetCustomerOrderWithFinancialDetailsByIdAsync(int id) =>
+            await _repository.GetWithFinancialDetailsByIdAsync(id);
+
         public async Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null) =>
             await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, paymentStatusId, orderStatusId, searchKey);
 

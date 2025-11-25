@@ -196,25 +196,15 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Payment : Main Driver
-        public async Task<(BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)> BuildBnplInstallmentSettlementAsync(PaymentRequestDto request)
+        public (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments) BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, decimal paymentAmount)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-
-            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
-            if (order == null)
-                throw new InvalidOperationException("Customer order not found.");
-
-            var planId = order.BNPL_PLAN!.Bnpl_PlanID;
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            var installments = await _repository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
 
             if (!installments.Any())
                 throw new InvalidOperationException("No unsettled installments found.");
 
             var response = new BnplInstallmentPaymentResultDto();
-            decimal remaining = request.PaymentAmount;
+            decimal remaining = paymentAmount;
 
             foreach (var inst in installments)
             {

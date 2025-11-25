@@ -1,8 +1,6 @@
-using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {
@@ -25,6 +23,6 @@ namespace WebApplication1.Services.IService
         Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan);
 
         //payment
-        Task<(BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)>BuildBnplInstallmentSettlementAsync(PaymentRequestDto request);
+        (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, decimal paymentAmount);
     }
 }

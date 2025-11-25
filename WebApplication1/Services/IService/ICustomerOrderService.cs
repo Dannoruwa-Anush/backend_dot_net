@@ -15,10 +15,8 @@ namespace WebApplication1.Services.IService
         Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto requet);
 
         //Custom Query Operations
+        Task<CustomerOrder?> GetCustomerOrderWithFinancialDetailsByIdAsync(int id);
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
-
-        //Shared Internal Operations Used by Multiple Repositories
-        //Task<CustomerOrder?> BuildCustomerOrderPaymentStatusUpdateRequestAsync(CustomerOrderPaymentStatusChangeRequestDto request);
     }
 }

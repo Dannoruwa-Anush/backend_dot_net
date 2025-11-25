@@ -8,6 +8,6 @@ namespace WebApplication1.Services.IService.Helper
     {
         Task<bool> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest);
         Task<BNPL_PLAN> ProcessInitialBnplPaymentAsync(BnplInitialPaymentRequestDto paymentRequest);
-        Task<BnplInstallmentPaymentResultDto?> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest);
+        Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest);
     }
 }
