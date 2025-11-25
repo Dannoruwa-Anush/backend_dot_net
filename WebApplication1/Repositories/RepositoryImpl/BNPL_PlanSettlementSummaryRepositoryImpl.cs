@@ -24,6 +24,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddRangeAsync(List<BNPL_PlanSettlementSummary> snapshots) =>
             await _context.BNPL_PlanSettlementSummaries.AddRangeAsync(snapshots);
 
+        public async Task<IEnumerable<BNPL_PlanSettlementSummary>> GetAllByPlanIdAsync(int planId)
+        {
+            return await _context.BNPL_PlanSettlementSummaries
+                .Where(s => s.Bnpl_PlanID == planId && s.IsLatest)
+                .ToListAsync();
+        }
+
         //Custom Query Operations
         public async Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotAsync(int planId)
         {

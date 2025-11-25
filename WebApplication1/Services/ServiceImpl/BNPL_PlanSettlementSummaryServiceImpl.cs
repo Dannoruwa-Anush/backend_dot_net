@@ -124,10 +124,8 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Shared Internal Operations Used by Multiple Repositories
-        // Single plan (for payment processing)
         public async Task<BNPL_PlanSettlementSummary?> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments)
         {
-            // Filter unsettled installments
             var unsettledInstallments = plan_Installments
                 .Where(i =>
                     i.RemainingBalance > 0 ||
@@ -139,16 +137,24 @@ namespace WebApplication1.Services.ServiceImpl
                 .OrderBy(i => i.InstallmentNo)
                 .ToList();
 
-            if (unsettledInstallments == null || !unsettledInstallments.Any())
+            if (!unsettledInstallments.Any())
                 return null;
+
+            int planId = unsettledInstallments.First().Bnpl_PlanID;
+
+            // Mark previous snapshots as not latest
+            var existingSnapshots = await _repository.GetAllByPlanIdAsync(planId);
+
+            foreach (var snapshotItem in existingSnapshots)
+                snapshotItem.IsLatest = false;
 
             // Calculate totals
             var totals = CalculateSettlementValues(unsettledInstallments);
 
-            // Create the settlement snapshot
+            // Create new snapshot
             var snapshot = new BNPL_PlanSettlementSummary
             {
-                Bnpl_PlanID = unsettledInstallments.First().Bnpl_PlanID,
+                Bnpl_PlanID = planId,
                 CurrentInstallmentNo = unsettledInstallments.Max(i => i.InstallmentNo),
                 InstallmentBaseAmount = totals.TotalBaseAmount,
                 TotalCurrentLateInterest = totals.TotalLateInterest,
@@ -160,7 +166,9 @@ namespace WebApplication1.Services.ServiceImpl
             };
 
             await _repository.AddAsync(snapshot);
-            _logger.LogInformation("Snapshot created: Bnpl_Plan={Bnp}", unsettledInstallments.First().Bnpl_PlanID);
+
+            _logger.LogInformation("Snapshot created for Plan={Bnpl_PlanID}", planId);
+
             return snapshot;
         }
 
