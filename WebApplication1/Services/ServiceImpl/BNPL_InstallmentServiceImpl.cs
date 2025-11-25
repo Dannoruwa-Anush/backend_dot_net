@@ -66,8 +66,8 @@ namespace WebApplication1.Services.ServiceImpl
         //Handle : Overdue Installments (LateIntrest + Arreas)
         public async Task ApplyLateInterestForAllPlansAsync()
         {
-            var activePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
-            if (activePlans == null || !activePlans.Any())
+            var existingActivePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
+            if (existingActivePlans == null || !existingActivePlans.Any())
             {
                 _logger.LogInformation("No active BNPL plans found.");
                 return;
@@ -80,10 +80,10 @@ namespace WebApplication1.Services.ServiceImpl
                 var plansWithChanges = new List<int>();
 
                 // Step 1: Apply late interest for all overdue installments
-                foreach (var plan in activePlans)
+                foreach (var plan in existingActivePlans)
                 {
-                    bool updated = await ApplyLateInterestToPlanAsync(plan.Bnpl_PlanID, today);
-                    if (updated)
+                    bool updatedInstallments = await ApplyLateInterestToPlanAsync(plan.Bnpl_PlanID, today);
+                    if (updatedInstallments)
                         plansWithChanges.Add(plan.Bnpl_PlanID);
                 }
 
@@ -108,19 +108,19 @@ namespace WebApplication1.Services.ServiceImpl
         // Returns true if any installment was updated
         private async Task<bool> ApplyLateInterestToPlanAsync(int planId, DateTime today)
         {
-            var overdueInstallments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentsForPlansAsync(new List<int> { planId }, today);
+            var existingOverdueInstallments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentsForPlansAsync(new List<int> { planId }, today);
 
-            if (!overdueInstallments.Any())
+            if (!existingOverdueInstallments.Any())
                 return false;
 
-            var bnplPlan = await _bNPL_PlanRepository.GetByIdAsync(planId);
-            if (bnplPlan == null)
+            var existingBnplPlan = await _bNPL_PlanRepository.GetByIdAsync(planId);
+            if (existingBnplPlan == null)
                 throw new Exception($"BNPL plan {planId} not found.");
 
-            decimal lateInterestRatePerDay = bnplPlan.BNPL_PlanType!.LatePayInterestRatePerDay;
+            decimal lateInterestRatePerDay = existingBnplPlan.BNPL_PlanType!.LatePayInterestRatePerDay;
             bool updated = false;
 
-            foreach (var inst in overdueInstallments)
+            foreach (var inst in existingOverdueInstallments)
             {
                 if (inst.Installment_DueDate < today && inst.TotalPaid < inst.TotalDueAmount)
                 {
@@ -174,7 +174,6 @@ namespace WebApplication1.Services.ServiceImpl
                     Installment_BaseAmount = plan.Bnpl_AmountPerInstallment,
                     Installment_DueDate = firstDueDate.AddDays(daysPerInstallment * (i - 1)),
                     TotalDueAmount = plan.Bnpl_AmountPerInstallment,
-                    CreatedAt = now,
                     Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Pending
                 });
             }

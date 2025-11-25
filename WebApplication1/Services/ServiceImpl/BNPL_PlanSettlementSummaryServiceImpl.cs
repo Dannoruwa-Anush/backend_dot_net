@@ -128,10 +128,14 @@ namespace WebApplication1.Services.ServiceImpl
 
         //Shared Internal Operations Used by Multiple Repositories
         // Single plan (for payment processing)
-        public async Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestAsync(int planId)
+        public async Task<BNPL_PlanSettlementSummary> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments)
         {
             var today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            return (await BuildSettlementGenerateRequestBatchAsync(new List<int> { planId }, today)).First();
+            
+            
+            
+            return null;
+            //return (await BuildSettlementGenerateRequestBatchAsync(new List<int> { planId }, today)).First();
         }
 
         // Batch version (for late interest updates or bulk operations)
