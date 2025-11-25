@@ -165,10 +165,7 @@ namespace WebApplication1.Services.ServiceImpl
                 IsLatest = true,
             };
 
-            await _repository.AddAsync(snapshot);
-
             _logger.LogInformation("Snapshot created for Plan={Bnpl_PlanID}", planId);
-
             return snapshot;
         }
 

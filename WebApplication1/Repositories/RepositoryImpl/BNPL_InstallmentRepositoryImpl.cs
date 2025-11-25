@@ -45,9 +45,6 @@ namespace WebApplication1.Repositories.RepositoryImpl
                         .ThenInclude(isn => isn.BNPL_PlanSettlementSummaries)
                 .FirstOrDefaultAsync(i => i.InstallmentID == id);
 
-        public async Task AddRangeAsync(List<BNPL_Installment> installments) =>
-            await _context.BNPL_Installments.AddRangeAsync(installments);
-
         //Custom Query Operations
         public async Task<PaginationResultDto<BNPL_Installment>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? bnpl_Installment_StatusId = null, string? searchKey = null)
         {

@@ -114,7 +114,6 @@ namespace WebApplication1.Services.ServiceImpl
             bNPL_Plan.Bnpl_NextDueDate = now.AddDays(freeTrialDays + daysPerInstallment);
             bNPL_Plan.Bnpl_Status = BnplStatusEnum.Active;
 
-            await _repository.AddAsync(bNPL_Plan);
             _logger.LogInformation("Bnpl plan created: Bnpl_PlanID={Bnpl_PlanID}, OrderId={OrderId}", bNPL_Plan.Bnpl_PlanID, bNPL_Plan.OrderID);
             return bNPL_Plan;
         }

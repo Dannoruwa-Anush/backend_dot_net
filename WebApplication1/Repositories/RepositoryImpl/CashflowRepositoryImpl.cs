@@ -24,10 +24,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.Cashflows.ToListAsync();
 
         public async Task<Cashflow?> GetByIdAsync(int id) =>
-            await _context.Cashflows.FindAsync(id);
-
-        public async Task AddAsync(Cashflow cashflow) =>
-            await _context.Cashflows.AddAsync(cashflow);    
+            await _context.Cashflows.FindAsync(id);   
 
         //Custom Query Operations
         public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
