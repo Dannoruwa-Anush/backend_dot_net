@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto;
@@ -25,6 +26,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost("process-full-payment")]
+        [Authorize(Roles = "Employee, Customer")] // JWT is required
         public async Task<IActionResult> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest)
         {
             try
@@ -50,6 +52,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost("process-bnpl-initial-payment")]
+        [Authorize(Roles = "Employee")] // JWT is required
         public async Task<IActionResult> ProcessBnplInitialPaymentAsync(BnplInitialPaymentRequestDto paymentRequest)
         {
             try
@@ -75,6 +78,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost("process-bnpl-installment-payment")]
+        [Authorize(Roles = "Employee, Customer")] // JWT is required
         public async Task<IActionResult> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
             try
