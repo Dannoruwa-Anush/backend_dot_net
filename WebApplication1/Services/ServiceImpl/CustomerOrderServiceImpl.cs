@@ -125,7 +125,7 @@ namespace WebApplication1.Services.ServiceImpl
                 //validation
                 ValidateOrderStatusTransition(order, request.NewOrderStatus, now);
 
-                ApplyOrderStatusChangesAsync(order, request.NewOrderStatus, now);
+                ApplyOrderStatusChangesAsync(order, request, now);
 
                 await _repository.UpdateAsync(order.OrderID, order);
                 await _unitOfWork.CommitAsync();
@@ -180,12 +180,13 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         // Helper Method: Applies status changes to the order
-        private void ApplyOrderStatusChangesAsync(CustomerOrder order, OrderStatusEnum newStatus, DateTime now)
+        private void ApplyOrderStatusChangesAsync(CustomerOrder order, CustomerOrderStatusChangeRequestDto request, DateTime now)
         {
-            switch (newStatus)
+            switch (request.NewOrderStatus)
             {
                 case OrderStatusEnum.Cancel_Pending:
                     order.OrderStatus = OrderStatusEnum.Cancel_Pending;
+                    order.CancellationReason = request.CancellationReason;
                     order.CancellationRequestDate = now;
                     order.CancellationApproved = null; // pending
                     break;
@@ -209,6 +210,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                 case OrderStatusEnum.DeliveredAfterCancellationRejected:
                     order.OrderStatus = OrderStatusEnum.DeliveredAfterCancellationRejected;
+                    order.CancellationRejectionReason = request.CancellationRejectionReason;
                     order.DeliveredDate = now;
                     order.CancellationApproved = false;
                     order.CancellationRejectionReason ??= "Cancellation rejected";
