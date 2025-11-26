@@ -1,9 +1,6 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
-using WebApplication1.Services.IService;
 using WebApplication1.Services.IService.Helper;
 
 namespace WebApplication1.Controllers
@@ -13,6 +10,8 @@ namespace WebApplication1.Controllers
     [AllowAnonymous]
     public class LateInterestController : ControllerBase
     {
+        //Note : LateInterest - Create snapshot (transfer current installment to arreas)
+        
         private readonly ILateInterestService _service;
 
         // Constructor
