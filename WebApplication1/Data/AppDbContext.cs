@@ -279,6 +279,9 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<BNPL_PlanSettlementSummary>(entity =>
             {
+                entity.Property(s => s.Total_OverpaymentCarriedFromPrevious)
+                      .HasColumnType("decimal(18,2)");
+
                 entity.Property(s => s.NotYetDueCurrentInstallmentBaseAmount)
                       .HasColumnType("decimal(18,2)");
 
@@ -286,9 +289,6 @@ namespace WebApplication1.Data
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.Total_LateInterest)
-                      .HasColumnType("decimal(18,2)");
-
-                entity.Property(s => s.Total_AvailableOverPayment)
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.Total_PayableSettlement)
@@ -302,6 +302,9 @@ namespace WebApplication1.Data
 
                 entity.Property(s => s.Paid_AgainstTotalLateInterest)
                       .HasColumnType("decimal(18,2)");  
+
+                entity.Property(s => s.Total_OverpaymentCarriedToNext)
+                      .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.IsLatest)
                     .HasDefaultValue(true);  

@@ -45,7 +45,7 @@ namespace WebApplication1.Services.ServiceImpl
         {
             //Call helper method
             (decimal paidToArrears, decimal paidToInterest, decimal paidToBase, decimal remainingBalance, decimal overPayment) = AllocatePaymentBuckets(snapshot, paymentAmount);
-            
+
             string status =
                 remainingBalance == 0 && overPayment > 0 ? "Overpaid" :
                 remainingBalance == 0 ? "Fully Settled" : "Partially Paid";
@@ -121,6 +121,46 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Shared Internal Operations Used by Multiple Repositories
+        public (BnplLastSnapshotSettledResultDto, BNPL_PlanSettlementSummary) BuildBNPL_PlanLastSettlementSummaryUpdateRequestAsync(BNPL_PlanSettlementSummary lastSnapshot, decimal paymentAmount)
+        {
+            //Call helper method
+            (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal nextSnapshotOverPayment) = AllocatePaymentBuckets(lastSnapshot, paymentAmount);
+
+            // Update only what belongs to this snapshot
+            lastSnapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += paidBase;
+            lastSnapshot.Paid_AgainstTotalArrears += paidArrears;
+            lastSnapshot.Paid_AgainstTotalLateInterest += paidInterest;
+
+            // DO NOT ACCUMULATE -- assign once
+            lastSnapshot.Total_OverpaymentCarriedToNext = nextSnapshotOverPayment;
+
+            lastSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
+            lastSnapshot.IsLatest = false;
+
+            var totalSettlement = new BnplLastSnapshotSettledResultDto
+            {
+                TotalPaidArrears = paidArrears,
+                TotalPaidLateInterest = paidInterest,
+                TotalPaidCurrentInstallmentBase = paidBase,
+                OverPaymentCarriedToNextInstallment = nextSnapshotOverPayment
+            };
+
+            return (totalSettlement, lastSnapshot);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ///*********************************************** need to check again*************************
         public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)
         {
             var installments = existingPlan.BNPL_Installments;
@@ -211,7 +251,7 @@ namespace WebApplication1.Services.ServiceImpl
                 Total_InstallmentBaseArrears = arrearsBase,
                 NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
                 Total_LateInterest = totalLateInterest,
-                Total_AvailableOverPayment = totalOverPayment,
+                Total_OverpaymentCarriedFromPrevious = totalOverPayment,
 
                 Paid_AgainstTotalArrears = paidAgainstArrears,
                 Paid_AgainstTotalLateInterest = paidAgainstLateInterest,
