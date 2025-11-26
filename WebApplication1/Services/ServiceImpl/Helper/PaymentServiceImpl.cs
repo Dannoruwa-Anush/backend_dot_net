@@ -163,7 +163,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             try
             {
                 var installments = bnplPlan.BNPL_Installments
-                                .Where(i => i.RemainingBalance > 0)
+                                //.Where(i => i.RemainingBalance > 0)
                                 .OrderBy(i => i.InstallmentNo)
                                 .ToList();
 
@@ -207,7 +207,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Helper : Update BnplPlan and customerOrder Status After Payment
         private void UpdateBnplPlanStatusAfterPayment(BNPL_PLAN bnplPlan, List<BNPL_Installment> updatedInstallments, CustomerOrder existingOrder)
         {
-            int remaining = updatedInstallments.Count(i => i.RemainingBalance > 0);
+            int remaining = 0 ;//updatedInstallments.Count(i => i.RemainingBalance > 0);
             bnplPlan.Bnpl_RemainingInstallmentCount = remaining;
 
             if (remaining == 0)
@@ -230,7 +230,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             else
             {
                 var nextInst = updatedInstallments
-                    .Where(i => i.RemainingBalance > 0)
+                    //.Where(i => i.RemainingBalance > 0)
                     .OrderBy(i => i.InstallmentNo)
                     .First();
 

@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models.Base;
-using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
@@ -18,7 +17,7 @@ namespace WebApplication1.Models
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Installment_BaseAmount { get; set; }
+        public decimal Installment_BaseAmount { get; set; } //This is fixed amount for a Bnpl_Plan
 
         [Required]
         public DateTime Installment_DueDate { get; set; }
@@ -26,18 +25,17 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal OverPaymentCarriedFromPreviousInstallment { get; set; } = 0m;
 
+        //LateInterest = (Installment_BaseAmount - OverPaymentCarriedFromPreviousInstallment) × lateInterestRatePerDay × overdueDays
         [Column(TypeName = "decimal(18,2)")]
-        public decimal LateInterest { get; set; } = 0m;
+        public decimal LateInterest { get; set; } = 0m; //Late interest is charged on the unpaid Installment_BaseAmount
 
+        //TotalDueAmount = (Installment_BaseAmount - OverPaymentCarriedFromPreviousInstallment) + LateInterest
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalDueAmount { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal AmountPaid_AgainstBase { get; set; } = 0m;
-
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal AmountPaid_AgainstArrears { get; set; } = 0m;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal AmountPaid_AgainstLateInterest { get; set; } = 0m;
@@ -54,23 +52,7 @@ namespace WebApplication1.Models
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
-        
-        // Derived convenience fields
-        [NotMapped]
-        public decimal TotalPaid => AmountPaid_AgainstBase + AmountPaid_AgainstArrears + AmountPaid_AgainstLateInterest;
-
-        [NotMapped]
-        public decimal RemainingBalance => TotalDueAmount - TotalPaid;
-
-        [NotMapped]
-        public bool IsOverdue => Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow) && Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending;
-
-        [NotMapped] 
-        public decimal BaseShortage => Math.Max(Installment_BaseAmount - (AmountPaid_AgainstBase + AmountPaid_AgainstArrears), 0m);
-
-        [NotMapped] 
-        public decimal ArrearsCarried => IsOverdue ? BaseShortage : 0m;
-        
+               
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
         //FK
         public int Bnpl_PlanID { get; set; }

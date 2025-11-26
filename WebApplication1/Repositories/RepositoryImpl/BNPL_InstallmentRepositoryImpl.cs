@@ -210,7 +210,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 {
                     Installment = i,
                     TotalPaidComputed = i.AmountPaid_AgainstBase
-                                        + i.AmountPaid_AgainstArrears
+                                        //+ i.AmountPaid_AgainstArrears
                                         + i.AmountPaid_AgainstLateInterest
                 })
                 .Where(x => x.TotalPaidComputed < x.Installment.TotalDueAmount)

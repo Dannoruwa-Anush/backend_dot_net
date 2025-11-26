@@ -15,23 +15,30 @@ namespace WebApplication1.Models
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalCurrentArrears { get; set; }
+        public decimal NotYetDueCurrentInstallmentBaseAmount { get; set; } // Unpaid base for installments NOT YET DUE
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalCurrentLateInterest { get; set; }
+        public decimal Total_InstallmentBaseArrears { get; set; } // Unpaid base for installments that are past due date
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal InstallmentBaseAmount { get; set; }
+        public decimal Total_LateInterest { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalCurrentOverPayment { get; set; }
+        public decimal Total_AvailableOverPayment { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalPayableSettlement { get; set; }
+        public decimal Total_PayableSettlement { get; set; } 
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Paid_AgainstTotalArrears { get; set; } = 0m;
+
+        // Total paid against late interest (historical)
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Paid_AgainstTotalLateInterest { get; set; } = 0m;
 
         [EnumDataType(typeof(BNPL_PlanSettlementSummary_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]

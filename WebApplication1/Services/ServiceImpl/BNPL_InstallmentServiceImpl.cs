@@ -125,8 +125,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             foreach (var inst in installments)
             {
-                if (inst.RemainingBalance <= 0)
-                    continue;
+                //if (inst.RemainingBalance <= 0)
+                    //continue;
 
                 // Calculate days since last interest applied
                 DateTime lastApplied = inst.LastLateInterestAppliedDate ?? inst.Installment_DueDate;
@@ -136,7 +136,7 @@ namespace WebApplication1.Services.ServiceImpl
                     continue;
 
                 // Apply late interest
-                inst.LateInterest += inst.RemainingBalance * lateInterestRatePerDay * overdueDays;
+                //inst.LateInterest += inst.RemainingBalance * lateInterestRatePerDay * overdueDays;
                 inst.LastLateInterestAppliedDate = today;
                 inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
             }
@@ -235,7 +235,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (arrears > 0 && remainingPayment > 0)
             {
                 var applied = Math.Min(arrears, remainingPayment);
-                inst.AmountPaid_AgainstArrears += applied;
+                //inst.AmountPaid_AgainstArrears += applied;
                 remainingPayment -= applied;
                 breakdown.AppliedToArrears = applied;
             }
@@ -272,7 +272,7 @@ namespace WebApplication1.Services.ServiceImpl
             inst.LastPaymentDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             // ===== STATUS UPDATE =====
-            bool fullyPaid = inst.TotalPaid >= inst.TotalDueAmount;
+            bool fullyPaid = false;//inst.TotalPaid >= inst.TotalDueAmount;
             bool overdue = inst.Installment_DueDate < TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             if (fullyPaid)
@@ -283,7 +283,7 @@ namespace WebApplication1.Services.ServiceImpl
             }
             else
             {
-                if (inst.TotalPaid > 0)
+                /*if (inst.TotalPaid > 0)
                 {
                     inst.Bnpl_Installment_Status =
                         overdue ? BNPL_Installment_StatusEnum.PartiallyPaid_Late
@@ -294,7 +294,7 @@ namespace WebApplication1.Services.ServiceImpl
                     inst.Bnpl_Installment_Status =
                         overdue ? BNPL_Installment_StatusEnum.Overdue
                                 : BNPL_Installment_StatusEnum.Pending;
-                }
+                }*/
             }
 
             breakdown.NewStatus = inst.Bnpl_Installment_Status.ToString();

@@ -59,15 +59,15 @@ namespace WebApplication1.Services.ServiceImpl
                 decimal paidToInterest = 0m;
                 decimal paidToBase = 0m;
 
-                decimal arrears = latestSnapshot.TotalCurrentArrears;
-                decimal interest = latestSnapshot.TotalCurrentLateInterest;
-                decimal baseAmount = latestSnapshot.InstallmentBaseAmount;
-                decimal totalDue = latestSnapshot.TotalPayableSettlement;
+                //decimal arrears = latestSnapshot.TotalCurrentArrears;
+                //decimal interest = latestSnapshot.TotalCurrentLateInterest;
+                //decimal baseAmount = latestSnapshot.InstallmentBaseAmount;
+                //decimal totalDue = latestSnapshot.TotalPayableSettlement;
 
                 // -----------------------------
                 // 1. PAY ARREARS FIRST
                 // -----------------------------
-                if (arrears > 0 && remaining > 0)
+                /*if (arrears > 0 && remaining > 0)
                 {
                     paidToArrears = Math.Min(arrears, remaining);
                     remaining -= paidToArrears;
@@ -108,7 +108,7 @@ namespace WebApplication1.Services.ServiceImpl
                 else if (remainingBalance == 0)
                     status = "Fully Settled";
                 else
-                    status = "Partially Paid";
+                    status = "Partially Paid";*/
 
                 return new BnplSnapshotPayingSimulationResultDto
                 {
@@ -116,9 +116,9 @@ namespace WebApplication1.Services.ServiceImpl
                     PaidToArrears = paidToArrears,
                     PaidToInterest = paidToInterest,
                     PaidToBase = paidToBase,
-                    RemainingBalance = remainingBalance,
-                    OverPaymentCarried = overPayment,
-                    ResultStatus = status
+                    //RemainingBalance = remainingBalance,
+                    //OverPaymentCarried = overPayment,
+                    //ResultStatus = status
                 };
             });
         }
@@ -128,7 +128,7 @@ namespace WebApplication1.Services.ServiceImpl
         {
             var unsettledInstallments = plan_Installments
                 .Where(i =>
-                    i.RemainingBalance > 0 ||
+                    ///i.RemainingBalance > 0 ||
                     i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending ||
                     i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.PartiallyPaid_OnTime ||
                     i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.PartiallyPaid_Late ||
@@ -156,11 +156,11 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 Bnpl_PlanID = planId,
                 CurrentInstallmentNo = unsettledInstallments.Max(i => i.InstallmentNo),
-                InstallmentBaseAmount = totals.TotalBaseAmount,
-                TotalCurrentLateInterest = totals.TotalLateInterest,
-                TotalCurrentOverPayment = totals.TotalOverPayment,
-                TotalCurrentArrears = totals.TotalArrears,
-                TotalPayableSettlement = totals.TotalPayable,
+                //InstallmentBaseAmount = totals.TotalBaseAmount,
+                //TotalCurrentLateInterest = totals.TotalLateInterest,
+                //TotalCurrentOverPayment = totals.TotalOverPayment,
+                //TotalCurrentArrears = totals.TotalArrears,
+                //TotalPayableSettlement = totals.TotalPayable,
                 Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
                 IsLatest = true,
             };
@@ -175,7 +175,7 @@ namespace WebApplication1.Services.ServiceImpl
             var baseAmount = installments.Sum(i => i.Installment_BaseAmount);
             var lateInterest = installments.Sum(i => i.LateInterest);
             var overPayment = installments.Sum(i => i.OverPaymentCarriedFromPreviousInstallment);
-            var arrears = installments.Sum(i => i.RemainingBalance);
+            var arrears = 0;//installments.Sum(i => i.RemainingBalance);
             var payable = arrears + lateInterest - overPayment;
 
             return (baseAmount, lateInterest, overPayment, arrears, payable);
