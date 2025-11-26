@@ -43,6 +43,28 @@ namespace WebApplication1.Services.ServiceImpl
         //Helper method : simulator per installment
         private BnplSnapshotPayingSimulationResultDto SimulatePaymentAllocationForSnapshot(BNPL_PlanSettlementSummary snapshot, decimal paymentAmount)
         {
+            //Call helper method
+            (decimal paidToArrears, decimal paidToInterest, decimal paidToBase, decimal remainingBalance, decimal overPayment) = AllocatePaymentBuckets(snapshot, paymentAmount);
+            
+            string status =
+                remainingBalance == 0 && overPayment > 0 ? "Overpaid" :
+                remainingBalance == 0 ? "Fully Settled" : "Partially Paid";
+
+            return new BnplSnapshotPayingSimulationResultDto
+            {
+                InstallmentId = snapshot.CurrentInstallmentNo,
+                PaidToArrears = paidToArrears,
+                PaidToInterest = paidToInterest,
+                PaidToBase = paidToBase,
+                RemainingBalance = remainingBalance,
+                OverPaymentCarried = overPayment,
+                ResultStatus = status
+            };
+        }
+
+        //Helper : paying flow
+        private (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal overPayment) AllocatePaymentBuckets(BNPL_PlanSettlementSummary snapshot, decimal paymentAmount)
+        {
             decimal remaining = paymentAmount;
 
             decimal remainingArrears = Math.Max(0, snapshot.Total_InstallmentBaseArrears - snapshot.Paid_AgainstTotalArrears);
@@ -56,17 +78,17 @@ namespace WebApplication1.Services.ServiceImpl
             // -----------------------------
             // TRACK CURRENT PAYMENT ALLOCATION
             // -----------------------------
-            decimal paidToArrears = 0m;
-            decimal paidToInterest = 0m;
-            decimal paidToBase = 0m;
+            decimal paidArrears = 0m;
+            decimal paidInterest = 0m;
+            decimal paidBase = 0m;
 
             // -----------------------------
             // 1. PAY ARREARS
             // -----------------------------
             if (remaining > 0 && remainingArrears > 0)
             {
-                paidToArrears = Math.Min(remainingArrears, remaining);
-                remaining -= paidToArrears;
+                paidArrears = Math.Min(remainingArrears, remaining);
+                remaining -= paidArrears;
             }
 
             // -----------------------------
@@ -74,8 +96,8 @@ namespace WebApplication1.Services.ServiceImpl
             // -----------------------------
             if (remaining > 0 && remainingInterest > 0)
             {
-                paidToInterest = Math.Min(remainingInterest, remaining);
-                remaining -= paidToInterest;
+                paidInterest = Math.Min(remainingInterest, remaining);
+                remaining -= paidInterest;
             }
 
             // -----------------------------
@@ -83,33 +105,19 @@ namespace WebApplication1.Services.ServiceImpl
             // -----------------------------
             if (remaining > 0 && remainingBase > 0)
             {
-                paidToBase = Math.Min(remainingBase, remaining);
-                remaining -= paidToBase;
+                paidBase = Math.Min(remainingBase, remaining);
+                remaining -= paidBase;
             }
 
             // -----------------------------
             // SUMMARY
             // -----------------------------
-            decimal appliedTotal = paidToArrears + paidToInterest + paidToBase;
+            decimal appliedTotal = paidArrears + paidInterest + paidBase;
 
             decimal remainingBalance = Math.Max(0, totalRemainingDue - appliedTotal);
             decimal overPayment = Math.Max(0, remaining);
 
-            string status =
-                remainingBalance == 0 && overPayment > 0 ? "Overpaid" :
-                remainingBalance == 0 ? "Fully Settled" :
-                "Partially Paid";
-
-            return new BnplSnapshotPayingSimulationResultDto
-            {
-                InstallmentId = snapshot.CurrentInstallmentNo,
-                PaidToArrears = paidToArrears,
-                PaidToInterest = paidToInterest,
-                PaidToBase = paidToBase,
-                RemainingBalance = remainingBalance,
-                OverPaymentCarried = overPayment,
-                ResultStatus = status
-            };
+            return (paidArrears, paidInterest, paidBase, remainingBalance, overPayment);
         }
 
         //Shared Internal Operations Used by Multiple Repositories
