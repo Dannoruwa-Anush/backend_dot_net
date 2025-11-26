@@ -62,62 +62,53 @@ namespace WebApplication1.Services.ServiceImpl
             };
         }
 
-        //Helper : paying flow
+        //Helper : AllocatePaymentBuckets
         private (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal overPayment) AllocatePaymentBuckets(BNPL_PlanSettlementSummary snapshot, decimal paymentAmount)
         {
-            decimal remaining = paymentAmount;
 
             decimal remainingArrears = Math.Max(0, snapshot.Total_InstallmentBaseArrears - snapshot.Paid_AgainstTotalArrears);
-
             decimal remainingInterest = Math.Max(0, snapshot.Total_LateInterest - snapshot.Paid_AgainstTotalLateInterest);
-
             decimal remainingBase = Math.Max(0, snapshot.NotYetDueCurrentInstallmentBaseAmount - snapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount);
 
-            decimal totalRemainingDue = remainingArrears + remainingInterest + remainingBase;
+            //Call helper method
+            var (paidArrears, paidInterest, paidBase, leftover) = ApplyPayingFlow(paymentAmount, remainingArrears, remainingInterest, remainingBase);
 
-            // -----------------------------
-            // TRACK CURRENT PAYMENT ALLOCATION
-            // -----------------------------
+            //Calculate : remainingBalance
+            decimal remainingBalance = Math.Max(0, remainingArrears + remainingInterest + remainingBase - (paidArrears + paidInterest + paidBase));
+
+            return (paidArrears, paidInterest, paidBase, remainingBalance, leftover);
+        }
+
+        //Helper : paying flow
+        private (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remaining) ApplyPayingFlow(decimal amount, decimal arrears, decimal interest, decimal baseAmount)
+        {
+            decimal remaining = amount;
             decimal paidArrears = 0m;
             decimal paidInterest = 0m;
             decimal paidBase = 0m;
 
-            // -----------------------------
-            // 1. PAY ARREARS
-            // -----------------------------
-            if (remaining > 0 && remainingArrears > 0)
+            // 1. Arrears first
+            if (remaining > 0 && arrears > 0)
             {
-                paidArrears = Math.Min(remainingArrears, remaining);
+                paidArrears = Math.Min(arrears, remaining);
                 remaining -= paidArrears;
             }
 
-            // -----------------------------
-            // 2. PAY LATE INTEREST
-            // -----------------------------
-            if (remaining > 0 && remainingInterest > 0)
+            // 2. Late Interest
+            if (remaining > 0 && interest > 0)
             {
-                paidInterest = Math.Min(remainingInterest, remaining);
+                paidInterest = Math.Min(interest, remaining);
                 remaining -= paidInterest;
             }
 
-            // -----------------------------
-            // 3. PAY CURRENT INSTALLMENT BASE
-            // -----------------------------
-            if (remaining > 0 && remainingBase > 0)
+            // 3. Current / Not-yet-due Base
+            if (remaining > 0 && baseAmount > 0)
             {
-                paidBase = Math.Min(remainingBase, remaining);
+                paidBase = Math.Min(baseAmount, remaining);
                 remaining -= paidBase;
             }
 
-            // -----------------------------
-            // SUMMARY
-            // -----------------------------
-            decimal appliedTotal = paidArrears + paidInterest + paidBase;
-
-            decimal remainingBalance = Math.Max(0, totalRemainingDue - appliedTotal);
-            decimal overPayment = Math.Max(0, remaining);
-
-            return (paidArrears, paidInterest, paidBase, remainingBalance, overPayment);
+            return (paidArrears, paidInterest, paidBase, remaining);
         }
 
         //Shared Internal Operations Used by Multiple Repositories
@@ -148,18 +139,6 @@ namespace WebApplication1.Services.ServiceImpl
             return (totalSettlement, lastSnapshot);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
         ///*********************************************** need to check again*************************
         public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)
         {
@@ -170,7 +149,9 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Step 1: filter paid/refunded
+            // ---------------------------------------------------------
+            // 1. FILTER UNPAID INSTALLMENTS
+            // ---------------------------------------------------------
             var unpaid = installments
                 .Where(inst => inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
                                inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
@@ -181,56 +162,90 @@ namespace WebApplication1.Services.ServiceImpl
             if (!unpaid.Any())
                 return null;
 
-            // Step 2: find the NEXT upcoming unpaid installment
+            // Next unpaid installment that is not overdue
             var nextUpcoming = unpaid.FirstOrDefault(i => i.Installment_DueDate >= now);
 
-            // Step 3: allowed InstallmentNos
-            int maxAllowedInstallmentNo = nextUpcoming?.InstallmentNo ?? unpaid.Last().InstallmentNo;
+            int maxAllowedInstallmentNo =
+                nextUpcoming?.InstallmentNo ?? unpaid.Last().InstallmentNo;
 
-            // Step 4: final list (exclude future installments)
             var effectiveInstallments = unpaid
                 .Where(i => i.InstallmentNo <= maxAllowedInstallmentNo)
                 .ToList();
 
+            // ---------------------------------------------------------
+            // ACCUMULATORS
+            // ---------------------------------------------------------
             decimal arrearsBase = 0m;
             decimal notYetDueBase = 0m;
             decimal totalLateInterest = 0m;
-            decimal totalOverPayment = 0m;
+            decimal totalOverPaymentCarriedForward = 0m;
 
             decimal paidAgainstArrears = 0m;
             decimal paidAgainstLateInterest = 0m;
             decimal paidAgainstNotYetDue = 0m;
 
+            // ---------------------------------------------------------
+            // 2. PROCESS EACH INSTALLMENT
+            // ---------------------------------------------------------
             foreach (var inst in effectiveInstallments)
             {
-                decimal unpaidBase = Math.Max(0,inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase);
-                if (unpaidBase < 0) 
-                    unpaidBase = 0;
+                // Remaining BASE & INTEREST BEFORE APPLYING CARRY
+                decimal remainingBase = Math.Max(0, inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase);
+                decimal remainingInterest = Math.Max(0, inst.LateInterest - inst.AmountPaid_AgainstLateInterest);
 
-                // Track historical payments
+                // Track historical payments already made
                 paidAgainstArrears += inst.AmountPaid_AgainstBase;
                 paidAgainstLateInterest += inst.AmountPaid_AgainstLateInterest;
 
-                // Track how much was paid toward the not-yet-due installment
                 if (inst.Installment_DueDate >= now)
                     paidAgainstNotYetDue += inst.AmountPaid_AgainstBase;
 
-                totalLateInterest += inst.LateInterest;
-                totalOverPayment += inst.OverPaymentCarriedFromPreviousInstallment;
+                // ---------------------------------------------------------
+                //  APPLY OVERPAYMENT FROM PREVIOUS INSTALLMENT
+                // ---------------------------------------------------------
+                decimal carry = inst.OverPaymentCarriedFromPreviousInstallment;
 
-                // Categorize base amounts
+                // What portion of base is arrears vs not-yet-due?
+                decimal arrearsPortion = inst.Installment_DueDate < now ? remainingBase : 0m;
+                decimal futureBasePortion = inst.Installment_DueDate >= now ? remainingBase : 0m;
+
+                var (paidCarryToArrears, paidCarryToInterest, paidCarryToBase, leftoverCarry) = ApplyPayingFlow(carry, arrearsPortion, remainingInterest, futureBasePortion);
+
+                // Apply the overpayment reductions
+                remainingBase -= paidCarryToArrears + paidCarryToBase;
+                remainingInterest -= paidCarryToInterest;
+
+                // leftover carry goes forward
+                totalOverPaymentCarriedForward += leftoverCarry;
+
+                // ---------------------------------------------------------
+                // ACCUMULATE UNPAID AFTER APPLYING CARRY
+                // ---------------------------------------------------------
                 if (inst.Installment_DueDate < now)
-                    arrearsBase += unpaidBase;
+                {
+                    arrearsBase += remainingBase;
+                }
                 else
-                    notYetDueBase += unpaidBase;
+                {
+                    notYetDueBase += remainingBase;
+                }
+
+                totalLateInterest += remainingInterest;
             }
 
-            decimal payableSettlement = arrearsBase + notYetDueBase + totalLateInterest -
-                                        (paidAgainstArrears + paidAgainstLateInterest + paidAgainstNotYetDue);
+            // ---------------------------------------------------------
+            // 3. CALCULATE FINAL PAYABLE
+            // ---------------------------------------------------------
+            decimal payableSettlement =
+                arrearsBase + notYetDueBase + totalLateInterest -
+                (paidAgainstArrears + paidAgainstLateInterest + paidAgainstNotYetDue);
 
             if (payableSettlement < 0)
                 payableSettlement = 0;
 
+            // ---------------------------------------------------------
+            // 4. RETURN SNAPSHOT
+            // ---------------------------------------------------------
             return new BNPL_PlanSettlementSummary
             {
                 Bnpl_PlanID = effectiveInstallments.First().Bnpl_PlanID,
@@ -239,14 +254,14 @@ namespace WebApplication1.Services.ServiceImpl
                 Total_InstallmentBaseArrears = arrearsBase,
                 NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
                 Total_LateInterest = totalLateInterest,
-                Total_OverpaymentCarriedFromPrevious = totalOverPayment,
+
+                Total_OverpaymentCarriedFromPrevious = totalOverPaymentCarriedForward,
 
                 Paid_AgainstTotalArrears = paidAgainstArrears,
                 Paid_AgainstTotalLateInterest = paidAgainstLateInterest,
                 Paid_AgainstNotYetDueCurrentInstallmentBaseAmount = paidAgainstNotYetDue,
 
                 Total_PayableSettlement = payableSettlement,
-
                 IsLatest = true
             };
         }
