@@ -1,6 +1,6 @@
 namespace WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation
 {
-    public class BnplLastSnapshotSettledResultDto
+    public class BnplLatestSnapshotSettledResultDto
     {
         public decimal TotalPaidArrears { get; set; } = 0m; // Arreas : previous Installment_Base
         public decimal TotalPaidLateInterest { get; set; } = 0m;

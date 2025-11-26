@@ -108,15 +108,15 @@ namespace WebApplication1.Services.ServiceImpl
         public (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)
     BuildBnplInstallmentSettlementAsync(
         List<BNPL_Installment> installments,
-        BnplLastSnapshotSettledResultDto lastSnapshotSettledResult)
+        BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
         {
             var sorted = installments.OrderBy(i => i.InstallmentNo).ToList();
 
-            decimal payArrears = lastSnapshotSettledResult.TotalPaidArrears;
-            decimal payInterest = lastSnapshotSettledResult.TotalPaidLateInterest;
-            decimal payBase = lastSnapshotSettledResult.TotalPaidCurrentInstallmentBase;
+            decimal payArrears = latestSnapshotSettledResult.TotalPaidArrears;
+            decimal payInterest = latestSnapshotSettledResult.TotalPaidLateInterest;
+            decimal payBase = latestSnapshotSettledResult.TotalPaidCurrentInstallmentBase;
 
-            decimal carryForward = lastSnapshotSettledResult.OverPaymentCarriedToNextInstallment;
+            decimal carryForward = latestSnapshotSettledResult.OverPaymentCarriedToNextInstallment;
 
             DateTime now = DateTime.UtcNow;
 
@@ -140,9 +140,9 @@ namespace WebApplication1.Services.ServiceImpl
             var result = new BnplInstallmentPaymentResultDto
             {
                 InstallmentId = sorted.First().InstallmentID,
-                AppliedToArrears = lastSnapshotSettledResult.TotalPaidArrears,
-                AppliedToLateInterest = lastSnapshotSettledResult.TotalPaidLateInterest,
-                AppliedToBase = lastSnapshotSettledResult.TotalPaidCurrentInstallmentBase,
+                AppliedToArrears = latestSnapshotSettledResult.TotalPaidArrears,
+                AppliedToLateInterest = latestSnapshotSettledResult.TotalPaidLateInterest,
+                AppliedToBase = latestSnapshotSettledResult.TotalPaidCurrentInstallmentBase,
                 OverPayment = carryForward,
                 PerInstallmentBreakdown = breakdownList
             };

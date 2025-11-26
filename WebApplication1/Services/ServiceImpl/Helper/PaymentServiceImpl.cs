@@ -162,21 +162,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var installments = bnplPlan.BNPL_Installments
-                                //.Where(i => i.RemainingBalance > 0)
-                                .OrderBy(i => i.InstallmentNo)
-                                .ToList();
-
-                if (!installments.Any())
-                    throw new Exception("No unpaid installments found");
-
                 // Apply payment : for snapshot
-                var lastSnapshot = bnplPlan.BNPL_PlanSettlementSummaries.Last();
-                var (lastSnapshotSettledResult, updatedLastSnapshot) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLastSettlementSummaryUpdateRequestAsync(lastSnapshot, paymentRequest.PaymentAmount);
-                lastSnapshot = updatedLastSnapshot;
+                var latestSnapshot = bnplPlan.BNPL_PlanSettlementSummaries.Last();
+                
+                var (latestSnapshotSettledResult, updatedLatestSnapshot) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(latestSnapshot, paymentRequest.PaymentAmount);
+                latestSnapshot = updatedLatestSnapshot;
 
                 // Apply the payment : for installments
-                var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(installments, lastSnapshotSettledResult);
+                var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(bnplPlan.BNPL_Installments.ToList(), latestSnapshotSettledResult);
                 bnplPlan.BNPL_Installments = updatedInstallments;
                 
                 // Update Bnpl plan and customer order

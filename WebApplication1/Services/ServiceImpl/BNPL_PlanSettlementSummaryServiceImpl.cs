@@ -112,23 +112,24 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Shared Internal Operations Used by Multiple Repositories
-        public (BnplLastSnapshotSettledResultDto, BNPL_PlanSettlementSummary) BuildBNPL_PlanLastSettlementSummaryUpdateRequestAsync(BNPL_PlanSettlementSummary lastSnapshot, decimal paymentAmount)
+        public (BnplLatestSnapshotSettledResultDto, BNPL_PlanSettlementSummary) BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(BNPL_PlanSettlementSummary latestSnapshot, decimal paymentAmount)
         {
             //Call helper method
-            (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal nextSnapshotOverPayment) = AllocatePaymentBuckets(lastSnapshot, paymentAmount);
+            (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal nextSnapshotOverPayment) = AllocatePaymentBuckets(latestSnapshot, paymentAmount);
 
             // Update only what belongs to this snapshot
-            lastSnapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += paidBase;
-            lastSnapshot.Paid_AgainstTotalArrears += paidArrears;
-            lastSnapshot.Paid_AgainstTotalLateInterest += paidInterest;
+            latestSnapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += paidBase;
+            latestSnapshot.Paid_AgainstTotalArrears += paidArrears;
+            latestSnapshot.Paid_AgainstTotalLateInterest += paidInterest;
 
-            // DO NOT ACCUMULATE -- assign once
-            lastSnapshot.Total_OverpaymentCarriedToNext = nextSnapshotOverPayment;
+            //????
+            latestSnapshot.Total_OverpaymentCarriedToNext = nextSnapshotOverPayment;
 
-            lastSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
-            lastSnapshot.IsLatest = false;
+            //After the snapshot payment, new snapshot will be generated
+            latestSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
+            latestSnapshot.IsLatest = false;
 
-            var totalSettlement = new BnplLastSnapshotSettledResultDto
+            var totalSettlement = new BnplLatestSnapshotSettledResultDto
             {
                 TotalPaidArrears = paidArrears,
                 TotalPaidLateInterest = paidInterest,
@@ -136,7 +137,7 @@ namespace WebApplication1.Services.ServiceImpl
                 OverPaymentCarriedToNextInstallment = nextSnapshotOverPayment
             };
 
-            return (totalSettlement, lastSnapshot);
+            return (totalSettlement, latestSnapshot);
         }
 
         ///*********************************************** need to check again*************************
