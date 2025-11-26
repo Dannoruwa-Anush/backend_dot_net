@@ -47,19 +47,18 @@ namespace WebApplication1.Controllers
             try
             {
                 var result = await _service.SimulateBnplPlanSettlementAsync(request);
-                var response = new ApiResponseDto<object>(
-                    200,
-                    "Payment simulation successful",
-                    result
-                );
+                var response = new ApiResponseDto<object>(200, "Payment simulation successful", result);
+
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponseDto<string>(
-                    400,
-                    ex.Message
-                ));
+                var message = ex.Message;
+                
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Latest snapshot not found"));
+
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
     }

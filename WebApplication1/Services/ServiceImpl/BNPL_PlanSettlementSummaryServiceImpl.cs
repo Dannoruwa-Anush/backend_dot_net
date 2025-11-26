@@ -33,95 +33,83 @@ namespace WebApplication1.Services.ServiceImpl
         //simulator : Main Driver
         public async Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request)
         {
-            // Load the customer order
-            var order = await _customerOrderRepository.GetByIdAsync(request.OrderId);
-            if (order == null)
-                throw new Exception("Customer order not found.");
-
-            var planId = order.BNPL_PLAN!.Bnpl_PlanID;
-
-            // Initialize remaining payment with input
-            decimal remainingPayment = request.PaymentAmount;
-
-            var latestSnapshot = await _repository.GetLatestSnapshotAsync(planId);
+            var latestSnapshot = await _repository.GetLatestSnapshotWithOrderDetailsAsync(request.OrderId);
             if (latestSnapshot == null)
                 throw new Exception("Latest snapshot not found");
 
-            return await SimulatePerInstallmentInternalAsync(latestSnapshot, remainingPayment);
+            return SimulatePaymentAllocationForSnapshot(latestSnapshot, request.PaymentAmount);
         }
 
         //Helper method : simulator per installment
-        private async Task<BnplSnapshotPayingSimulationResultDto> SimulatePerInstallmentInternalAsync(BNPL_PlanSettlementSummary latestSnapshot, decimal paymentAmount)
+        private BnplSnapshotPayingSimulationResultDto SimulatePaymentAllocationForSnapshot(BNPL_PlanSettlementSummary snapshot, decimal paymentAmount)
         {
-            return await Task.Run(() =>
+            decimal remaining = paymentAmount;
+
+            decimal remainingArrears = Math.Max(0, snapshot.Total_InstallmentBaseArrears - snapshot.Paid_AgainstTotalArrears);
+
+            decimal remainingInterest = Math.Max(0, snapshot.Total_LateInterest - snapshot.Paid_AgainstTotalLateInterest);
+
+            decimal remainingBase = Math.Max(0, snapshot.NotYetDueCurrentInstallmentBaseAmount - snapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount);
+
+            decimal totalRemainingDue = remainingArrears + remainingInterest + remainingBase;
+
+            // -----------------------------
+            // TRACK CURRENT PAYMENT ALLOCATION
+            // -----------------------------
+            decimal paidToArrears = 0m;
+            decimal paidToInterest = 0m;
+            decimal paidToBase = 0m;
+
+            // -----------------------------
+            // 1. PAY ARREARS
+            // -----------------------------
+            if (remaining > 0 && remainingArrears > 0)
             {
-                decimal remaining = paymentAmount;
-                decimal paidToArrears = 0m;
-                decimal paidToInterest = 0m;
-                decimal paidToBase = 0m;
+                paidToArrears = Math.Min(remainingArrears, remaining);
+                remaining -= paidToArrears;
+            }
 
-                //decimal arrears = latestSnapshot.TotalCurrentArrears;
-                //decimal interest = latestSnapshot.TotalCurrentLateInterest;
-                //decimal baseAmount = latestSnapshot.InstallmentBaseAmount;
-                //decimal totalDue = latestSnapshot.TotalPayableSettlement;
+            // -----------------------------
+            // 2. PAY LATE INTEREST
+            // -----------------------------
+            if (remaining > 0 && remainingInterest > 0)
+            {
+                paidToInterest = Math.Min(remainingInterest, remaining);
+                remaining -= paidToInterest;
+            }
 
-                // -----------------------------
-                // 1. PAY ARREARS FIRST
-                // -----------------------------
-                /*if (arrears > 0 && remaining > 0)
-                {
-                    paidToArrears = Math.Min(arrears, remaining);
-                    remaining -= paidToArrears;
-                }
+            // -----------------------------
+            // 3. PAY CURRENT INSTALLMENT BASE
+            // -----------------------------
+            if (remaining > 0 && remainingBase > 0)
+            {
+                paidToBase = Math.Min(remainingBase, remaining);
+                remaining -= paidToBase;
+            }
 
-                // -----------------------------
-                // 2. PAY LATE INTEREST
-                // -----------------------------
-                if (interest > 0 && remaining > 0)
-                {
-                    paidToInterest = Math.Min(interest, remaining);
-                    remaining -= paidToInterest;
-                }
+            // -----------------------------
+            // SUMMARY
+            // -----------------------------
+            decimal appliedTotal = paidToArrears + paidToInterest + paidToBase;
 
-                // -----------------------------
-                // 3. PAY BASE AMOUNT
-                // -----------------------------
-                if (baseAmount > 0 && remaining > 0)
-                {
-                    paidToBase = Math.Min(baseAmount, remaining);
-                    remaining -= paidToBase;
-                }
+            decimal remainingBalance = Math.Max(0, totalRemainingDue - appliedTotal);
+            decimal overPayment = Math.Max(0, remaining);
 
-                // ---------------------------------
-                // CALCULATE APPLIED + OVERPAYMENT
-                // ---------------------------------
-                decimal appliedTotal = paidToArrears + paidToInterest + paidToBase;
-                decimal remainingBalance = Math.Max(0, totalDue - appliedTotal);
-                decimal overPayment = remaining > 0 ? remaining : 0;
+            string status =
+                remainingBalance == 0 && overPayment > 0 ? "Overpaid" :
+                remainingBalance == 0 ? "Fully Settled" :
+                "Partially Paid";
 
-                // ---------------------------------
-                // DETERMINE RESULT STATUS
-                // ---------------------------------
-                string status;
-
-                if (remainingBalance == 0 && overPayment > 0)
-                    status = "Overpaid";
-                else if (remainingBalance == 0)
-                    status = "Fully Settled";
-                else
-                    status = "Partially Paid";*/
-
-                return new BnplSnapshotPayingSimulationResultDto
-                {
-                    InstallmentId = latestSnapshot.CurrentInstallmentNo,
-                    PaidToArrears = paidToArrears,
-                    PaidToInterest = paidToInterest,
-                    PaidToBase = paidToBase,
-                    //RemainingBalance = remainingBalance,
-                    //OverPaymentCarried = overPayment,
-                    //ResultStatus = status
-                };
-            });
+            return new BnplSnapshotPayingSimulationResultDto
+            {
+                InstallmentId = snapshot.CurrentInstallmentNo,
+                PaidToArrears = paidToArrears,
+                PaidToInterest = paidToInterest,
+                PaidToBase = paidToBase,
+                RemainingBalance = remainingBalance,
+                OverPaymentCarried = overPayment,
+                ResultStatus = status
+            };
         }
 
         //Shared Internal Operations Used by Multiple Repositories
