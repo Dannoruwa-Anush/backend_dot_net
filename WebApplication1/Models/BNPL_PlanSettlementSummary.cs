@@ -33,6 +33,10 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Total_PayableSettlement { get; set; } 
 
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Paid_AgainstNotYetDueCurrentInstallmentBaseAmount { get; set; } = 0m;
+
         [Column(TypeName = "decimal(18,2)")]
         public decimal Paid_AgainstTotalArrears { get; set; } = 0m;
 

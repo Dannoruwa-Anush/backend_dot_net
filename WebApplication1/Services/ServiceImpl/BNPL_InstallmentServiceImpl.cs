@@ -86,8 +86,7 @@ namespace WebApplication1.Services.ServiceImpl
 
                     if (updatedInstallments != null)
                     {
-                        await _bnpl_planSettlementSummaryService
-                            .BuildSettlementGenerateRequestForPlanAsync(updatedInstallments);
+                        _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan);
 
                         _logger.LogInformation($"Snapshot created for Plan={plan.Bnpl_PlanID}");
                     }

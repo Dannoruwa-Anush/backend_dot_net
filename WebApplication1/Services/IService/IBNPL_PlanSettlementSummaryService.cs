@@ -13,6 +13,6 @@ namespace WebApplication1.Services.IService
         Task<BnplSnapshotPayingSimulationResultDto> SimulateBnplPlanSettlementAsync(BnplSnapshotPayingSimulationRequestDto request);
         
         //Shared Internal Operations Used by Multiple Repositories
-        Task<BNPL_PlanSettlementSummary?> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments);
+        BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan);
     }
 }

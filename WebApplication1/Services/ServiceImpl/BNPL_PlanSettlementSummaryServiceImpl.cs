@@ -3,6 +3,7 @@ using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
@@ -124,61 +125,151 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Shared Internal Operations Used by Multiple Repositories
-        public async Task<BNPL_PlanSettlementSummary?> BuildSettlementGenerateRequestForPlanAsync(List<BNPL_Installment> plan_Installments)
+        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)
         {
-            var unsettledInstallments = plan_Installments
-                .Where(i =>
-                    ///i.RemainingBalance > 0 ||
-                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Pending ||
-                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.PartiallyPaid_OnTime ||
-                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.PartiallyPaid_Late ||
-                    i.Bnpl_Installment_Status == BNPL_Installment_StatusEnum.Overdue
-                )
+            var installments = existingPlan.BNPL_Installments;
+
+            if (installments == null || installments.Count == 0)
+                return null;
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            MarkPreviousSnapshotsOfPlanAsObsoleteAsync(existingPlan);
+
+            // Step 1: filter paid/refunded
+            var unpaid = installments
+                .Where(inst => inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
+                               inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
+                               inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded)
                 .OrderBy(i => i.InstallmentNo)
                 .ToList();
 
-            if (!unsettledInstallments.Any())
+            if (!unpaid.Any())
                 return null;
 
-            int planId = unsettledInstallments.First().Bnpl_PlanID;
+            // Step 2: find the NEXT upcoming unpaid installment
+            var nextUpcoming = unpaid.FirstOrDefault(i => i.Installment_DueDate >= now);
 
-            // Mark previous snapshots as not latest
-            var existingSnapshots = await _repository.GetAllByPlanIdAsync(planId);
+            // Step 3: allowed InstallmentNos
+            int maxAllowedInstallmentNo = nextUpcoming?.InstallmentNo ?? unpaid.Last().InstallmentNo;
 
-            foreach (var snapshotItem in existingSnapshots)
-                snapshotItem.IsLatest = false;
+            // Step 4: final list (exclude future installments)
+            var effectiveInstallments = unpaid
+                .Where(i => i.InstallmentNo <= maxAllowedInstallmentNo)
+                .ToList();
 
-            // Calculate totals
-            var totals = CalculateSettlementValues(unsettledInstallments);
+            decimal arrearsBase = 0m;
+            decimal notYetDueBase = 0m;
+            decimal totalLateInterest = 0m;
+            decimal totalOverPayment = 0m;
 
-            // Create new snapshot
-            var snapshot = new BNPL_PlanSettlementSummary
+            decimal paidAgainstArrears = 0m;
+            decimal paidAgainstLateInterest = 0m;
+            decimal paidAgainstNotYetDue = 0m;
+
+            foreach (var inst in effectiveInstallments)
             {
-                Bnpl_PlanID = planId,
-                CurrentInstallmentNo = unsettledInstallments.Max(i => i.InstallmentNo),
-                //InstallmentBaseAmount = totals.TotalBaseAmount,
-                //TotalCurrentLateInterest = totals.TotalLateInterest,
-                //TotalCurrentOverPayment = totals.TotalOverPayment,
-                //TotalCurrentArrears = totals.TotalArrears,
-                //TotalPayableSettlement = totals.TotalPayable,
-                Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Active,
-                IsLatest = true,
-            };
+                decimal unpaidBase = inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase;
+                if (unpaidBase < 0) unpaidBase = 0;
 
-            _logger.LogInformation("Snapshot created for Plan={Bnpl_PlanID}", planId);
-            return snapshot;
+                // Track historical payments
+                paidAgainstArrears += inst.AmountPaid_AgainstBase;
+                paidAgainstLateInterest += inst.AmountPaid_AgainstLateInterest;
+
+                // Track how much was paid toward the not-yet-due installment
+                if (inst.Installment_DueDate >= now)
+                    paidAgainstNotYetDue += inst.AmountPaid_AgainstBase;
+
+                totalLateInterest += inst.LateInterest;
+                totalOverPayment += inst.OverPaymentCarriedFromPreviousInstallment;
+
+                // Categorize base amounts
+                if (inst.Installment_DueDate < now)
+                    arrearsBase += unpaidBase;
+                else
+                    notYetDueBase += unpaidBase;
+            }
+
+            // Apply paying pattern
+            ApplyPayingPattern(
+                ref arrearsBase,
+                ref totalLateInterest,
+                ref notYetDueBase,
+                ref totalOverPayment
+            );
+
+            decimal payableSettlement =
+                arrearsBase +
+                totalLateInterest +
+                notYetDueBase -
+                totalOverPayment;
+
+            if (payableSettlement < 0)
+                payableSettlement = 0;
+
+            return new BNPL_PlanSettlementSummary
+            {
+                Bnpl_PlanID = effectiveInstallments.First().Bnpl_PlanID,
+                CurrentInstallmentNo = effectiveInstallments.First().InstallmentNo,
+
+                Total_InstallmentBaseArrears = arrearsBase,
+                NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
+                Total_LateInterest = totalLateInterest,
+                Total_AvailableOverPayment = totalOverPayment,
+
+                Paid_AgainstTotalArrears = paidAgainstArrears,
+                Paid_AgainstTotalLateInterest = paidAgainstLateInterest,
+                Paid_AgainstNotYetDueCurrentInstallmentBaseAmount = paidAgainstNotYetDue,
+
+                Total_PayableSettlement = payableSettlement,
+                IsLatest = true
+            };
         }
 
-        //Helper method : to calculate accumulated values
-        private (decimal TotalBaseAmount, decimal TotalLateInterest, decimal TotalOverPayment, decimal TotalArrears, decimal TotalPayable) CalculateSettlementValues(List<BNPL_Installment> installments)
+        //Helper : MarkPreviousSnapshotsOfPlanAsObsoleteAsync
+        private void MarkPreviousSnapshotsOfPlanAsObsoleteAsync(BNPL_PLAN existingPlan)
         {
-            var baseAmount = installments.Sum(i => i.Installment_BaseAmount);
-            var lateInterest = installments.Sum(i => i.LateInterest);
-            var overPayment = installments.Sum(i => i.OverPaymentCarriedFromPreviousInstallment);
-            var arrears = 0;//installments.Sum(i => i.RemainingBalance);
-            var payable = arrears + lateInterest - overPayment;
+            var snapshots = existingPlan.BNPL_PlanSettlementSummaries;
 
-            return (baseAmount, lateInterest, overPayment, arrears, payable);
+            if (snapshots.Any())
+            {
+                foreach (var s in snapshots)
+                {
+                    s.IsLatest = false;
+                    s.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
+                }
+            }
+        }
+
+        //Helper : ApplyPayingPattern
+        private void ApplyPayingPattern(
+            ref decimal arrearsBase,
+            ref decimal lateInterest,
+            ref decimal notYetDueBase,
+            ref decimal overPayment)
+        {
+            if (overPayment > 0)
+            {
+                decimal reduce = Math.Min(overPayment, arrearsBase);
+                arrearsBase -= reduce;
+                overPayment -= reduce;
+            }
+
+            if (overPayment > 0)
+            {
+                decimal reduce = Math.Min(overPayment, lateInterest);
+                lateInterest -= reduce;
+                overPayment -= reduce;
+            }
+
+            if (overPayment > 0)
+            {
+                decimal reduce = Math.Min(overPayment, notYetDueBase);
+                notYetDueBase -= reduce;
+                overPayment -= reduce;
+            }
+
+            // Whatever remains stays as overpayment
         }
     }
 }

@@ -294,16 +294,19 @@ namespace WebApplication1.Data
                 entity.Property(s => s.Total_PayableSettlement)
                     .HasColumnType("decimal(18,2)");
 
+                entity.Property(s => s.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount) 
+                    .HasColumnType("decimal(18,2)");   
+
                 entity.Property(s => s.Paid_AgainstTotalArrears)
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.Paid_AgainstTotalLateInterest)
                       .HasColumnType("decimal(18,2)");  
 
-                entity.Property(i => i.IsLatest)
+                entity.Property(s => s.IsLatest)
                     .HasDefaultValue(true);  
 
-                entity.Property(i => i.RowVersion)
+                entity.Property(s => s.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
                     .IsConcurrencyToken();  
