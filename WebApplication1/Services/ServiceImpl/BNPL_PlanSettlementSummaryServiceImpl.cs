@@ -170,8 +170,6 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            MarkPreviousSnapshotsOfPlanAsObsoleteAsync(existingPlan);
-
             // Step 1: filter paid/refunded
             var unpaid = installments
                 .Where(inst => inst.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
@@ -205,8 +203,9 @@ namespace WebApplication1.Services.ServiceImpl
 
             foreach (var inst in effectiveInstallments)
             {
-                decimal unpaidBase = inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase;
-                if (unpaidBase < 0) unpaidBase = 0;
+                decimal unpaidBase = Math.Max(0,inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase);
+                if (unpaidBase < 0) 
+                    unpaidBase = 0;
 
                 // Track historical payments
                 paidAgainstArrears += inst.AmountPaid_AgainstBase;
@@ -226,19 +225,8 @@ namespace WebApplication1.Services.ServiceImpl
                     notYetDueBase += unpaidBase;
             }
 
-            // Apply paying pattern
-            ApplyPayingPattern(
-                ref arrearsBase,
-                ref totalLateInterest,
-                ref notYetDueBase,
-                ref totalOverPayment
-            );
-
-            decimal payableSettlement =
-                arrearsBase +
-                totalLateInterest +
-                notYetDueBase -
-                totalOverPayment;
+            decimal payableSettlement = arrearsBase + notYetDueBase + totalLateInterest -
+                                        (paidAgainstArrears + paidAgainstLateInterest + paidAgainstNotYetDue);
 
             if (payableSettlement < 0)
                 payableSettlement = 0;
@@ -258,54 +246,9 @@ namespace WebApplication1.Services.ServiceImpl
                 Paid_AgainstNotYetDueCurrentInstallmentBaseAmount = paidAgainstNotYetDue,
 
                 Total_PayableSettlement = payableSettlement,
+
                 IsLatest = true
             };
-        }
-
-        //Helper : MarkPreviousSnapshotsOfPlanAsObsoleteAsync
-        private void MarkPreviousSnapshotsOfPlanAsObsoleteAsync(BNPL_PLAN existingPlan)
-        {
-            var snapshots = existingPlan.BNPL_PlanSettlementSummaries;
-
-            if (snapshots.Any())
-            {
-                foreach (var s in snapshots)
-                {
-                    s.IsLatest = false;
-                    s.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
-                }
-            }
-        }
-
-        //Helper : ApplyPayingPattern
-        private void ApplyPayingPattern(
-            ref decimal arrearsBase,
-            ref decimal lateInterest,
-            ref decimal notYetDueBase,
-            ref decimal overPayment)
-        {
-            if (overPayment > 0)
-            {
-                decimal reduce = Math.Min(overPayment, arrearsBase);
-                arrearsBase -= reduce;
-                overPayment -= reduce;
-            }
-
-            if (overPayment > 0)
-            {
-                decimal reduce = Math.Min(overPayment, lateInterest);
-                lateInterest -= reduce;
-                overPayment -= reduce;
-            }
-
-            if (overPayment > 0)
-            {
-                decimal reduce = Math.Min(overPayment, notYetDueBase);
-                notYetDueBase -= reduce;
-                overPayment -= reduce;
-            }
-
-            // Whatever remains stays as overpayment
         }
     }
 }
