@@ -40,7 +40,7 @@ namespace WebApplication1.Controllers
             return Ok(response);
         }
 
-        //Installment Paymenr Simulator
+        //Installment Payment Simulator
         [HttpPost("bnpl-snapshot-payment-simulate")]
         public async Task<IActionResult> SimulateBnplPlanSettlement([FromBody] BnplSnapshotPayingSimulationRequestDto request)
         {
