@@ -17,9 +17,6 @@ namespace WebApplication1.Services.IService
         Task<IEnumerable<BNPL_Installment>> GetAllByPlanIdAsync(int planId);
         Task<List<BNPL_Installment>> GetAllUnsettledInstallmentByPlanIdAsync(int planId);
 
-        //OverDueInstallments
-        Task ApplyLateInterestForAllPlansAsync();
-
         //Shared Internal Operations Used by Multiple Repositories
         Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan);
 

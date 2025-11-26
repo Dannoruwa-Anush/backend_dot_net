@@ -15,28 +15,17 @@ namespace WebApplication1.Services.ServiceImpl
     public class BNPL_InstallmentServiceImpl : IBNPL_InstallmentService
     {
         private readonly IBNPL_InstallmentRepository _repository;
-        private readonly IAppUnitOfWork _unitOfWork;
-
-        private readonly ICustomerOrderRepository _customerOrderRepository;
         private readonly IBNPL_PlanTypeRepository _bNPL_PlanTypeRepository;
-        private readonly IBNPL_PlanRepository _bNPL_PlanRepository;
-        private readonly IBNPL_InstallmentRepository _bNPL_InstallmentRepository;
-        private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
 
         //logger: for auditing
         private readonly ILogger<BNPL_InstallmentServiceImpl> _logger;
 
         // Constructor
-        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IBNPL_PlanTypeRepository bNPL_PlanTypeRepository, IBNPL_PlanRepository bNPL_PlanRepository, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IBNPL_InstallmentRepository bNPL_InstallmentRepository, ILogger<BNPL_InstallmentServiceImpl> logger)
+        public BNPL_InstallmentServiceImpl(IBNPL_InstallmentRepository repository, IBNPL_PlanTypeRepository bNPL_PlanTypeRepository, ILogger<BNPL_InstallmentServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
-            _unitOfWork = unitOfWork;
-            _customerOrderRepository = customerOrderRepository;
             _bNPL_PlanTypeRepository = bNPL_PlanTypeRepository;
-            _bNPL_PlanRepository = bNPL_PlanRepository;
-            _bNPL_InstallmentRepository = bNPL_InstallmentRepository;
-            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _logger = logger;
         }
 
@@ -63,86 +52,6 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<List<BNPL_Installment>> GetAllUnsettledInstallmentByPlanIdAsync(int planId) =>
             await _repository.GetAllUnsettledInstallmentByPlanIdAsync(planId);
-
-        //Handle : Overdue Installments (LateIntrest + Arreas)
-        public async Task ApplyLateInterestForAllPlansAsync()
-        {
-            var activePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
-
-            if (!activePlans.Any())
-            {
-                _logger.LogInformation("No active BNPL plans found.");
-                return;
-            }
-
-            await _unitOfWork.BeginTransactionAsync();
-
-            try
-            {
-                DateTime today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-                foreach (var plan in activePlans)
-                {
-                    var updatedInstallments = await ApplyLateInterestToPlanAsync(plan.Bnpl_PlanID, today);
-
-                    if (updatedInstallments != null)
-                    {
-                        _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan);
-
-                        _logger.LogInformation($"Snapshot created for Plan={plan.Bnpl_PlanID}");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"No late interest applied for Plan={plan.Bnpl_PlanID}");
-                    }
-                }
-
-                // Commit all changes in a single transaction
-                await _unitOfWork.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, "Failed to apply late interest for BNPL plans");
-                throw;
-            }
-        }
-
-        //Helper : interest for a single plan
-        private async Task<List<BNPL_Installment>?> ApplyLateInterestToPlanAsync(int planId, DateTime today)
-        {
-            // Fetch all overdue/unsettled installments (tracked)
-            var installments = await _bNPL_InstallmentRepository
-                .GetAllUnsettledInstallmentUpToDateAsync(planId, today);
-
-            if (!installments.Any())
-                return null;
-
-            var plan = await _bNPL_PlanRepository.GetByIdAsync(planId)
-                       ?? throw new Exception($"BNPL plan {planId} not found.");
-
-            decimal lateInterestRatePerDay = plan.BNPL_PlanType!.LatePayInterestRatePerDay;
-
-            foreach (var inst in installments)
-            {
-                //if (inst.RemainingBalance <= 0)
-                //continue;
-
-                // Calculate days since last interest applied
-                DateTime lastApplied = inst.LastLateInterestAppliedDate ?? inst.Installment_DueDate;
-                int overdueDays = Math.Max((today.Date - lastApplied.Date).Days, 0);
-
-                if (overdueDays == 0)
-                    continue;
-
-                // Apply late interest
-                //inst.LateInterest += inst.RemainingBalance * lateInterestRatePerDay * overdueDays;
-                inst.LastLateInterestAppliedDate = today;
-                inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Overdue;
-            }
-
-            return installments;
-        }
 
         //Shared Internal Operations Used by Multiple Repositories
         public async Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan)
