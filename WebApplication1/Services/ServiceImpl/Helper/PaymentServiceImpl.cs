@@ -170,7 +170,12 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 if (!installments.Any())
                     throw new Exception("No unpaid installments found");
 
-                // Apply the payment fully in memory
+                // Apply payment : for snapshot
+                var lastSnapshot = bnplPlan.BNPL_PlanSettlementSummaries.Last();
+                var (lastSnapshotSettledResult, updatedLastSnapshot) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLastSettlementSummaryUpdateRequestAsync(lastSnapshot, paymentRequest.PaymentAmount);
+                lastSnapshot = updatedLastSnapshot;
+
+                // Apply the payment : for installments
                 var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(installments, paymentRequest.PaymentAmount);
 
                 // Update Bnpl plan and customer order
