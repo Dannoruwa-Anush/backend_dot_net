@@ -176,8 +176,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 lastSnapshot = updatedLastSnapshot;
 
                 // Apply the payment : for installments
-                var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(installments, paymentRequest.PaymentAmount);
-
+                var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(installments, lastSnapshotSettledResult);
+                bnplPlan.BNPL_Installments = updatedInstallments;
+                
                 // Update Bnpl plan and customer order
                 UpdateBnplPlanStatusAfterPayment(bnplPlan, updatedInstallments, existingOrder);
 

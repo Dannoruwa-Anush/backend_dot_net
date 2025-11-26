@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Models;
@@ -23,6 +24,6 @@ namespace WebApplication1.Services.IService
         Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan);
 
         //payment
-        (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, decimal paymentAmount);
+        (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, BnplLastSnapshotSettledResultDto lastSnapshotSettledResult);
     }
 }
