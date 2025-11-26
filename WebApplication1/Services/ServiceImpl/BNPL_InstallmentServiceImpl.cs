@@ -264,7 +264,7 @@ namespace WebApplication1.Services.ServiceImpl
             // ===== STEP 4 – Overpayment =====
             if (remainingPayment > 0)
             {
-                inst.OverPaymentCarried += remainingPayment;
+                inst.OverPaymentCarriedFromPreviousInstallment += remainingPayment;
                 breakdown.OverPayment = remainingPayment;
                 remainingPayment = 0;
             }

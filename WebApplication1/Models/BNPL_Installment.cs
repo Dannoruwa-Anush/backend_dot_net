@@ -24,7 +24,7 @@ namespace WebApplication1.Models
         public DateTime Installment_DueDate { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal OverPaymentCarried { get; set; } = 0m;
+        public decimal OverPaymentCarriedFromPreviousInstallment { get; set; } = 0m;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal LateInterest { get; set; } = 0m;

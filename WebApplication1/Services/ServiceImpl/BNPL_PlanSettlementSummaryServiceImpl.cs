@@ -174,7 +174,7 @@ namespace WebApplication1.Services.ServiceImpl
         {
             var baseAmount = installments.Sum(i => i.Installment_BaseAmount);
             var lateInterest = installments.Sum(i => i.LateInterest);
-            var overPayment = installments.Sum(i => i.OverPaymentCarried);
+            var overPayment = installments.Sum(i => i.OverPaymentCarriedFromPreviousInstallment);
             var arrears = installments.Sum(i => i.RemainingBalance);
             var payable = arrears + lateInterest - overPayment;
 
