@@ -65,6 +65,8 @@ namespace WebApplication1.Services.ServiceImpl
         //Helper : AllocatePaymentBuckets
         private (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal overPayment) AllocatePaymentBuckets(BNPL_PlanSettlementSummary snapshot, decimal paymentAmount)
         {
+            if (paymentAmount <= 0)
+                throw new Exception("Payment amount should be a positive number");
 
             decimal remainingArrears = Math.Max(0, snapshot.Total_InstallmentBaseArrears - snapshot.Paid_AgainstTotalArrears);
             decimal remainingInterest = Math.Max(0, snapshot.Total_LateInterest - snapshot.Paid_AgainstTotalLateInterest);
