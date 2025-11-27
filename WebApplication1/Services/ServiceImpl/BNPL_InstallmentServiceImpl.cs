@@ -106,7 +106,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //---- [Start : installment payment] -----
         //Main Driver Method : Installmet Payment
-        public (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments)BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
+        public (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments) BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
         {
             var updatedInstallments = new List<BNPL_Installment>();
             var resultDto = new BnplInstallmentPaymentResultDto();
