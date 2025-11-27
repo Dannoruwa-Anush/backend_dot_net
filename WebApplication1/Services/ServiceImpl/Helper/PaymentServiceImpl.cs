@@ -124,7 +124,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 foreach (var inst in installments)
                     newBnplPlan.BNPL_Installments.Add(inst);
 
-                // Build snapshot
+                // Build initial snapshot
                 var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(newBnplPlan, Bnpl_PlanSettlementSummary_TypeEnum.Initial);
                 if (snapshot != null)
                     newBnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
@@ -189,11 +189,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
                 // Update Bnpl plan and customer order
                 UpdateBnplPlanStatusAfterPayment(bnplPlan, updatedInstallments, existingOrder);
-
-                // Generate new snapshot
-                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(bnplPlan, Bnpl_PlanSettlementSummary_TypeEnum.AfterPayment);
-                if (snapshot != null)
-                    bnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
 
                 // Build cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
