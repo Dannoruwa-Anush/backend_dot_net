@@ -122,12 +122,8 @@ namespace WebApplication1.Services.ServiceImpl
             latestSnapshot.Paid_AgainstTotalArrears += paidArrears;
             latestSnapshot.Paid_AgainstTotalLateInterest += paidInterest;
 
-            //????
+            //???? check
             latestSnapshot.Total_OverpaymentCarriedToNext = nextSnapshotOverPayment;
-
-            //After the snapshot payment, new snapshot will be generated
-            latestSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
-            latestSnapshot.IsLatest = false;
 
             var totalSettlement = new BnplLatestSnapshotSettledResultDto
             {
@@ -163,7 +159,6 @@ namespace WebApplication1.Services.ServiceImpl
             if (!unpaid.Any())
                 return null;
 
-            // Next unpaid installment that is not overdue
             var nextUpcoming = unpaid.FirstOrDefault(i => i.Installment_DueDate >= now);
 
             int maxAllowedInstallmentNo =
@@ -190,53 +185,37 @@ namespace WebApplication1.Services.ServiceImpl
             // ---------------------------------------------------------
             foreach (var inst in effectiveInstallments)
             {
-                // Remaining BASE & INTEREST BEFORE APPLYING CARRY
                 decimal remainingBase = Math.Max(0, inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase);
                 decimal remainingInterest = Math.Max(0, inst.LateInterest - inst.AmountPaid_AgainstLateInterest);
 
-                // Track historical payments already made
                 paidAgainstArrears += inst.AmountPaid_AgainstBase;
                 paidAgainstLateInterest += inst.AmountPaid_AgainstLateInterest;
 
                 if (inst.Installment_DueDate >= now)
                     paidAgainstNotYetDue += inst.AmountPaid_AgainstBase;
 
-                // ---------------------------------------------------------
-                //  APPLY OVERPAYMENT FROM PREVIOUS INSTALLMENT
-                // ---------------------------------------------------------
+                // APPLY OVERPAYMENT
                 decimal carry = inst.OverPaymentCarriedFromPreviousInstallment;
 
-                // What portion of base is arrears vs not-yet-due?
                 decimal arrearsPortion = inst.Installment_DueDate < now ? remainingBase : 0m;
                 decimal futureBasePortion = inst.Installment_DueDate >= now ? remainingBase : 0m;
 
-                var (paidCarryToArrears, paidCarryToInterest, paidCarryToBase, leftoverCarry) = ApplyPayingFlow(carry, arrearsPortion, remainingInterest, futureBasePortion);
+                var (paidCarryToArrears, paidCarryToInterest, paidCarryToBase, leftoverCarry)
+                    = ApplyPayingFlow(carry, arrearsPortion, remainingInterest, futureBasePortion);
 
-                // Apply the overpayment reductions
                 remainingBase -= paidCarryToArrears + paidCarryToBase;
                 remainingInterest -= paidCarryToInterest;
 
-                // leftover carry goes forward
                 totalOverPaymentCarriedForward += leftoverCarry;
 
-                // ---------------------------------------------------------
-                // ACCUMULATE UNPAID AFTER APPLYING CARRY
-                // ---------------------------------------------------------
                 if (inst.Installment_DueDate < now)
-                {
                     arrearsBase += remainingBase;
-                }
                 else
-                {
                     notYetDueBase += remainingBase;
-                }
 
                 totalLateInterest += remainingInterest;
             }
 
-            // ---------------------------------------------------------
-            // 3. CALCULATE FINAL PAYABLE
-            // ---------------------------------------------------------
             decimal payableSettlement =
                 arrearsBase + notYetDueBase + totalLateInterest -
                 (paidAgainstArrears + paidAgainstLateInterest + paidAgainstNotYetDue);
@@ -245,7 +224,12 @@ namespace WebApplication1.Services.ServiceImpl
                 payableSettlement = 0;
 
             // ---------------------------------------------------------
-            // 4. RETURN SNAPSHOT
+            // SAFELY Mark previous snapshot obsolete
+            // ---------------------------------------------------------
+            MarkLatestSnapshotObsolete(existingPlan);
+
+            // ---------------------------------------------------------
+            // RETURN SNAPSHOT
             // ---------------------------------------------------------
             return new BNPL_PlanSettlementSummary
             {
@@ -265,6 +249,23 @@ namespace WebApplication1.Services.ServiceImpl
                 Total_PayableSettlement = payableSettlement,
                 IsLatest = true
             };
+        }
+
+        //Helper to mark last snapshot as Obsolete
+        private void MarkLatestSnapshotObsolete(BNPL_PLAN bnplPlan)
+        {
+            if (bnplPlan == null)
+                throw new ArgumentNullException(nameof(bnplPlan));
+
+            var latestSnapshot = bnplPlan.BNPL_PlanSettlementSummaries
+                .FirstOrDefault(s => s.IsLatest);
+
+            // If no snapshot exists yet (first time) - nothing to obsolete
+            if (latestSnapshot == null)
+                return;
+
+            latestSnapshot.IsLatest = false;
+            latestSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
         }
     }
 }

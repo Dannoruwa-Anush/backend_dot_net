@@ -52,6 +52,9 @@ namespace WebApplication1.Models
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
+
+        [NotMapped]
+        public decimal RemainingBalance => TotalDueAmount - (AmountPaid_AgainstBase + AmountPaid_AgainstLateInterest);
                
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****
         //FK

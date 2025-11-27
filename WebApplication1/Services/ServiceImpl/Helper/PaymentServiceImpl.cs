@@ -7,6 +7,7 @@ using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
+using WebApplication1.Utils.SystemConstants;
 
 namespace WebApplication1.Services.ServiceImpl.Helper
 {
@@ -52,14 +53,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (existingOrder == null)
                 throw new Exception("Order not found");
 
+            ValidateBeforePayment(existingOrder);
+
             if (paymentRequest.PaymentAmount != existingOrder.TotalAmount)
                 throw new Exception("Full payment must match the total order amount");
 
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                ValidatePaymentStatusTransition(existingOrder.OrderPaymentStatus, OrderPaymentStatusEnum.Fully_Paid);
-
                 // Create a cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
                 existingOrder.Cashflows.Add(cashflow);
@@ -86,6 +87,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             var existingOrder = await _customerOrderService.GetCustomerOrderByIdAsync(request.OrderId);
             if (existingOrder == null)
                 throw new Exception("Order not found");
+
+            ValidateBeforePayment(existingOrder);    
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -156,26 +159,29 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (existingOrder == null)
                 throw new Exception("Order not found");
 
+            ValidateBeforePayment(existingOrder);    
+
             var bnplPlan = existingOrder.BNPL_PLAN
                 ?? throw new Exception("BNPL plan not found on order");
 
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Apply payment : for snapshot
-                var latestSnapshot = bnplPlan.BNPL_PlanSettlementSummaries.Last();
-                
+                var latestSnapshot = bnplPlan.BNPL_PlanSettlementSummaries.FirstOrDefault(s => s.IsLatest)
+                    ?? throw new Exception("Latest snapshot not found");
+
+                // Apply payment to snapshot
                 var (latestSnapshotSettledResult, updatedLatestSnapshot) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(latestSnapshot, paymentRequest.PaymentAmount);
                 latestSnapshot = updatedLatestSnapshot;
 
-                // Apply the payment : for installments
+                // Update the installments according to the payment
                 var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(bnplPlan.BNPL_Installments.ToList(), latestSnapshotSettledResult);
                 bnplPlan.BNPL_Installments = updatedInstallments;
-                
+
                 // Update Bnpl plan and customer order
                 UpdateBnplPlanStatusAfterPayment(bnplPlan, updatedInstallments, existingOrder);
 
-                // Build snapshot
+                // Generate new snapshot
                 var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(bnplPlan);
                 if (snapshot != null)
                     bnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
@@ -206,7 +212,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Helper : Update BnplPlan and customerOrder Status After Payment
         private void UpdateBnplPlanStatusAfterPayment(BNPL_PLAN bnplPlan, List<BNPL_Installment> updatedInstallments, CustomerOrder existingOrder)
         {
-            int remaining = 0 ;//updatedInstallments.Count(i => i.RemainingBalance > 0);
+            int remaining = updatedInstallments.Count(i => i.RemainingBalance > 0);
             bnplPlan.Bnpl_RemainingInstallmentCount = remaining;
 
             if (remaining == 0)
@@ -218,52 +224,58 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
                 // Update main customer order
                 existingOrder.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-                ValidatePaymentStatusTransition(
-                    existingOrder.OrderPaymentStatus,
-                    OrderPaymentStatusEnum.Fully_Paid
-                );
-
                 existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
             }
             else
             {
                 var nextInst = updatedInstallments
-                    //.Where(i => i.RemainingBalance > 0)
+                    .Where(i => i.RemainingBalance > 0)
                     .OrderBy(i => i.InstallmentNo)
                     .First();
 
                 bnplPlan.Bnpl_Status = BnplStatusEnum.Active;
                 bnplPlan.Bnpl_NextDueDate = nextInst.Installment_DueDate;
-
-                ValidatePaymentStatusTransition(
-                    existingOrder.OrderPaymentStatus,
-                    OrderPaymentStatusEnum.Partially_Paid
-                );
-
                 existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
             }
         }
 
-        //Helper : ValidatePaymentStatus
-        private void ValidatePaymentStatusTransition(OrderPaymentStatusEnum oldStatus, OrderPaymentStatusEnum newStatus)
+        //Helper : to valiadate payment
+        private void ValidateBeforePayment(CustomerOrder order)
         {
-            switch (oldStatus)
+            switch (order.OrderStatus)
             {
-                case OrderPaymentStatusEnum.Partially_Paid:
-                    if (newStatus != OrderPaymentStatusEnum.Fully_Paid && newStatus != OrderPaymentStatusEnum.Overdue)
-                        throw new InvalidOperationException("Partially paid orders can only move to 'Fully_Paid' or 'Overdue'.");
+                // These states allow payments
+                case OrderStatusEnum.Pending:
+                case OrderStatusEnum.Shipped:
+                case OrderStatusEnum.Delivered:
+                case OrderStatusEnum.DeliveredAfterCancellationRejected:
                     break;
-                case OrderPaymentStatusEnum.Fully_Paid:
-                    if (newStatus != OrderPaymentStatusEnum.Refunded)
-                        throw new InvalidOperationException("Fully paid orders can only move to 'Refunded'.");
-                    break;
-                case OrderPaymentStatusEnum.Overdue:
-                    if (newStatus != OrderPaymentStatusEnum.Partially_Paid && newStatus != OrderPaymentStatusEnum.Fully_Paid)
-                        throw new InvalidOperationException("Overdue orders can only move to 'Partially_Paid' or 'Fully_Paid'.");
-                    break;
-                case OrderPaymentStatusEnum.Refunded:
-                    throw new InvalidOperationException("Refunded orders cannot change payment status.");
+
+                case OrderStatusEnum.Cancel_Pending:
+                    throw new InvalidOperationException("Payment cannot be processed while a cancellation request is pending.");
+
+                case OrderStatusEnum.Cancelled:
+                    throw new InvalidOperationException("Payment cannot be processed for cancelled orders.");
+
+                default:
+                    throw new InvalidOperationException("Invalid order status.");
+            }
+
+            // 2. BNPL Plan Validation
+            var bnplPlan = order.BNPL_PLAN;
+            if (bnplPlan == null)
+            {
+                //full_payment
+                return;
+            }
+            else
+            {
+                //Bnpl_payment
+                if (bnplPlan.Bnpl_Status == BnplStatusEnum.Completed)
+                    throw new InvalidOperationException("BNPL plan is already completed. No additional payments are allowed.");
+
+                if (bnplPlan.Bnpl_RemainingInstallmentCount <= 0)
+                    throw new InvalidOperationException( "No remaining installments exist for this BNPL plan.");
             }
         }
     }
