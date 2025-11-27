@@ -15,10 +15,6 @@ namespace WebApplication1.Models
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Total_OverpaymentCarriedFromPrevious { get; set; } = 0m;
-
-        [Required]
-        [Column(TypeName = "decimal(18,2)")]
         public decimal NotYetDueCurrentInstallmentBaseAmount { get; set; } // Unpaid base for installments NOT YET DUE
 
         [Required]
@@ -48,15 +44,19 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Total_OverpaymentCarriedToNext { get; set; } = 0m;
 
+        [Required(ErrorMessage = "Cashflow ref is required")]
+        [MaxLength(100)]
+        public string Bnpl_PlanSettlementSummaryRef { get; set; } = string.Empty;
+
         [EnumDataType(typeof(BNPL_PlanSettlementSummary_StatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
         public BNPL_PlanSettlementSummary_StatusEnum Bnpl_PlanSettlementSummary_Status { get; set; } = BNPL_PlanSettlementSummary_StatusEnum.Active;
         
         public bool IsLatest { get; set; } = true;
 
-        [EnumDataType(typeof(Bnpl_PlanSettlementSummary_TypeEnum))]
+        [EnumDataType(typeof(Bnpl_PlanSettlementSummary_PaymentStatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
-        public Bnpl_PlanSettlementSummary_TypeEnum Bnpl_PlanSettlementSummary_Type { get; set; } = Bnpl_PlanSettlementSummary_TypeEnum.Initial;
+        public Bnpl_PlanSettlementSummary_PaymentStatusEnum Bnpl_PlanSettlementSummary_PaymentStatusEnum { get; set; } = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Unsettled;
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.

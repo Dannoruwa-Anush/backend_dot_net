@@ -16,6 +16,6 @@ namespace WebApplication1.Services.IService
         //Shared Internal Operations Used by Multiple Repositories
         (BnplLatestSnapshotSettledResultDto, BNPL_PlanSettlementSummary)BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(BNPL_PlanSettlementSummary latestSnapshot, decimal paymentAmount);
 
-        BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan, Bnpl_PlanSettlementSummary_TypeEnum SnapshotType);
+        BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan);
     }
 }

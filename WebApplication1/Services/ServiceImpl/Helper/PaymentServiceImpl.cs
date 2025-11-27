@@ -125,7 +125,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     newBnplPlan.BNPL_Installments.Add(inst);
 
                 // Build initial snapshot
-                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(newBnplPlan, Bnpl_PlanSettlementSummary_TypeEnum.Initial);
+                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(newBnplPlan);
                 if (snapshot != null)
                     newBnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
 

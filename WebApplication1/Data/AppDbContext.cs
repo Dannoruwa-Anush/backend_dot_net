@@ -292,9 +292,6 @@ namespace WebApplication1.Data
                 entity.HasIndex("ActiveLatestKey").IsUnique();
                 //** [End : Ensures only ONE record per Bnpl_PlanID (Ative, IsLatest = true)] *****************
 
-                entity.Property(s => s.Total_OverpaymentCarriedFromPrevious)
-                      .HasColumnType("decimal(18,2)");
-
                 entity.Property(s => s.NotYetDueCurrentInstallmentBaseAmount)
                       .HasColumnType("decimal(18,2)");
 

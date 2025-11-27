@@ -139,9 +139,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         ///*********************************************** need to check again*************************
-        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(
-    BNPL_PLAN existingPlan,
-    Bnpl_PlanSettlementSummary_TypeEnum snapshotType)
+        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)
         {
             var installments = existingPlan.BNPL_Installments;
 
@@ -271,7 +269,7 @@ namespace WebApplication1.Services.ServiceImpl
                 NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
                 Total_LateInterest = totalLateInterest,
 
-                Total_OverpaymentCarriedFromPrevious = totalCarriedOver,
+                //Total_OverpaymentCarriedFromPrevious = totalCarriedOver,
 
                 // Reporting-only fields
                 Paid_AgainstTotalArrears = paidAgainstArrears,
@@ -281,7 +279,7 @@ namespace WebApplication1.Services.ServiceImpl
                 Total_PayableSettlement = totalPayable,
 
                 IsLatest = true,
-                Bnpl_PlanSettlementSummary_Type = snapshotType,
+                Bnpl_PlanSettlementSummaryRef = $"SNP-{effectiveInstallments.First().Bnpl_PlanID}-for-{effectiveInstallments.First().InstallmentNo}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}"
             };
         }
 
