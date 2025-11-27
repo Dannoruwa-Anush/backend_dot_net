@@ -220,7 +220,7 @@ namespace WebApplication1.Services.ServiceImpl
                 // ---------------------------------------------------
                 // Apply carried over overpayment
                 // ---------------------------------------------------
-                decimal carry = inst.OverPaymentCarriedFromPreviousInstallment;
+                decimal carry = 0;//inst.OverPaymentCarriedFromPreviousInstallment;
 
                 decimal arrearsBucket = isArrears ? remainingBase : 0m;
                 decimal futureBucket = !isArrears ? remainingBase : 0m;

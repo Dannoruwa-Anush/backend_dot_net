@@ -23,13 +23,14 @@ namespace WebApplication1.Models
         public DateTime Installment_DueDate { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal OverPaymentCarriedFromPreviousInstallment { get; set; } = 0m;
+        public decimal OverpaymentCarriedToNextMonth { get; set; } = 0m;
 
-        //LateInterest = (Installment_BaseAmount - OverPaymentCarriedFromPreviousInstallment) × lateInterestRatePerDay × overdueDays
+        //Late interest is charged on the unpaid Installment_BaseAmount
+        //LateInterest = (Installment_BaseAmount - AmountPaid_AgainstBase) × lateInterestRatePerDay × overdueDays
         [Column(TypeName = "decimal(18,2)")]
-        public decimal LateInterest { get; set; } = 0m; //Late interest is charged on the unpaid Installment_BaseAmount
+        public decimal LateInterest { get; set; } = 0m; 
 
-        //TotalDueAmount = (Installment_BaseAmount - OverPaymentCarriedFromPreviousInstallment) + LateInterest
+        //TotalDueAmount = Installment_BaseAmount + LateInterest
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalDueAmount { get; set; }
@@ -52,7 +53,8 @@ namespace WebApplication1.Models
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
-
+        
+        //Calculated property this doesn’t need to be stored in the database
         [NotMapped]
         public decimal RemainingBalance => TotalDueAmount - (AmountPaid_AgainstBase + AmountPaid_AgainstLateInterest);
                

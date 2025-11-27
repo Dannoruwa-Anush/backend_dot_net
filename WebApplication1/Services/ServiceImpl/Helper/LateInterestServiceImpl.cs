@@ -130,7 +130,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             // --------------------------------------------
             decimal unpaidBase =
                 inst.Installment_BaseAmount
-                - inst.OverPaymentCarriedFromPreviousInstallment
+                ///- inst.OverPaymentCarriedFromPreviousInstallment
                 - inst.AmountPaid_AgainstBase;
 
             if (unpaidBase < 0)

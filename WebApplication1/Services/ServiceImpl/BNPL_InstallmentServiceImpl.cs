@@ -170,7 +170,7 @@ namespace WebApplication1.Services.ServiceImpl
             // -----------------------------------------------------------
             // APPLY CARRY-FORWARD FIRST
             // -----------------------------------------------------------
-            inst.OverPaymentCarriedFromPreviousInstallment += carryForward;
+            //inst.OverPaymentCarriedFromPreviousInstallment += carryForward;
             carryForward = 0;
 
             decimal remainingBase =
@@ -258,7 +258,7 @@ namespace WebApplication1.Services.ServiceImpl
             // 6. UPDATE TOTAL DUE
             // -----------------------------------------------------------
             inst.TotalDueAmount =
-                (inst.Installment_BaseAmount - inst.OverPaymentCarriedFromPreviousInstallment)
+                (inst.Installment_BaseAmount - 0 /*inst.OverPaymentCarriedFromPreviousInstallment*/)
                 + inst.LateInterest
                 - inst.AmountPaid_AgainstBase
                 - inst.AmountPaid_AgainstLateInterest;
