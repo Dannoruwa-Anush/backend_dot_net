@@ -54,7 +54,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
                     if (updatedInstallments != null)
                     {
-                        _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan);
+                        _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan, Bnpl_PlanSettlementSummary_TypeEnum.AfterLateInterest);
 
                         _logger.LogInformation($"Snapshot created for Plan={plan.Bnpl_PlanID}");
                     }

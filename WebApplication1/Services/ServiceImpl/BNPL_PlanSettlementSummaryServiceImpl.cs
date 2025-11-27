@@ -137,7 +137,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         ///*********************************************** need to check again*************************
-        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)
+        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan, Bnpl_PlanSettlementSummary_TypeEnum SnapshotType)
         {
             var installments = existingPlan.BNPL_Installments;
 
@@ -247,7 +247,8 @@ namespace WebApplication1.Services.ServiceImpl
                 Paid_AgainstNotYetDueCurrentInstallmentBaseAmount = paidAgainstNotYetDue,
 
                 Total_PayableSettlement = payableSettlement,
-                IsLatest = true
+                IsLatest = true,
+                Bnpl_PlanSettlementSummary_Type = SnapshotType,
             };
         }
 

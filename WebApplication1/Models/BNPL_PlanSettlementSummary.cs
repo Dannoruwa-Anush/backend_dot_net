@@ -54,6 +54,10 @@ namespace WebApplication1.Models
         
         public bool IsLatest { get; set; } = true;
 
+        [EnumDataType(typeof(Bnpl_PlanSettlementSummary_TypeEnum))]
+        [Column(TypeName = "nvarchar(30)")]
+        public Bnpl_PlanSettlementSummary_TypeEnum Bnpl_PlanSettlementSummary_Type { get; set; } = Bnpl_PlanSettlementSummary_TypeEnum.Initial;
+
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
         

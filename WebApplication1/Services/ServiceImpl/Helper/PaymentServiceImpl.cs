@@ -119,7 +119,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     newBnplPlan.BNPL_Installments.Add(inst);
 
                 // Build snapshot
-                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(newBnplPlan);
+                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(newBnplPlan, Bnpl_PlanSettlementSummary_TypeEnum.Initial);
                 if (snapshot != null)
                     newBnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
 
@@ -182,7 +182,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 UpdateBnplPlanStatusAfterPayment(bnplPlan, updatedInstallments, existingOrder);
 
                 // Generate new snapshot
-                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(bnplPlan);
+                var snapshot = _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(bnplPlan, Bnpl_PlanSettlementSummary_TypeEnum.AfterPayment);
                 if (snapshot != null)
                     bnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
 
