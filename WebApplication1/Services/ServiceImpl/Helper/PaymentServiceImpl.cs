@@ -49,6 +49,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Full payment
         public async Task<bool> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest)
         {
+            if (paymentRequest.PaymentAmount <= 0)
+                throw new Exception("Payment amount should be a positive number");
+
             var existingOrder = await _customerOrderService.GetCustomerOrderByIdAsync(paymentRequest.OrderId);
             if (existingOrder == null)
                 throw new Exception("Order not found");
@@ -84,6 +87,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Bnpl initial payment
         public async Task<BNPL_PLAN> ProcessInitialBnplPaymentAsync(BnplInitialPaymentRequestDto request)
         {
+            if (request.InitialPayment <= 0)
+                throw new Exception("Initial payment amount should be a positive number");
+
             var existingOrder = await _customerOrderService.GetCustomerOrderByIdAsync(request.OrderId);
             if (existingOrder == null)
                 throw new Exception("Order not found");
@@ -154,6 +160,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Bnpl installment payment
         public async Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
+            if (paymentRequest.PaymentAmount <= 0)
+                throw new Exception("Payment amount should be a positive number");
+
             var existingOrder = await _customerOrderService.GetCustomerOrderWithFinancialDetailsByIdAsync(paymentRequest.OrderId);
 
             if (existingOrder == null)
