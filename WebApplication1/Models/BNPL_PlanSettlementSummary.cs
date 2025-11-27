@@ -56,7 +56,7 @@ namespace WebApplication1.Models
 
         [EnumDataType(typeof(Bnpl_PlanSettlementSummary_PaymentStatusEnum))]
         [Column(TypeName = "nvarchar(30)")]
-        public Bnpl_PlanSettlementSummary_PaymentStatusEnum Bnpl_PlanSettlementSummary_PaymentStatusEnum { get; set; } = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Unsettled;
+        public Bnpl_PlanSettlementSummary_PaymentStatusEnum Bnpl_PlanSettlementSummary_PaymentStatus { get; set; } = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Unsettled;
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.

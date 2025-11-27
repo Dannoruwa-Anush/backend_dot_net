@@ -119,15 +119,21 @@ namespace WebApplication1.Services.ServiceImpl
             //Call helper method
             (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal nextSnapshotOverPayment) = AllocatePaymentBuckets(latestSnapshot, paymentAmount);
 
-            // Update only what belongs to this snapshot
             latestSnapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += paidBase;
             latestSnapshot.Paid_AgainstTotalArrears += paidArrears;
             latestSnapshot.Paid_AgainstTotalLateInterest += paidInterest;
 
-            //???? check
-            latestSnapshot.Total_OverpaymentCarriedToNext = nextSnapshotOverPayment;
+            var totalAllocated = paidArrears + paidInterest + paidBase;
+            latestSnapshot.Total_PayableSettlement = Math.Max(latestSnapshot.Total_PayableSettlement - totalAllocated, 0m);
 
-            var totalSettlement = new BnplLatestSnapshotSettledResultDto
+            latestSnapshot.Total_OverpaymentCarriedToNext += nextSnapshotOverPayment;
+
+            if (remainingBalance == 0)
+            {
+                latestSnapshot.Bnpl_PlanSettlementSummary_PaymentStatus = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Settled;
+            }
+
+            var result = new BnplLatestSnapshotSettledResultDto
             {
                 TotalPaidArrears = paidArrears,
                 TotalPaidLateInterest = paidInterest,
@@ -135,7 +141,7 @@ namespace WebApplication1.Services.ServiceImpl
                 OverPaymentCarriedToNextInstallment = nextSnapshotOverPayment
             };
 
-            return (totalSettlement, latestSnapshot);
+            return (result, latestSnapshot);
         }
 
         ///*********************************************** need to check again*************************
