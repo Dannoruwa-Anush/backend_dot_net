@@ -279,6 +279,19 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<BNPL_PlanSettlementSummary>(entity =>
             {
+                //** [Strat : Ensures only ONE record per Bnpl_PlanID (Status = Ative(1), IsLatest = true)] **
+                // Add generated column for MySQL
+                entity.Property<int?>("ActiveLatestKey")
+                    .HasColumnType("int")
+                    .HasComputedColumnSql(
+                        "IF(`Bnpl_PlanSettlementSummary_Status` = 1 AND `IsLatest` = 1, `Bnpl_PlanID`, NULL)",
+                        stored: true
+                    );
+
+                // Add unique index on the generated column
+                entity.HasIndex("ActiveLatestKey").IsUnique();
+                //** [End : Ensures only ONE record per Bnpl_PlanID (Ative, IsLatest = true)] *****************
+
                 entity.Property(s => s.Total_OverpaymentCarriedFromPrevious)
                       .HasColumnType("decimal(18,2)");
 
