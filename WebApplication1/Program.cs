@@ -98,7 +98,7 @@ builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<IBNPL_InstallmentService, BNPL_InstallmentServiceImpl>()
                 .AddScoped<IBNPL_PlanSettlementSummaryService, BNPL_PlanSettlementSummaryServiceImpl>()
                 .AddScoped<IPaymentService, PaymentServiceImpl>()
-                .AddScoped<ILateInterestService, LateInterestServiceImpl>();
+                .AddScoped<IDueDateAdjustmentService, DueDateAdjustmentServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

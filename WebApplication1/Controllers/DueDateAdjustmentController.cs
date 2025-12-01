@@ -8,14 +8,14 @@ namespace WebApplication1.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [AllowAnonymous]
-    public class LateInterestController : ControllerBase
+    public class DueDateAdjustmentController : ControllerBase
     {
         //Note : LateInterest - Create snapshot (transfer current installment to arreas)
         
-        private readonly ILateInterestService _service;
+        private readonly IDueDateAdjustmentService _service;
 
         // Constructor
-        public LateInterestController(ILateInterestService service)
+        public DueDateAdjustmentController(IDueDateAdjustmentService service)
         {
             // Dependency injection
             _service = service;
@@ -27,10 +27,10 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                await _service.ApplyLateInterestForAllPlansAsync();
+                await _service.ProcessDueDateAdjustmentsAsync();
                 return Ok(new ApiResponseDto<string>(
                     200,
-                    "Late interest applied successfully to all overdue installments."
+                    "Due date adjustment applied successfully to all overdue installments."
                 ));
             }
             catch (Exception)
