@@ -154,9 +154,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // =======================================================
-            // 1. Filter unpaid installments
-            // =======================================================
+            //Filter unpaid installments
             var unpaid = installments
                 .Where(i => i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
                             i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
@@ -178,38 +176,26 @@ namespace WebApplication1.Services.ServiceImpl
                 .Where(i => i.InstallmentNo <= maxInstallmentNoAllowed)
                 .ToList();
 
-
-            // =======================================================
-            // 2. Accumulators
-            // =======================================================
+            //Accumulators
             decimal arrearsBase = 0m;
             decimal notYetDueBase = 0m;
             decimal totalLateInterest = 0m;
-            decimal totalCarriedOver = 0m;
 
             // Payment reporting only (not used in settlement computation)
             decimal paidAgainstArrears = 0m;
             decimal paidAgainstNotYetDue = 0m;
             decimal paidAgainstLateInterest = 0m;
 
-
-            // =======================================================
-            // 3. Installment-by-installment processing
-            // =======================================================
             foreach (var inst in effectiveInstallments)
             {
                 bool isArrears = inst.Installment_DueDate < now;
 
-                // Remaining amounts AFTER user payments
                 decimal remainingBase =
                     Math.Max(0, inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase);
 
                 decimal remainingInterest =
                     Math.Max(0, inst.LateInterest - inst.AmountPaid_AgainstLateInterest);
 
-                // ---------------------------------------------------
-                // Categorize payments correctly (FIXED)
-                // ---------------------------------------------------
                 if (isArrears)
                     paidAgainstArrears += inst.AmountPaid_AgainstBase;
                 else
@@ -217,26 +203,6 @@ namespace WebApplication1.Services.ServiceImpl
 
                 paidAgainstLateInterest += inst.AmountPaid_AgainstLateInterest;
 
-                // ---------------------------------------------------
-                // Apply carried over overpayment
-                // ---------------------------------------------------
-                decimal carry = 0;//inst.OverPaymentCarriedFromPreviousInstallment;
-
-                decimal arrearsBucket = isArrears ? remainingBase : 0m;
-                decimal futureBucket = !isArrears ? remainingBase : 0m;
-
-                var (applyToArrears, applyToInterest, applyToFutureBase, leftover) =
-                    ApplyPayingFlow(carry, arrearsBucket, remainingInterest, futureBucket);
-
-                // Update remaining amounts after carry
-                remainingBase -= applyToArrears + applyToFutureBase;
-                remainingInterest -= applyToInterest;
-
-                totalCarriedOver += leftover;
-
-                // ---------------------------------------------------
-                // Add to totals
-                // ---------------------------------------------------
                 if (isArrears)
                     arrearsBase += remainingBase;
                 else
@@ -245,27 +211,10 @@ namespace WebApplication1.Services.ServiceImpl
                 totalLateInterest += remainingInterest;
             }
 
+            decimal totalPayable = arrearsBase + notYetDueBase + totalLateInterest;
 
-            // =======================================================
-            // 4. FINAL PAYMENT CALCULATION (FIXED)
-            // =======================================================
-            // Payments should NOT be subtracted again here
-            // because remainingBase & remainingInterest already reflect them.
-            decimal totalPayable =
-                arrearsBase +
-                notYetDueBase +
-                totalLateInterest;
-
-
-            // =======================================================
-            // 5. Mark previous snapshot obsolete
-            // =======================================================
             MarkLatestSnapshotObsolete(existingPlan);
 
-
-            // =======================================================
-            // 6. Return snapshot
-            // =======================================================
             return new BNPL_PlanSettlementSummary
             {
                 Bnpl_PlanID = effectiveInstallments.First().Bnpl_PlanID,
@@ -274,8 +223,6 @@ namespace WebApplication1.Services.ServiceImpl
                 Total_InstallmentBaseArrears = arrearsBase,
                 NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
                 Total_LateInterest = totalLateInterest,
-
-                //Total_OverpaymentCarriedFromPrevious = totalCarriedOver,
 
                 // Reporting-only fields
                 Paid_AgainstTotalArrears = paidAgainstArrears,
