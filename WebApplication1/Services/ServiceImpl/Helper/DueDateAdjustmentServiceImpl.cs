@@ -41,8 +41,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 return;
             }
 
-            await _unitOfWork.BeginTransactionAsync();
             DateTime today = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 foreach (var plan in activePlans)
@@ -73,7 +74,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         {
             var installments = await _bNPL_InstallmentRepository.GetAllUnsettledInstallmentUpToDateAsync(planId, today);
 
-            if (!installments.Any()) 
+            if (!installments.Any())
                 return false;
 
             var plan = await _bNPL_PlanRepository.GetByIdAsync(planId)
@@ -106,7 +107,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         private LateInterestCalculationResultDto CalculateLateInterest(BNPL_Installment inst, decimal ratePerDay, DateTime today)
         {
             DateTime lastAppliedDate = inst.LastLateInterestAppliedDate ?? inst.Installment_DueDate;
-            
+
             int overdueDays = Math.Max((today.Date - lastAppliedDate.Date).Days, 0);
 
             if (overdueDays <= 0)
@@ -122,8 +123,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             }
 
             decimal unpaidBase = inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase;
-            
-            if (unpaidBase < 0) 
+
+            if (unpaidBase < 0)
                 unpaidBase = 0;
 
             decimal interestToAdd = Math.Round(unpaidBase * ratePerDay * overdueDays, 2, MidpointRounding.AwayFromZero);
@@ -148,14 +149,22 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
             var ordered = installments.OrderBy(i => i.InstallmentNo).ToList();
 
-            var last = ordered.Last();
-            decimal overpay = last.OverpaymentCarriedToNextMonth;
+            // Get the installment where due date is today or yesterday
+            var source = ordered.FirstOrDefault(i =>
+                i.Installment_DueDate.Date == today.Date ||
+                i.Installment_DueDate.Date == today.AddDays(-1).Date);
+
+            if (source == null)
+                return false;
+
+            decimal overpay = source.OverpaymentCarriedToNextMonth;
 
             if (overpay <= 0)
                 return false;
 
+            // Find the next unpaid installment after this one
             var next = ordered.FirstOrDefault(i =>
-                i.InstallmentNo > last.InstallmentNo &&
+                i.InstallmentNo > source.InstallmentNo &&
                 i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
                 i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
                 i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded);
@@ -169,7 +178,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             next.AmountPaid_AgainstBase += applyAmount;
             next.LastPaymentDate = today;
 
-            last.OverpaymentCarriedToNextMonth = overpay - applyAmount;
+            // update remaining overpayment
+            source.OverpaymentCarriedToNextMonth = overpay - applyAmount;
 
             return true;
         }
