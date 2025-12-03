@@ -106,7 +106,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //---- [Start : installment payment] -----
         //Main Driver Method : Installmet Payment
-        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlementAsync(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
+        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlement(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
         {
             if (existingOrder.BNPL_PLAN == null)
                 throw new Exception("BNPL plan not found for the order.");

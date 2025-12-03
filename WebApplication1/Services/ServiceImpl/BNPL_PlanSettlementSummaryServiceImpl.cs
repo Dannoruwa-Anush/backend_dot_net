@@ -115,7 +115,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //Shared Internal Operations Used by Multiple Repositories
         //-----------------[Start: snapshot payment]--------------------
-        public BnplLatestSnapshotSettledResultDto BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(CustomerOrder existingOrder, decimal paymentAmount)
+        public BnplLatestSnapshotSettledResultDto BuildBNPL_PlanLatestSettlementSummaryUpdateRequest(CustomerOrder existingOrder, decimal paymentAmount)
         {
             var existingPlan = existingOrder.BNPL_PLAN
                 ?? throw new Exception("BNPL plan not found on order");

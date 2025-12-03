@@ -21,6 +21,6 @@ namespace WebApplication1.Services.IService
         Task<List<BNPL_Installment>> BuildBnplInstallmentBulkAddRequestAsync(BNPL_PLAN plan);
 
         //payment
-        BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlementAsync(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult);
+        BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlement(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult);
     }
 }
