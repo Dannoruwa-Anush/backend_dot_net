@@ -170,17 +170,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
             ValidateBeforePayment(existingOrder);    
 
-            var bnplPlan = existingOrder.BNPL_PLAN
-                ?? throw new Exception("BNPL plan not found on order");
-
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // Apply payment to snapshot
-                var latestSnapshotSettledResult = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(bnplPlan, paymentRequest.PaymentAmount);
+                var (latestSnapshotSettledResult, updatedOrder) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(existingOrder, paymentRequest.PaymentAmount);
 
                 // Update the installments according to the payment
-                var paymentResult = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(existingOrder, latestSnapshotSettledResult);
+                var paymentResult = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(updatedOrder, latestSnapshotSettledResult);
 
                 // Build cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
