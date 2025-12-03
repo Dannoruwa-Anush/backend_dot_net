@@ -106,7 +106,9 @@ namespace WebApplication1.Services.ServiceImpl
 
         //---- [Start : installment payment] -----
         //Main Driver Method : Installmet Payment
-        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlement(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
+        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlement(
+    CustomerOrder existingOrder,
+    BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
         {
             if (existingOrder.BNPL_PLAN == null)
                 throw new Exception("BNPL plan not found for the order.");
@@ -121,16 +123,29 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            //FILTER: Only unpaid installments + due today or earlier
-            var installmentsToProcess = bnplPlan.BNPL_Installments
-                .Where(i => i.RemainingBalance > 0 &&
-                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
+            // Step 1: Filter unpaid installments
+            var unpaid = bnplPlan.BNPL_Installments
+                .Where(i => i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
                             i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
-                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded &&
-                            i.Installment_DueDate <= now)
-                .OrderBy(i => i.InstallmentNo)
+                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded)
+                .OrderBy(i => i.Installment_DueDate)
+                .ThenBy(i => i.InstallmentNo)
                 .ToList();
 
+            if (!unpaid.Any())
+                return resultDto; // nothing to process
+
+            // Step 2: Identify nearest upcoming installment
+            var nextUpcoming = unpaid.FirstOrDefault(i => i.Installment_DueDate >= now);
+
+            int maxInstallmentNoAllowed = nextUpcoming?.InstallmentNo ?? unpaid.Last().InstallmentNo;
+
+            // Step 3: Select installments to process (overdue + nearest upcoming)
+            var installmentsToProcess = unpaid
+                .Where(i => i.InstallmentNo <= maxInstallmentNoAllowed)
+                .ToList();
+
+            // Step 4: Apply payments
             foreach (var installment in installmentsToProcess)
             {
                 var breakdown = ApplyPaymentToSingleInstallment(
@@ -150,12 +165,12 @@ namespace WebApplication1.Services.ServiceImpl
                 resultDto.NewStatus = installment.Bnpl_Installment_Status.ToString();
             }
 
-            // Update BNPL plan and customer order based on remaining installments
+            // Step 5: Update BNPL plan and customer order
             UpdateBnplPlanAndOrder(bnplPlan, existingOrder, now);
 
             return resultDto;
         }
-
+        
         //Helper method to Update BNPL plan and customer order
         private void UpdateBnplPlanAndOrder(BNPL_PLAN bnplPlan, CustomerOrder existingOrder, DateTime now)
         {
