@@ -204,7 +204,7 @@ namespace WebApplication1.Services.ServiceImpl
             }
 
             installment.TotalDueAmount = installment.Installment_BaseAmount + installment.LateInterest;
-            installment.LastPaymentDate = DateTime.UtcNow;
+            installment.LastPaymentDate = today;
 
             //Apply helper method to determine installment status
             installment.Bnpl_Installment_Status = DetermineInstallmentStatus(installment, today);
@@ -212,7 +212,7 @@ namespace WebApplication1.Services.ServiceImpl
             return breakdown;
         }
 
-        //Hlper method to determine installment status
+        //Helper method to determine installment status
         private BNPL_Installment_StatusEnum DetermineInstallmentStatus(BNPL_Installment inst, DateTime today)
         {
             bool fullyPaid = inst.RemainingBalance <= 0;
