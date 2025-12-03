@@ -106,9 +106,12 @@ namespace WebApplication1.Services.ServiceImpl
 
         //---- [Start : installment payment] -----
         //Main Driver Method : Installmet Payment
-        public (BnplInstallmentPaymentResultDto Result, List<BNPL_Installment> UpdatedInstallments) BuildBnplInstallmentSettlementAsync(List<BNPL_Installment> installments, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
+        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlementAsync(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
         {
-            var updatedInstallments = new List<BNPL_Installment>();
+            if (existingOrder.BNPL_PLAN == null)
+                throw new Exception("BNPL plan not found for the order.");
+
+            var bnplPlan = existingOrder.BNPL_PLAN;
             var resultDto = new BnplInstallmentPaymentResultDto();
 
             decimal remainingArrears = latestSnapshotSettledResult.TotalPaidArrears;
@@ -119,32 +122,67 @@ namespace WebApplication1.Services.ServiceImpl
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             //FILTER: Only unpaid installments + due today or earlier
-            var installmentsToProcess = installments
-                .Where(i =>
-                    i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
-                    i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
-                    i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded)
-                .Where(i => i.RemainingBalance > 0)
-                .Where(i => i.Installment_DueDate <= now)
+            var installmentsToProcess = bnplPlan.BNPL_Installments
+                .Where(i => i.RemainingBalance > 0 &&
+                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
+                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
+                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded &&
+                            i.Installment_DueDate <= now)
                 .OrderBy(i => i.InstallmentNo)
                 .ToList();
 
-            foreach (var inst in installmentsToProcess)
+            foreach (var installment in installmentsToProcess)
             {
-                //Apply : Helper method for handle single installment update
-                var breakdown = ApplyPaymentToSingleInstallment(inst, now, ref remainingArrears, ref remainingLateInterest, ref remainingBase, ref remainingOverpayment);
-                resultDto.PerInstallmentBreakdown.Add(breakdown);
-                updatedInstallments.Add(inst);
+                var breakdown = ApplyPaymentToSingleInstallment(
+                    installment, now,
+                    ref remainingArrears,
+                    ref remainingLateInterest,
+                    ref remainingBase,
+                    ref remainingOverpayment);
 
-                resultDto.InstallmentId = inst.InstallmentID;
+                resultDto.PerInstallmentBreakdown.Add(breakdown);
+
+                resultDto.InstallmentId = installment.InstallmentID;
                 resultDto.AppliedToArrears += breakdown.AppliedToArrears;
                 resultDto.AppliedToLateInterest += breakdown.AppliedToLateInterest;
                 resultDto.AppliedToBase += breakdown.AppliedToBase;
                 resultDto.OverPayment += breakdown.OverPayment;
-                resultDto.NewStatus = inst.Bnpl_Installment_Status.ToString();
+                resultDto.NewStatus = installment.Bnpl_Installment_Status.ToString();
             }
 
-            return (resultDto, updatedInstallments);
+            // Update BNPL plan and customer order based on remaining installments
+            UpdateBnplPlanAndOrder(bnplPlan, existingOrder, now);
+
+            return resultDto;
+        }
+
+        //Helper method to Update BNPL plan and customer order
+        private void UpdateBnplPlanAndOrder(BNPL_PLAN bnplPlan, CustomerOrder existingOrder, DateTime now)
+        {
+            int remaining = bnplPlan.BNPL_Installments.Count(i => i.RemainingBalance > 0);
+            bnplPlan.Bnpl_RemainingInstallmentCount = remaining;
+
+            if (remaining == 0)
+            {
+                // Complete plan
+                bnplPlan.Bnpl_NextDueDate = null;
+                bnplPlan.Bnpl_Status = BnplStatusEnum.Completed;
+                bnplPlan.CompletedAt = now;
+
+                existingOrder.PaymentCompletedDate = now;
+                existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
+            }
+            else
+            {
+                var nextInst = bnplPlan.BNPL_Installments
+                    .Where(i => i.RemainingBalance > 0)
+                    .OrderBy(i => i.InstallmentNo)
+                    .First();
+
+                bnplPlan.Bnpl_Status = BnplStatusEnum.Active;
+                bnplPlan.Bnpl_NextDueDate = nextInst.Installment_DueDate;
+                existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+            }
         }
 
         //Helper method to handle single installment update

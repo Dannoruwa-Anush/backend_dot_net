@@ -114,35 +114,55 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Shared Internal Operations Used by Multiple Repositories
-        public (BnplLatestSnapshotSettledResultDto, BNPL_PlanSettlementSummary) BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(BNPL_PlanSettlementSummary latestSnapshot, decimal paymentAmount)
+        //-----------------[Start: snapshot payment]--------------------
+        public BnplLatestSnapshotSettledResultDto BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(BNPL_PLAN existingPlan, decimal paymentAmount)
         {
-            //Call helper method
-            (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal nextSnapshotOverPayment) = AllocatePaymentBuckets(latestSnapshot, paymentAmount);
+            var latestSnapshot = GetLatestSnapshot(existingPlan);
 
-            latestSnapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += paidBase;
-            latestSnapshot.Paid_AgainstTotalArrears += paidArrears;
-            latestSnapshot.Paid_AgainstTotalLateInterest += paidInterest;
+            var allocation = AllocatePaymentBuckets(latestSnapshot, paymentAmount);
 
-            var totalAllocated = paidArrears + paidInterest + paidBase;
-            latestSnapshot.Total_PayableSettlement = Math.Max(latestSnapshot.Total_PayableSettlement - totalAllocated, 0m);
+            UpdateSnapshotWithAllocation(latestSnapshot, allocation);
 
-            latestSnapshot.Total_OverpaymentCarriedToNext += nextSnapshotOverPayment;
-
-            if (remainingBalance == 0)
-            {
-                latestSnapshot.Bnpl_PlanSettlementSummary_PaymentStatus = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Settled;
-            }
-
-            var result = new BnplLatestSnapshotSettledResultDto
-            {
-                TotalPaidArrears = paidArrears,
-                TotalPaidLateInterest = paidInterest,
-                TotalPaidCurrentInstallmentBase = paidBase,
-                OverPaymentCarriedToNextInstallment = nextSnapshotOverPayment
-            };
-
-            return (result, latestSnapshot);
+            return BuildSettlementResultDto(allocation);
         }
+
+        //Helper method
+        private BNPL_PlanSettlementSummary GetLatestSnapshot(BNPL_PLAN plan)
+        {
+            return plan.BNPL_PlanSettlementSummaries.FirstOrDefault(s => s.IsLatest)
+                   ?? throw new Exception("Latest snapshot not found");
+        }
+
+        //Helper method
+        private void UpdateSnapshotWithAllocation(BNPL_PlanSettlementSummary snapshot, (decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal overPayment) allocation)
+        {
+            snapshot.Paid_AgainstTotalArrears += allocation.paidArrears;
+            snapshot.Paid_AgainstTotalLateInterest += allocation.paidInterest;
+            snapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += allocation.paidBase;
+
+            var totalAllocated = allocation.paidArrears + allocation.paidInterest + allocation.paidBase;
+            snapshot.Total_PayableSettlement = Math.Max(snapshot.Total_PayableSettlement - totalAllocated, 0m);
+            snapshot.Total_OverpaymentCarriedToNext += allocation.overPayment;
+
+            if (allocation.remainingBalance == 0)
+            {
+                snapshot.Bnpl_PlanSettlementSummary_PaymentStatus = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Settled;
+            }
+        }
+
+        //Helper method
+        private BnplLatestSnapshotSettledResultDto BuildSettlementResultDto((decimal paidArrears, decimal paidInterest, decimal paidBase, decimal remainingBalance, decimal overPayment) allocation)
+        {
+            return new BnplLatestSnapshotSettledResultDto
+            {
+                TotalPaidArrears = allocation.paidArrears,
+                TotalPaidLateInterest = allocation.paidInterest,
+                TotalPaidCurrentInstallmentBase = allocation.paidBase,
+                OverPaymentCarriedToNextInstallment = allocation.overPayment
+            };
+        }
+        //-----------------[End: snapshot payment]----------------------
+
 
         ///*********************************************** need to check again*************************
         public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)

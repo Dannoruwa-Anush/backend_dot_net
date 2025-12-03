@@ -176,19 +176,11 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var latestSnapshot = bnplPlan.BNPL_PlanSettlementSummaries.FirstOrDefault(s => s.IsLatest)
-                    ?? throw new Exception("Latest snapshot not found");
-
                 // Apply payment to snapshot
-                var (latestSnapshotSettledResult, updatedLatestSnapshot) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(latestSnapshot, paymentRequest.PaymentAmount);
-                latestSnapshot = updatedLatestSnapshot;
+                var latestSnapshotSettledResult = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(bnplPlan, paymentRequest.PaymentAmount);
 
                 // Update the installments according to the payment
-                var (paymentResult, updatedInstallments) = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(bnplPlan.BNPL_Installments.ToList(), latestSnapshotSettledResult);
-                bnplPlan.BNPL_Installments = updatedInstallments;
-
-                // Update Bnpl plan and customer order
-                UpdateBnplPlanStatusAfterPayment(bnplPlan, updatedInstallments, existingOrder);
+                var paymentResult = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(existingOrder, latestSnapshotSettledResult);
 
                 // Build cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
@@ -210,36 +202,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to process bnpl installment payment for OrderID={OrderID}", paymentRequest.OrderId);
                 throw;
-            }
-        }
-
-        //Helper : Update BnplPlan and customerOrder Status After Payment
-        private void UpdateBnplPlanStatusAfterPayment(BNPL_PLAN bnplPlan, List<BNPL_Installment> updatedInstallments, CustomerOrder existingOrder)
-        {
-            int remaining = updatedInstallments.Count(i => i.RemainingBalance > 0);
-            bnplPlan.Bnpl_RemainingInstallmentCount = remaining;
-
-            if (remaining == 0)
-            {
-                // Mark plan completed
-                bnplPlan.Bnpl_NextDueDate = null;
-                bnplPlan.Bnpl_Status = BnplStatusEnum.Completed;
-                bnplPlan.CompletedAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-                // Update main customer order
-                existingOrder.PaymentCompletedDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
-            }
-            else
-            {
-                var nextInst = updatedInstallments
-                    .Where(i => i.RemainingBalance > 0)
-                    .OrderBy(i => i.InstallmentNo)
-                    .First();
-
-                bnplPlan.Bnpl_Status = BnplStatusEnum.Active;
-                bnplPlan.Bnpl_NextDueDate = nextInst.Installment_DueDate;
-                existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
             }
         }
 
