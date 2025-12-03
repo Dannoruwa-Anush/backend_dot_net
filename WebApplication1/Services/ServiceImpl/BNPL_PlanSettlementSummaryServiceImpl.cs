@@ -115,7 +115,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //Shared Internal Operations Used by Multiple Repositories
         //-----------------[Start: snapshot payment]--------------------
-        public (BnplLatestSnapshotSettledResultDto snapshotResult, CustomerOrder updatedOrder) BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(CustomerOrder existingOrder, decimal paymentAmount)
+        public BnplLatestSnapshotSettledResultDto BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(CustomerOrder existingOrder, decimal paymentAmount)
         {
             var existingPlan = existingOrder.BNPL_PLAN
                 ?? throw new Exception("BNPL plan not found on order");
@@ -128,7 +128,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             var snapshotResult = BuildSettlementResultDto(allocation);
 
-            return (snapshotResult, existingOrder);
+            return snapshotResult;
         }
 
         //Helper method

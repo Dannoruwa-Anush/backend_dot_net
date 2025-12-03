@@ -174,10 +174,10 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             try
             {
                 // Apply payment to snapshot
-                var (latestSnapshotSettledResult, updatedOrder) = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(existingOrder, paymentRequest.PaymentAmount);
+                var latestSnapshotSettledResult = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequestAsync(existingOrder, paymentRequest.PaymentAmount);
 
                 // Update the installments according to the payment
-                var paymentResult = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(updatedOrder, latestSnapshotSettledResult);
+                var paymentResult = _bNPL_InstallmentService.BuildBnplInstallmentSettlementAsync(existingOrder, latestSnapshotSettledResult);
 
                 // Build cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
