@@ -53,9 +53,13 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
                     if (lateInterestApplied || overpaymentApplied || !IsPlanCompleted(plan))
                     {
-                        _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan);
+                        var snapshot =  _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan);
 
-                        _logger.LogInformation($"Snapshot created for Plan={plan.Bnpl_PlanID}; " + $"InterestApplied={lateInterestApplied}, OverpayApplied={overpaymentApplied}");
+                        if (snapshot != null)
+                        {
+                           plan.BNPL_PlanSettlementSummaries.Add(snapshot);
+                            _logger.LogInformation($"Snapshot created for Plan={plan.Bnpl_PlanID}; " + $"InterestApplied={lateInterestApplied}, OverpayApplied={overpaymentApplied}"); 
+                        }       
                     }
                 }
 
