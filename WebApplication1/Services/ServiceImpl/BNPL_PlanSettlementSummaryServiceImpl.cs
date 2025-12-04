@@ -169,8 +169,8 @@ namespace WebApplication1.Services.ServiceImpl
         //-----------------[End: snapshot payment]----------------------
 
 
-        ///*********************************************** need to check again*************************
-        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlanAsync(BNPL_PLAN existingPlan)
+        //-----------------[Start: Settlement Generation]---------------
+        public BNPL_PlanSettlementSummary? BuildSettlementGenerateRequestForPlan(BNPL_PLAN existingPlan)
         {
             var installments = existingPlan.BNPL_Installments;
 
@@ -179,77 +179,55 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            //Filter unpaid installments
-            var unpaid = installments
+            // Filter unpaid or partially paid installments
+            var unpaidInstallments = installments
                 .Where(i => i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
                             i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
                             i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded)
                 .OrderBy(i => i.InstallmentNo)
                 .ToList();
 
-            if (!unpaid.Any())
+            if (!unpaidInstallments.Any())
                 return null;
 
-            // Next upcoming installment (future due date)
-            var nextUpcoming = unpaid.FirstOrDefault(i => i.Installment_DueDate >= now);
+            // Segregate overdue and nearest upcoming
+            var segregation = SegregateInstallments(unpaidInstallments, now);
+            var overdueInstallments = segregation.OverdueInstallments;
+            var nearestUpcomingInstallment = segregation.NearestUpcomingInstallment;
 
-            // Only process installments up to the upcoming one
-            int maxInstallmentNoAllowed =
-                nextUpcoming?.InstallmentNo ?? unpaid.Last().InstallmentNo;
+            // Accumulators
+            decimal arrearsBase = overdueInstallments.Sum(i => Math.Max(0, i.Installment_BaseAmount - i.AmountPaid_AgainstBase));
+            decimal notYetDueBase = nearestUpcomingInstallment != null
+                                        ? Math.Max(0, nearestUpcomingInstallment.Installment_BaseAmount - nearestUpcomingInstallment.AmountPaid_AgainstBase)
+                                        : 0m;
 
-            var effectiveInstallments = unpaid
-                .Where(i => i.InstallmentNo <= maxInstallmentNoAllowed)
-                .ToList();
+            decimal totalLateInterest = overdueInstallments.Sum(i => Math.Max(0, i.LateInterest - i.AmountPaid_AgainstLateInterest))
+                                      + (nearestUpcomingInstallment != null
+                                         ? Math.Max(0, nearestUpcomingInstallment.LateInterest - nearestUpcomingInstallment.AmountPaid_AgainstLateInterest)
+                                         : 0m);
 
-            //Accumulators
-            decimal arrearsBase = 0m;
-            decimal notYetDueBase = 0m;
-            decimal totalLateInterest = 0m;
-
-            // Payment reporting only (not used in settlement computation)
-            decimal paidAgainstArrears = 0m;
-            decimal paidAgainstNotYetDue = 0m;
-            decimal paidAgainstLateInterest = 0m;
-
-            foreach (var inst in effectiveInstallments)
-            {
-                bool isArrears = inst.Installment_DueDate < now;
-
-                decimal remainingBase =
-                    Math.Max(0, inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase);
-
-                decimal remainingInterest =
-                    Math.Max(0, inst.LateInterest - inst.AmountPaid_AgainstLateInterest);
-
-                if (isArrears)
-                    paidAgainstArrears += inst.AmountPaid_AgainstBase;
-                else
-                    paidAgainstNotYetDue += inst.AmountPaid_AgainstBase;
-
-                paidAgainstLateInterest += inst.AmountPaid_AgainstLateInterest;
-
-                if (isArrears)
-                    arrearsBase += remainingBase;
-                else
-                    notYetDueBase += remainingBase;
-
-                totalLateInterest += remainingInterest;
-            }
+            // Reporting-only
+            decimal paidAgainstArrears = overdueInstallments.Sum(i => i.AmountPaid_AgainstBase);
+            decimal paidAgainstNotYetDue = nearestUpcomingInstallment?.AmountPaid_AgainstBase ?? 0m;
+            decimal paidAgainstLateInterest = overdueInstallments.Sum(i => i.AmountPaid_AgainstLateInterest)
+                                           + (nearestUpcomingInstallment?.AmountPaid_AgainstLateInterest ?? 0m);
 
             decimal totalPayable = arrearsBase + notYetDueBase + totalLateInterest;
 
             MarkLatestSnapshotObsolete(existingPlan);
 
+            // Pick first effective installment for reference
+            var firstEffectiveInstallment = overdueInstallments.FirstOrDefault() ?? nearestUpcomingInstallment!;
+
             return new BNPL_PlanSettlementSummary
             {
-                Bnpl_PlanID = effectiveInstallments.First().Bnpl_PlanID,
-                CurrentInstallmentNo = effectiveInstallments.First().InstallmentNo,
+                Bnpl_PlanID = firstEffectiveInstallment.Bnpl_PlanID,
+                CurrentInstallmentNo = firstEffectiveInstallment.InstallmentNo,
 
                 Total_InstallmentBaseArrears = arrearsBase,
                 NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
                 Total_LateInterest = totalLateInterest,
 
-                // Reporting-only fields
                 Paid_AgainstTotalArrears = paidAgainstArrears,
                 Paid_AgainstNotYetDueCurrentInstallmentBaseAmount = paidAgainstNotYetDue,
                 Paid_AgainstTotalLateInterest = paidAgainstLateInterest,
@@ -257,11 +235,40 @@ namespace WebApplication1.Services.ServiceImpl
                 Total_PayableSettlement = totalPayable,
 
                 IsLatest = true,
-                Bnpl_PlanSettlementSummaryRef = $"SNP-{effectiveInstallments.First().Bnpl_PlanID}-for-{effectiveInstallments.First().InstallmentNo}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}"
+                Bnpl_PlanSettlementSummaryRef = $"SNP-{firstEffectiveInstallment.Bnpl_PlanID}-for-{firstEffectiveInstallment.InstallmentNo}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}"
             };
         }
 
-        //Helper to mark last snapshot as Obsolete
+        // Helper record to return segregation results
+        private record InstallmentSegregationResult(
+            List<BNPL_Installment> OverdueInstallments,
+            BNPL_Installment? NearestUpcomingInstallment
+        );
+
+        // Helper method to segregate installments
+        private InstallmentSegregationResult SegregateInstallments(List<BNPL_Installment> unpaidInstallments, DateTime now)
+        {
+            if (unpaidInstallments == null || unpaidInstallments.Count == 0)
+                return new InstallmentSegregationResult(new List<BNPL_Installment>(), null);
+
+            // Overdue installments
+            var overdueInstallments = unpaidInstallments
+                .Where(i => i.Installment_DueDate < now)
+                .OrderBy(i => i.Installment_DueDate)
+                .ThenBy(i => i.InstallmentNo)
+                .ToList();
+
+            // Nearest upcoming installment
+            var nearestUpcomingInstallment = unpaidInstallments
+                .Where(i => i.Installment_DueDate >= now)
+                .OrderBy(i => i.InstallmentNo) // Ensure the smallest InstallmentNo >= now
+                .FirstOrDefault();
+
+            return new InstallmentSegregationResult(overdueInstallments, nearestUpcomingInstallment);
+        }
+
+        
+        // Helper to mark last snapshot as obsolete
         private void MarkLatestSnapshotObsolete(BNPL_PLAN existingBnplPlan)
         {
             if (existingBnplPlan == null)
@@ -270,12 +277,12 @@ namespace WebApplication1.Services.ServiceImpl
             var latestSnapshot = existingBnplPlan.BNPL_PlanSettlementSummaries
                 .FirstOrDefault(s => s.IsLatest);
 
-            // If no snapshot exists yet (first time) - nothing to obsolete
             if (latestSnapshot == null)
                 return;
 
             latestSnapshot.IsLatest = false;
             latestSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
         }
+        //-----------------[End: Settlement Generation]---------------
     }
 }

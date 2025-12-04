@@ -53,7 +53,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
                     if (lateInterestApplied || overpaymentApplied || !IsPlanCompleted(plan))
                     {
-                        var snapshot =  _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlanAsync(plan);
+                        var snapshot =  _bnpl_planSettlementSummaryService.BuildSettlementGenerateRequestForPlan(plan);
 
                         if (snapshot != null)
                         {
