@@ -221,7 +221,7 @@ namespace WebApplication1.Services.ServiceImpl
             // 2. Apply Overpayment
             if (remainingOverpayment > 0)
             {
-                currentInstallment.OverpaymentCarriedToNextMonth += remainingOverpayment;
+                currentInstallment.OverpaymentCarriedToNext += remainingOverpayment;
                 breakdown.OverPayment = remainingOverpayment;
             }
 

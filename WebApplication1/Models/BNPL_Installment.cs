@@ -23,7 +23,7 @@ namespace WebApplication1.Models
         public DateTime Installment_DueDate { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal OverpaymentCarriedToNextMonth { get; set; } = 0m;
+        public decimal OverpaymentCarriedToNext { get; set; } = 0m;
 
         //Late interest is charged on the unpaid Installment_BaseAmount
         //LateInterest = (Installment_BaseAmount - AmountPaid_AgainstBase) × lateInterestRatePerDay × overdueDays

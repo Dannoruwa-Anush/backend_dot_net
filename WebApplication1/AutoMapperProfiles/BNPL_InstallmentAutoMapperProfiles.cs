@@ -11,8 +11,6 @@ namespace WebApplication1.AutoMapperProfiles
         {
             CreateMap<BNPL_Installment, BNPL_InstallmentResponseDto>()
                 .ForMember(dest => dest.BNPL_PlanResponseDto, opt => opt.MapFrom(src => src.BNPL_PLAN));
-
-            CreateMap<BNPL_InstallmentRequestDto, BNPL_Installment>();
         }
     }
 }

@@ -178,7 +178,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (source == null)
                 return false;
 
-            decimal overpay = source.OverpaymentCarriedToNextMonth;
+            decimal overpay = source.OverpaymentCarriedToNext;
 
             if (overpay <= 0)
                 return false;

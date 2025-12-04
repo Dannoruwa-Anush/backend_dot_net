@@ -253,7 +253,7 @@ namespace WebApplication1.Data
                 entity.Property(i => i.Installment_BaseAmount)
                       .HasColumnType("decimal(18,2)");
 
-                entity.Property(i => i.OverpaymentCarriedToNextMonth)
+                entity.Property(i => i.OverpaymentCarriedToNext)
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(i => i.LateInterest)
