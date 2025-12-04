@@ -178,9 +178,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             next.AmountPaid_AgainstBase += applyAmount;
             next.LastPaymentDate = today;
 
-            // update remaining overpayment
-            source.OverpaymentCarriedToNextMonth = overpay - applyAmount;
-
             return true;
         }
 
