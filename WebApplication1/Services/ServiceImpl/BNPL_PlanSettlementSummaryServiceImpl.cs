@@ -262,12 +262,12 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper to mark last snapshot as Obsolete
-        private void MarkLatestSnapshotObsolete(BNPL_PLAN bnplPlan)
+        private void MarkLatestSnapshotObsolete(BNPL_PLAN existingBnplPlan)
         {
-            if (bnplPlan == null)
-                throw new ArgumentNullException(nameof(bnplPlan));
+            if (existingBnplPlan == null)
+                throw new ArgumentNullException(nameof(existingBnplPlan));
 
-            var latestSnapshot = bnplPlan.BNPL_PlanSettlementSummaries
+            var latestSnapshot = existingBnplPlan.BNPL_PlanSettlementSummaries
                 .FirstOrDefault(s => s.IsLatest);
 
             // If no snapshot exists yet (first time) - nothing to obsolete

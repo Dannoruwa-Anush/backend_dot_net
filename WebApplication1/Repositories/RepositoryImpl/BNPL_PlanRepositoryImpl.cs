@@ -115,6 +115,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
         public async Task<IEnumerable<BNPL_PLAN>> GetAllActiveAsync() =>
             await _context.BNPL_PLANs
+                .Include(bpl => bpl.BNPL_PlanSettlementSummaries)
                 .Where(bpl => bpl.Bnpl_Status == BnplStatusEnum.Active)
                 .ToListAsync();
     }
