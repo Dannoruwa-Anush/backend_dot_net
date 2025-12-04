@@ -190,30 +190,37 @@ namespace WebApplication1.Services.ServiceImpl
             if (!unpaidInstallments.Any())
                 return null;
 
-            // Segregate overdue and nearest upcoming
+            // Using helper method segregate overdue and nearest upcoming
             var segregation = SegregateInstallments(unpaidInstallments, now);
+
             var overdueInstallments = segregation.OverdueInstallments;
             var nearestUpcomingInstallment = segregation.NearestUpcomingInstallment;
 
-            // Accumulators
+            // Accumulators : Overdue
             decimal arrearsBase = overdueInstallments.Sum(i => Math.Max(0, i.Installment_BaseAmount - i.AmountPaid_AgainstBase));
-            decimal notYetDueBase = nearestUpcomingInstallment != null
-                                        ? Math.Max(0, nearestUpcomingInstallment.Installment_BaseAmount - nearestUpcomingInstallment.AmountPaid_AgainstBase)
-                                        : 0m;
 
             decimal totalLateInterest = overdueInstallments.Sum(i => Math.Max(0, i.LateInterest - i.AmountPaid_AgainstLateInterest))
                                       + (nearestUpcomingInstallment != null
                                          ? Math.Max(0, nearestUpcomingInstallment.LateInterest - nearestUpcomingInstallment.AmountPaid_AgainstLateInterest)
                                          : 0m);
 
+            //Upcoming nearest installment                             
+            decimal notYetDueBase = nearestUpcomingInstallment != null
+                            ? Math.Max(0, nearestUpcomingInstallment.Installment_BaseAmount - nearestUpcomingInstallment.AmountPaid_AgainstBase)
+                            : 0m;
+
             // Reporting-only
             decimal paidAgainstArrears = overdueInstallments.Sum(i => i.AmountPaid_AgainstBase);
-            decimal paidAgainstNotYetDue = nearestUpcomingInstallment?.AmountPaid_AgainstBase ?? 0m;
+
             decimal paidAgainstLateInterest = overdueInstallments.Sum(i => i.AmountPaid_AgainstLateInterest)
                                            + (nearestUpcomingInstallment?.AmountPaid_AgainstLateInterest ?? 0m);
 
+            decimal paidAgainstNotYetDue = nearestUpcomingInstallment?.AmountPaid_AgainstBase ?? 0m;
+
+            //total settlement
             decimal totalPayable = arrearsBase + notYetDueBase + totalLateInterest;
 
+            //Using helper method, mark previous snapshots as obsolate
             MarkLatestSnapshotObsolete(existingPlan);
 
             // Pick first effective installment for reference
@@ -225,8 +232,8 @@ namespace WebApplication1.Services.ServiceImpl
                 CurrentInstallmentNo = firstEffectiveInstallment.InstallmentNo,
 
                 Total_InstallmentBaseArrears = arrearsBase,
-                NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
                 Total_LateInterest = totalLateInterest,
+                NotYetDueCurrentInstallmentBaseAmount = notYetDueBase,
 
                 Paid_AgainstTotalArrears = paidAgainstArrears,
                 Paid_AgainstNotYetDueCurrentInstallmentBaseAmount = paidAgainstNotYetDue,
@@ -239,7 +246,7 @@ namespace WebApplication1.Services.ServiceImpl
             };
         }
 
-        // Helper record to return segregation results
+        // Helper record to return segregation results (DTO)
         private record InstallmentSegregationResult(
             List<BNPL_Installment> OverdueInstallments,
             BNPL_Installment? NearestUpcomingInstallment
@@ -267,7 +274,6 @@ namespace WebApplication1.Services.ServiceImpl
             return new InstallmentSegregationResult(overdueInstallments, nearestUpcomingInstallment);
         }
 
-        
         // Helper to mark last snapshot as obsolete
         private void MarkLatestSnapshotObsolete(BNPL_PLAN existingBnplPlan)
         {
