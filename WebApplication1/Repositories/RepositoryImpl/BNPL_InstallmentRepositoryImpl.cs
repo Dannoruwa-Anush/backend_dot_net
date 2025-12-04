@@ -190,6 +190,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
 
             return await _context.BNPL_Installments
+                .Include(i => i.BNPL_PLAN!)
+                    .ThenInclude(ipt => ipt.BNPL_PlanType)
                 .Where(i =>
                     i.Bnpl_PlanID == planId &&
                     i.Installment_DueDate <= asOfDate &&
