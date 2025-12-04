@@ -30,7 +30,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger = logger;
         }
 
-        //Main Driver Method : Process Due Date Adjustments
+        //Main Driver Method : Process Due Date Adjustments (This process run next day of the due date on 00.00h)
         public async Task ProcessDueDateAdjustmentsAsync()
         {
             var activePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
@@ -106,6 +106,23 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Helper method : single installment late interest calculator
         private LateInterestCalculationResultDto CalculateLateInterest(BNPL_Installment inst, decimal ratePerDay, DateTime today)
         {
+            // -------------------------------------------------------------
+            // Note : Determine the starting date for late-interest calculation.
+            //
+            // If late interest has been applied before → use the last applied date.
+            //
+            // If applying late interest for the FIRST TIME:
+            //     Interest starts from the day AFTER the due date.
+            //
+            // Rationale:
+            // - The due date itself should NOT count as an overdue day.
+            // - Example:
+            //      Due date:    Dec 03
+            //      Today:       Dec 04
+            //      Overdue days = 0   (Correct)
+            //      Late interest begins accumulating from Dec 05.
+            // -------------------------------------------------------------
+
             DateTime lastAppliedDate = inst.LastLateInterestAppliedDate ?? inst.Installment_DueDate;
 
             int overdueDays = Math.Max((today.Date - lastAppliedDate.Date).Days, 0);
@@ -130,7 +147,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             decimal interestToAdd = Math.Round(unpaidBase * ratePerDay * overdueDays, 2, MidpointRounding.AwayFromZero);
 
             decimal newLateInterestTotal = inst.LateInterest + interestToAdd;
-            decimal newTotalDueAmount = Math.Round(unpaidBase + newLateInterestTotal, 2, MidpointRounding.AwayFromZero);
+            decimal newTotalDueAmount = Math.Round(inst.TotalDueAmount + interestToAdd, 2, MidpointRounding.AwayFromZero);
 
             return new LateInterestCalculationResultDto
             {
