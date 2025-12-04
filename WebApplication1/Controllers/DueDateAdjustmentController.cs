@@ -22,15 +22,15 @@ namespace WebApplication1.Controllers
         }
 
         //For testing : Manual trigger (Need to do : automate with bg-process: Hangfire)
-        [HttpPost("apply-late-interest")]
-        public async Task<IActionResult> ApplyLateInterest()
+        [HttpPost("apply-due-date-adjustment")]
+        public async Task<IActionResult> ApplyDueDateAdjustment()
         {
             try
             {
                 await _service.ProcessDueDateAdjustmentsAsync();
                 return Ok(new ApiResponseDto<string>(
                     200,
-                    "Due date adjustment applied successfully to all overdue installments."
+                    "Due date adjustment applied successfully."
                 ));
             }
             catch (Exception)
