@@ -16,7 +16,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public DateTime Bnpl_StartDate { get; set; }
 
-        public DateTime Bnpl_NextDueDate { get; set; }
+        public DateTime? Bnpl_NextDueDate { get; set; }
 
         public DateTime? CompletedAt { get; set; }
 

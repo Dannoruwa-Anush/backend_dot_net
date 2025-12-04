@@ -13,7 +13,7 @@ namespace WebApplication1.DTOs.ResponseDto
         public DateTime CashflowDate { get; set; }
 
         public DateTime? RefundDate { get; set; }
-
+        
         public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
         
         // Include simplified info about FK: Order 
