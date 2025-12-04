@@ -7,7 +7,7 @@ namespace WebApplication1.Repositories.IRepository
     {
         //CRUD operations
         Task<IEnumerable<BNPL_PLAN>> GetAllAsync();
-        Task<IEnumerable<BNPL_PLAN>> GetAllWithBnplPlanAsync();
+        Task<IEnumerable<BNPL_PLAN>> GetAllWithBnplPlanTypeAsync();
         Task<BNPL_PLAN?> GetByIdAsync(int id);
         Task<BNPL_PLAN?> GetWithPlanTypeCustomerDetailsByIdAsync(int id);
 
@@ -16,6 +16,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> ExistsByBnplPlanTypeAsync(int bnplPlanTypeId);
         Task<BNPL_PLAN?> GetByOrderIdAsync(int OrderId);
         Task<BNPL_PLAN?> GetByPlanTypeIdAsync(int planTypeId);
-        Task<IEnumerable<BNPL_PLAN>> GetAllActiveAsync();
+        Task<IEnumerable<BNPL_PLAN>> GetAllActiveWithFinancialDetailsAsync();
     }
 }

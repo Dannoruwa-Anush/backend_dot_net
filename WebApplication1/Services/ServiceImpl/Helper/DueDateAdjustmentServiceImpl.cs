@@ -33,7 +33,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Main Driver Method : Process Due Date Adjustments (This process run next day of the due date on 00.00h)
         public async Task ProcessDueDateAdjustmentsAsync()
         {
-            var activePlans = await _bNPL_PlanRepository.GetAllActiveAsync();
+            var activePlans = await _bNPL_PlanRepository.GetAllActiveWithFinancialDetailsAsync();
 
             if (!activePlans.Any())
             {

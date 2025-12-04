@@ -23,7 +23,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<IEnumerable<BNPL_PLAN>> GetAllAsync() =>
             await _context.BNPL_PLANs.ToListAsync();
 
-        public async Task<IEnumerable<BNPL_PLAN>> GetAllWithBnplPlanAsync() =>
+        public async Task<IEnumerable<BNPL_PLAN>> GetAllWithBnplPlanTypeAsync() =>
             await _context.BNPL_PLANs
                     .Include(bpl => bpl.BNPL_PlanType)
                     .ToListAsync();
@@ -113,8 +113,9 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.BNPL_PLANs
                 .FirstOrDefaultAsync(bpl => bpl.Bnpl_PlanTypeID == planTypeId);
 
-        public async Task<IEnumerable<BNPL_PLAN>> GetAllActiveAsync() =>
+        public async Task<IEnumerable<BNPL_PLAN>> GetAllActiveWithFinancialDetailsAsync() =>
             await _context.BNPL_PLANs
+                .Include(bpl => bpl.BNPL_Installments)
                 .Include(bpl => bpl.BNPL_PlanSettlementSummaries)
                 .Where(bpl => bpl.Bnpl_Status == BnplStatusEnum.Active)
                 .ToListAsync();

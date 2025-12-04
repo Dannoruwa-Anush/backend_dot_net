@@ -32,7 +32,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         //CRUD operations
         public async Task<IEnumerable<BNPL_PLAN>> GetAllBNPL_PlansAsync() =>
-            await _repository.GetAllWithBnplPlanAsync();
+            await _repository.GetAllWithBnplPlanTypeAsync();
 
         public async Task<BNPL_PLAN?> GetBNPL_PlanByIdAsync(int id) =>
             await _repository.GetWithPlanTypeCustomerDetailsByIdAsync(id);
