@@ -106,14 +106,11 @@ namespace WebApplication1.Services.ServiceImpl
 
         //---- [Start : installment payment] -----
         //Main Driver Method : Installmet Payment
-        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlement(
-    CustomerOrder existingOrder,
-    BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
+        public BnplInstallmentPaymentResultDto BuildBnplInstallmentSettlement(CustomerOrder existingOrder, BnplLatestSnapshotSettledResultDto latestSnapshotSettledResult)
         {
-            if (existingOrder.BNPL_PLAN == null)
-                throw new Exception("BNPL plan not found for the order.");
+            var bnplPlan = existingOrder.BNPL_PLAN
+                ?? throw new Exception("BNPL plan not found for the order.");
 
-            var bnplPlan = existingOrder.BNPL_PLAN;
             var resultDto = new BnplInstallmentPaymentResultDto();
 
             decimal remainingArrears = latestSnapshotSettledResult.TotalPaidArrears;
@@ -123,54 +120,120 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Step 1: Filter unpaid installments
-            var unpaid = bnplPlan.BNPL_Installments
-                .Where(i => i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
-                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
-                            i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded)
+            // ----------------------------
+            // Step 1: Process Past Installments (Arrears + Late Interest)
+            // ----------------------------
+
+            // Filter unpaid installments
+            var unpaidOrPartiallyPaid = bnplPlan.BNPL_Installments
+                .Where(i =>
+                    i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_OnTime &&
+                    i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Paid_Late &&
+                    i.Bnpl_Installment_Status != BNPL_Installment_StatusEnum.Refunded)
                 .OrderBy(i => i.Installment_DueDate)
                 .ThenBy(i => i.InstallmentNo)
                 .ToList();
 
-            if (!unpaid.Any())
-                return resultDto; // nothing to process
+            ProcessArrearsAndLateFees(unpaidOrPartiallyPaid, ref remainingArrears, ref remainingLateInterest, resultDto, now);
 
-            // Step 2: Identify nearest upcoming installment
-            var nextUpcoming = unpaid.FirstOrDefault(i => i.Installment_DueDate >= now);
+            // ----------------------------
+            // Step 2: Process Current Installment (Base + Overpayment) → nearest installment by due date
+            // ----------------------------
+            // Filter nearest installments
+            var nearestInstallment = bnplPlan.BNPL_Installments
+                .OrderBy(i => i.Installment_DueDate)
+                .FirstOrDefault(i => i.Installment_DueDate >= now);
 
-            int maxInstallmentNoAllowed = nextUpcoming?.InstallmentNo ?? unpaid.Last().InstallmentNo;
-
-            // Step 3: Select installments to process (overdue + nearest upcoming)
-            var installmentsToProcess = unpaid
-                .Where(i => i.InstallmentNo <= maxInstallmentNoAllowed)
-                .ToList();
-
-            // Step 4: Apply payments
-            foreach (var installment in installmentsToProcess)
+            if (nearestInstallment != null)
             {
-                var breakdown = ApplyPaymentToSingleInstallment(
-                    installment, now,
-                    ref remainingArrears,
-                    ref remainingLateInterest,
-                    ref remainingBase,
-                    ref remainingOverpayment);
-
-                resultDto.PerInstallmentBreakdown.Add(breakdown);
-
-                resultDto.InstallmentId = installment.InstallmentID;
-                resultDto.AppliedToArrears += breakdown.AppliedToArrears;
-                resultDto.AppliedToLateInterest += breakdown.AppliedToLateInterest;
-                resultDto.AppliedToBase += breakdown.AppliedToBase;
-                resultDto.OverPayment += breakdown.OverPayment;
-                resultDto.NewStatus = installment.Bnpl_Installment_Status.ToString();
+                ProcessCurrentBaseAndOverpayment(nearestInstallment, ref remainingBase, remainingOverpayment, resultDto, now);
             }
 
-            // Step 5: Update BNPL plan and customer order
+            // ----------------------------
+            // Step 3: Update BNPL plan and customer order
+            // ----------------------------
             UpdateBnplPlanAndOrder(bnplPlan, existingOrder, now);
 
             return resultDto;
         }
-        
+
+        //Helper method to handle late installments (Overdue)
+        private void ProcessArrearsAndLateFees(List<BNPL_Installment> installments, ref decimal remainingArrears, ref decimal remainingLateInterest, BnplInstallmentPaymentResultDto resultDto, DateTime today)
+        {
+            foreach (var inst in installments)
+            {
+                var breakdown = new BnplPerInstallmentPaymentBreakdownResultDto
+                {
+                    InstallmentId = inst.InstallmentID
+                };
+
+                // Apply arrears to base
+                if (remainingArrears > 0)
+                {
+                    decimal arrearsDue = inst.Installment_BaseAmount - inst.AmountPaid_AgainstBase;
+                    decimal apply = Math.Min(arrearsDue, remainingArrears);
+
+                    inst.AmountPaid_AgainstBase += apply;
+                    remainingArrears -= apply;
+                    breakdown.AppliedToArrears = apply;
+                }
+
+                // Apply late interest
+                if (remainingLateInterest > 0)
+                {
+                    decimal lateDue = inst.LateInterest - inst.AmountPaid_AgainstLateInterest;
+                    decimal apply = Math.Min(lateDue, remainingLateInterest);
+
+                    inst.AmountPaid_AgainstLateInterest += apply;
+                    remainingLateInterest -= apply;
+                    breakdown.AppliedToLateInterest = apply;
+                }
+
+                inst.TotalDueAmount = inst.Installment_BaseAmount + inst.LateInterest;
+                inst.LastPaymentDate = today;
+                inst.Bnpl_Installment_Status = DetermineInstallmentStatus(inst, today);
+
+                resultDto.PerInstallmentBreakdown.Add(breakdown);
+                resultDto.AppliedToArrears += breakdown.AppliedToArrears;
+                resultDto.AppliedToLateInterest += breakdown.AppliedToLateInterest;
+            }
+        }
+
+        //Helper method to handle current paymnets
+        private void ProcessCurrentBaseAndOverpayment(BNPL_Installment currentInstallment, ref decimal remainingBase, decimal remainingOverpayment, BnplInstallmentPaymentResultDto resultDto, DateTime today)
+        {
+            var breakdown = new BnplPerInstallmentPaymentBreakdownResultDto
+            {
+                InstallmentId = currentInstallment.InstallmentID
+            };
+
+            // 1. Apply Base
+            if (remainingBase > 0)
+            {
+                decimal baseDue = currentInstallment.Installment_BaseAmount - currentInstallment.AmountPaid_AgainstBase;
+                decimal apply = Math.Min(baseDue, remainingBase);
+
+                currentInstallment.AmountPaid_AgainstBase += apply;
+                remainingBase -= apply;
+                breakdown.AppliedToBase = apply;
+            }
+
+            // 2. Apply Overpayment
+            if (remainingOverpayment > 0)
+            {
+                currentInstallment.OverpaymentCarriedToNextMonth += remainingOverpayment;
+                breakdown.OverPayment = remainingOverpayment;
+            }
+
+            currentInstallment.TotalDueAmount = currentInstallment.Installment_BaseAmount + currentInstallment.LateInterest;
+            currentInstallment.LastPaymentDate = today;
+            currentInstallment.Bnpl_Installment_Status = DetermineInstallmentStatus(currentInstallment, today);
+
+            resultDto.PerInstallmentBreakdown.Add(breakdown);
+            resultDto.AppliedToBase += breakdown.AppliedToBase;
+            resultDto.OverPayment += breakdown.OverPayment;
+        }
+
         //Helper method to Update BNPL plan and customer order
         private void UpdateBnplPlanAndOrder(BNPL_PLAN bnplPlan, CustomerOrder existingOrder, DateTime now)
         {
@@ -198,71 +261,6 @@ namespace WebApplication1.Services.ServiceImpl
                 bnplPlan.Bnpl_NextDueDate = nextInst.Installment_DueDate;
                 existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
             }
-        }
-
-        //Helper method to handle single installment update
-        private BnplPerInstallmentPaymentBreakdownResultDto ApplyPaymentToSingleInstallment(BNPL_Installment installment, DateTime today, ref decimal remainingArrears, ref decimal remainingLateInterest, ref decimal remainingBase, ref decimal remainingOverpayment)
-        {
-            var breakdown = new BnplPerInstallmentPaymentBreakdownResultDto
-            {
-                InstallmentId = installment.InstallmentID
-            };
-
-            // 1.APPLY ARREARS
-            if (remainingArrears > 0)
-            {
-                decimal arrearsDue = installment.Installment_BaseAmount - installment.AmountPaid_AgainstBase;
-                decimal apply = Math.Min(arrearsDue, remainingArrears);
-
-                installment.AmountPaid_AgainstBase += apply;
-                remainingArrears -= apply;
-
-                breakdown.AppliedToArrears = apply;
-            }
-
-            // 2. APPLY LATE INTEREST
-            if (remainingLateInterest > 0)
-            {
-                decimal lateDue = installment.LateInterest - installment.AmountPaid_AgainstLateInterest;
-                decimal apply = Math.Min(lateDue, remainingLateInterest);
-
-                installment.AmountPaid_AgainstLateInterest += apply;
-                remainingLateInterest -= apply;
-
-                breakdown.AppliedToLateInterest = apply;
-            }
-
-            // 3. APPLY BASE
-            if (remainingBase > 0)
-            {
-                decimal baseDue = installment.Installment_BaseAmount - installment.AmountPaid_AgainstBase;
-                decimal apply = Math.Min(baseDue, remainingBase);
-
-                installment.AmountPaid_AgainstBase += apply;
-                remainingBase -= apply;
-
-                breakdown.AppliedToBase = apply;
-            }
-
-            // 4. APPLY OVERPAYMENT
-            if (remainingOverpayment > 0)
-            {
-                decimal baseDue = installment.Installment_BaseAmount - installment.AmountPaid_AgainstBase;
-                decimal apply = Math.Min(baseDue, remainingOverpayment);
-
-                installment.AmountPaid_AgainstBase += apply;
-                remainingOverpayment -= apply;
-
-                breakdown.OverPayment = apply;
-            }
-
-            installment.TotalDueAmount = installment.Installment_BaseAmount + installment.LateInterest;
-            installment.LastPaymentDate = today;
-
-            //Apply helper method to determine installment status
-            installment.Bnpl_Installment_Status = DetermineInstallmentStatus(installment, today);
-
-            return breakdown;
         }
 
         //Helper method to determine installment status
