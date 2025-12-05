@@ -160,6 +160,21 @@ builder.Services.AddAuthentication(options =>
     }
 );
 
+// -------------[CORS for Angular]--------------------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularClient",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:4200") // Angular
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        });
+});
+
+//----------------------------------------------------
+
 var app = builder.Build();
 
 //------------------[Set default time zone globally]-----------------------
@@ -198,6 +213,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAngularClient"); // Enable CORS BEFORE auth
+
 app.UseAuthentication(); // Required before authorization
 app.UseAuthorization();
 
