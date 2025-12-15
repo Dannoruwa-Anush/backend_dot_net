@@ -51,6 +51,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.QOH = electronicItem.QOH;
             existing.BrandID = electronicItem.BrandID;
             existing.CategoryID = electronicItem.CategoryID;
+            existing.ElectronicItemImage = electronicItem.ElectronicItemImage;
 
             _context.ElectronicItems.Update(existing);
             return existing;
