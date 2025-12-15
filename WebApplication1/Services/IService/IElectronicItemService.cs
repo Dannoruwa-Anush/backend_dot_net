@@ -15,7 +15,7 @@ namespace WebApplication1.Services.IService
         Task DeleteElectronicItemWithSaveAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
+        Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? categoryId = null, int? brandId = null, string? searchKey = null);
         Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByCategoryIdAsync(int categoryId);
         Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByBrandIdAsync(int brandId);
         Task<List<ElectronicItem>> GetAllElectronicItemsByIdsAsync(List<int> ids);

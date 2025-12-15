@@ -176,11 +176,11 @@ namespace WebApplication1.Controllers
         //Custom Query Operations
         [HttpGet("paged")]
         [AllowAnonymous] // JWT is not required
-        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
+        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, int? categoryId = null, int? brandId = null, string? searchKey = null)
         {
             try
             {
-                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, categoryId, brandId, searchKey);
                 // Model -> ResponseDto   
                 var paginationResponse = _mapper.Map<PaginationResultDto<ElectronicItemResponseDto>>(pageResultDto);
                 var response = new ApiResponseDto<PaginationResultDto<ElectronicItemResponseDto>>(

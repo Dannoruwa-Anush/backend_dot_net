@@ -35,7 +35,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.ElectronicItems
                 .Include(e => e.Brand)
                 .Include(e => e.Category)
-                .FirstOrDefaultAsync(e => e.ElectronicItemID == id);        
+                .FirstOrDefaultAsync(e => e.ElectronicItemID == id);
 
         public async Task AddAsync(ElectronicItem electronicItem) =>
             await _context.ElectronicItems.AddAsync(electronicItem);
@@ -67,12 +67,27 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
+        public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? categoryId = null, int? brandId = null, string? searchKey = null)
         {
             var query = _context.ElectronicItems.AsNoTracking().AsQueryable();
 
-            // Apply filters from helper
-            query = ApplyElectronicItemFilters(query, searchKey).OrderByDescending(c => c.CreatedAt);
+            // Apply search filter
+            query = ApplyElectronicItemFilters(query, searchKey);
+
+            // Apply Category filter if provided
+            if (categoryId.HasValue)
+            {
+                query = query.Where(e => e.CategoryID == categoryId.Value);
+            }
+
+            // Apply Brand filter if provided
+            if (brandId.HasValue)
+            {
+                query = query.Where(e => e.BrandID == brandId.Value);
+            }
+
+            // Order by CreatedAt descending
+            query = query.OrderByDescending(e => e.CreatedAt);
 
             var totalCount = await query.CountAsync();
 
