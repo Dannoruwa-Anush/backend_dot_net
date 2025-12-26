@@ -9,7 +9,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public string EmployeeName { get; set; } = string.Empty;
 
-        public EmployeePositionEnum Position { get; set; } = EmployeePositionEnum.Cashier;
+        public string Position { get; set; } = string.Empty;
 
         // Include simplified info about FK: User
         public required UserResponseDto UserResponseDto { get; set; }
