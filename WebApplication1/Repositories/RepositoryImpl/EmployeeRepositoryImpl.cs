@@ -114,5 +114,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             return query;
         }
+
+        public async Task<Employee?> GetByUserIdAsync(int userId)
+        {
+            return await _context.Set<Employee>()
+                             .Include(e => e.User)
+                             .FirstOrDefaultAsync(e => e.UserID == userId);
+        }
     }
 }

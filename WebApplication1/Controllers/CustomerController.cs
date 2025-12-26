@@ -126,5 +126,20 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
+
+        [HttpGet("user/{userId}")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
+        public async Task<IActionResult> GetByUserId(int userId)
+        {
+            var customer = await _service.GetCustomerByUserIdAsync(userId);
+            if (customer == null)
+                return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
+            
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<CustomerResponseDto>(customer);
+            var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", responseDtos);
+
+            return Ok(response);
+        }
     }
 }

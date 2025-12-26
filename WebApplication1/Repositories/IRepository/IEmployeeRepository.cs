@@ -16,5 +16,6 @@ namespace WebApplication1.Repositories.IRepository
 
         //Custom Query Operations
         Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? positionId, string? searchKey = null);
+        Task<Employee?> GetByUserIdAsync(int userId);
     }
 }

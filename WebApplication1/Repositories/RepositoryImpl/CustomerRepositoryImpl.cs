@@ -25,7 +25,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<IEnumerable<Customer>> GetAllWithUserDeailsAsync() =>
             await _context.Customers
                     .Include(cu => cu.User)
-                    .ToListAsync();            
+                    .ToListAsync();
 
         public async Task<Customer?> GetByIdAsync(int id) =>
             await _context.Customers.FindAsync(id);
@@ -41,7 +41,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Customer?> UpdateAsync(int id, Customer customer)
         {
             var existing = await _context.Customers.FindAsync(id);
-            if (existing == null) 
+            if (existing == null)
                 return null;
 
             existing.CustomerName = customer.CustomerName;
@@ -49,7 +49,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             existing.Address = customer.Address;
 
             _context.Customers.Update(existing);
-            return existing; 
+            return existing;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -100,7 +100,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             return query;
         }
-        
+
         public async Task<bool> ExistsByPhoneNoAsync(string phoneNo)
         {
             return await _context.Customers.AnyAsync(cu => cu.PhoneNo == phoneNo);
@@ -109,6 +109,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<bool> ExistsByPhoneNoAsync(string phoneNo, int excludeId)
         {
             return await _context.Customers.AnyAsync(cu => cu.PhoneNo == phoneNo && cu.CustomerID != excludeId);
+        }
+
+        public async Task<Customer?> GetByUserIdAsync(int userId)
+        {
+            return await _context.Set<Customer>()
+                 .Include(e => e.User)
+                 .FirstOrDefaultAsync(e => e.UserID == userId);
         }
     }
 }

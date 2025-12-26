@@ -82,7 +82,7 @@ namespace WebApplication1.Controllers
                 // RequestDto -> Model
                 var employee = _mapper.Map<Employee>(employeeUpdateDto);
                 var updated = await _service.UpdateEmployeeWithSaveAsync(id, employee);
-                
+
                 var responseDto = _mapper.Map<EmployeeResponseDto>(updated);
                 var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee updated successfully", responseDto);
                 return Ok(response);
@@ -123,6 +123,21 @@ namespace WebApplication1.Controllers
             {
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
+        }
+
+        [HttpGet("user/{userId}")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        public async Task<IActionResult> GetByUserId(int userId)
+        {
+            var employee = await _service.GetEmployeeByUserIdAsync(userId);
+            if (employee == null)
+                return NotFound(new ApiResponseDto<string>(404, "Employee not found"));
+
+            // Model -> ResponseDto
+            var responseDtos = _mapper.Map<EmployeeResponseDto>(employee);
+            var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee retrieved successfully", responseDtos);
+
+            return Ok(response);
         }
     }
 }

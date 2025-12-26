@@ -71,5 +71,8 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, searchKey);
         }
+
+        public async Task<Customer?> GetCustomerByUserIdAsync(int userId) =>
+            await _repository.GetByUserIdAsync(userId);
     }
 }
