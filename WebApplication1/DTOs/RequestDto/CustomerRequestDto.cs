@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using WebApplication1.DTOs.RequestDto.Auth;
 
 namespace WebApplication1.DTOs.RequestDto
 {
@@ -18,6 +19,7 @@ namespace WebApplication1.DTOs.RequestDto
         public string Address { get; set; } = string.Empty;
 
         //FK
-        public int UserID { get; set; }
+        [Required(ErrorMessage = "User info is required")]
+        public RegisterRequestDto User { get; set; } = new RegisterRequestDto();
     }
 }

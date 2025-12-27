@@ -59,7 +59,7 @@ namespace WebApplication1.Services.ServiceImpl
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, "Failed to create customer order.");
+                _logger.LogError(ex, "Failed to create employee.");
                 throw;
             }
         }

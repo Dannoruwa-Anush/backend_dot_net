@@ -9,8 +9,10 @@ namespace WebApplication1.Services.IService
         Task<IEnumerable<Customer>> GetAllCustomersAsync();
         Task<Customer?> GetCustomerByIdAsync(int id);
 
+        //Multiple Repository Operations (transactional)
+        Task<Customer> CreateCustomerWithTransactionAsync(Customer customer);
+
         //Single Repository Operations (save immediately)
-        Task<Customer> AddCustomerWithSaveAsync(Customer customer);
         Task<Customer> UpdateCustomerWithSaveAsync(int id, Customer customer);
 
         //Custom Query Operations

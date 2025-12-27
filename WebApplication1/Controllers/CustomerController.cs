@@ -51,7 +51,7 @@ namespace WebApplication1.Controllers
             var customer = await _service.GetCustomerByIdAsync(id);
             if (customer == null)
                 return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
-            
+
             // Model -> ResponseDto
             var responseDtos = _mapper.Map<CustomerResponseDto>(customer);
             var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", responseDtos);
@@ -60,18 +60,33 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Customer")] // JWT is required
+        [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> Create([FromBody] CustomerRequestDto customerCreateDto)
         {
-            // RequestDto -> Model
-            var customer = _mapper.Map<Customer>(customerCreateDto);
-            var created = await _service.AddCustomerWithSaveAsync(customer);
+            try
+            {
+                // RequestDto -> Model
+                var customer = _mapper.Map<Customer>(customerCreateDto);
+                var created = await _service.CreateCustomerWithTransactionAsync(customer);
 
-            // Model -> ResponseDto
-            var responseDto = _mapper.Map<CustomerResponseDto>(created);
-            var response = new ApiResponseDto<CustomerResponseDto>(201, "Customer created successfully", responseDto);
+                // Model -> ResponseDto
+                var responseDto = _mapper.Map<CustomerResponseDto>(created);
+                var response = new ApiResponseDto<CustomerResponseDto>(201, "Customer created successfully", responseDto);
 
-            return CreatedAtAction(nameof(GetById), new { id = responseDto.CustomerID}, response);
+                return CreatedAtAction(nameof(GetById), new { id = responseDto.CustomerID }, response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Customer with the given email already exists"));
+
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
         }
 
         [HttpPut("{id}")]
@@ -134,7 +149,7 @@ namespace WebApplication1.Controllers
             var customer = await _service.GetCustomerByUserIdAsync(userId);
             if (customer == null)
                 return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
-            
+
             // Model -> ResponseDto
             var responseDtos = _mapper.Map<CustomerResponseDto>(customer);
             var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", responseDtos);

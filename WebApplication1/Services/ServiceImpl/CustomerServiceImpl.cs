@@ -18,9 +18,9 @@ namespace WebApplication1.Services.ServiceImpl
         public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
-            _repository     = repository;
-            _unitOfWork     = unitOfWork;
-            _logger         = logger;
+            _repository = repository;
+            _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -31,17 +31,37 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Customer?> GetCustomerByIdAsync(int id) =>
             await _repository.GetWithUserDetailsByIdAsync(id);
 
-        public async Task<Customer> AddCustomerWithSaveAsync(Customer customer)
+        public async Task<Customer> CreateCustomerWithTransactionAsync(Customer customer)
         {
-            var duplicate = await _repository.ExistsByPhoneNoAsync(customer.PhoneNo);
-            if (duplicate)
-                throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // Trim
+                customer.User.Email = customer.User.Email.Trim().ToLower();
+                customer.User.Password = customer.User.Password.Trim();
 
-            await _repository.AddAsync(customer);
-            await _unitOfWork.SaveChangesAsync();
+                var duplicate = await _repository.ExistsByPhoneNoAsync(customer.PhoneNo);
+                if (duplicate)
+                    throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
 
-            _logger.LogInformation("Customer created: Id={Id}, PhoneNo={PhoneNo}", customer.CustomerID, customer.PhoneNo);
-            return customer;
+                // Hash only if not already hashed
+                if (!customer.User.Password.StartsWith("$2a$") && !customer.User.Password.StartsWith("$2b$"))
+                {
+                    customer.User.Password = BCrypt.Net.BCrypt.HashPassword(customer.User.Password);
+                }
+
+                await _repository.AddAsync(customer);
+                await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Customer created: Id={Id}, PhoneNo={PhoneNo}", customer.CustomerID, customer.PhoneNo);
+                return customer;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Failed to create customer.");
+                throw;
+            }
         }
 
         public async Task<Customer> UpdateCustomerWithSaveAsync(int id, Customer customer)
