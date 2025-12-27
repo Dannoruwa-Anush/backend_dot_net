@@ -9,8 +9,10 @@ namespace WebApplication1.Services.IService
         Task<IEnumerable<Employee>> GetAllEmployeesAsync();
         Task<Employee?> GetEmployeeByIdAsync(int id);
 
+        //Multiple Repository Operations (transactional)
+        Task<Employee> CreateEmployeeWithTransactionAsync(Employee employee);
+
         //Single Repository Operations (save immediately)
-        Task<Employee> AddEmployeeWithSaveAsync(Employee employee);
         Task<Employee> UpdateEmployeeWithSaveAsync(int id, Employee employee);
 
         //Custom Query Operations

@@ -33,12 +33,12 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         //Register
         public async Task<User> RegisterUserWithSaveAsync(User user)
         {
+            // Trim
+            user.Email = user.Email.Trim().ToLower();
+            user.Password = user.Password.Trim();
+
             if (await _repository.EmailExistsAsync(user.Email))
                 throw new Exception($"User with email '{user.Email}' already exists.");
-
-            // Trim
-            user.Email = user.Email.Trim();
-            user.Password = user.Password.Trim();
 
             // Hash only if not already hashed
             if (!user.Password.StartsWith("$2a$") && !user.Password.StartsWith("$2b$"))

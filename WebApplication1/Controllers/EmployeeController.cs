@@ -63,14 +63,30 @@ namespace WebApplication1.Controllers
         [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Create([FromBody] EmployeeRequestDto employeeCreateDto)
         {
-            // RequestDto -> Model
-            var employee = _mapper.Map<Employee>(employeeCreateDto);
-            var created = await _service.AddEmployeeWithSaveAsync(employee);
+            try
+            {
+                // RequestDto -> Model
+                var employee = _mapper.Map<Employee>(employeeCreateDto);
+                var created = await _service.CreateEmployeeWithTransactionAsync(employee);
 
-            var responseDto = _mapper.Map<EmployeeResponseDto>(created);
-            var response = new ApiResponseDto<EmployeeResponseDto>(201, "Employee created successfully", responseDto);
+                // Model -> ResponseDto
+                var responseDto = _mapper.Map<EmployeeResponseDto>(created);
+                var response = new ApiResponseDto<EmployeeResponseDto>(201, "Employee created successfully", responseDto);
 
-            return CreatedAtAction(nameof(GetById), new { id = responseDto.EmployeeID }, response);
+                return CreatedAtAction(nameof(GetById), new { id = responseDto.EmployeeID }, response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Employee with the given email already exists"));
+
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
         }
 
         [HttpPut("{id}")]

@@ -9,16 +9,18 @@ namespace WebApplication1.Services.ServiceImpl
     public class EmployeeServiceImpl : IEmployeeService
     {
         private readonly IEmployeeRepository _repository;
+        private readonly IUserRepository _userRepository;
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
         private readonly ILogger<EmployeeServiceImpl> _logger;
 
         // Constructor
-        public EmployeeServiceImpl(IEmployeeRepository repository, IAppUnitOfWork unitOfWork, ILogger<EmployeeServiceImpl> logger)
+        public EmployeeServiceImpl(IEmployeeRepository repository, IUserRepository userRepository, IAppUnitOfWork unitOfWork, ILogger<EmployeeServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -29,14 +31,37 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Employee?> GetEmployeeByIdAsync(int id) =>
             await _repository.GetWithUserDetailsByIdAsync(id);
-        
-        public async Task<Employee> AddEmployeeWithSaveAsync(Employee employee)
-        {
-            await _repository.AddAsync(employee);
-            await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Employee created: Id={Id}, EmploeeName={Name}", employee.EmployeeID, employee.EmployeeName);
-            return employee;
+        public async Task<Employee> CreateEmployeeWithTransactionAsync(Employee employee)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // Trim
+                employee.User.Email = employee.User.Email.Trim().ToLower();
+                employee.User.Password = employee.User.Password.Trim();
+
+                if (await _userRepository.EmailExistsAsync(employee.User.Email))
+                    throw new Exception($"User with email '{employee.User.Email}' already exists.");
+
+                // Hash only if not already hashed
+                if (!employee.User.Password.StartsWith("$2a$") && !employee.User.Password.StartsWith("$2b$"))
+                {
+                    employee.User.Password = BCrypt.Net.BCrypt.HashPassword(employee.User.Password);
+                }
+
+                await _repository.AddAsync(employee);
+                await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Employee created: Id={Id}, EmploeeName={Name}", employee.EmployeeID, employee.EmployeeName);
+                return employee;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Failed to create customer order.");
+                throw;
+            }
         }
 
         public async Task<Employee> UpdateEmployeeWithSaveAsync(int id, Employee employee)
@@ -53,7 +78,7 @@ namespace WebApplication1.Services.ServiceImpl
                 _logger.LogInformation("Employee updated: Id={Id}, EmployeeName={Name}", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
                 return updatedEmployee;
             }
-            
+
             throw new Exception("Employee update failed.");
         }
 
