@@ -12,6 +12,6 @@ namespace WebApplication1.DTOs.ResponseDto
         public string Position { get; set; } = string.Empty;
 
         // Include simplified info about FK: User
-        public required UserResponseDto UserResponseDto { get; set; }
+        public required UserResponseDto User { get; set; }
     }
 }

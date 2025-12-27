@@ -10,7 +10,7 @@ namespace WebApplication1.AutoMapperProfiles
         public EmployeeAutoMappingProfile()
         {
             CreateMap<Employee, EmployeeResponseDto>()
-                .ForMember(dest => dest.UserResponseDto, opt => opt.MapFrom(src => src.User));
+                .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User));
 
             CreateMap<EmployeeRequestDto, Employee>();
         }
