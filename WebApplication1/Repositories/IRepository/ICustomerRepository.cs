@@ -11,7 +11,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<Customer?> GetByIdAsync(int id);
         Task<Customer?> GetWithUserDetailsByIdAsync(int id);
         Task AddAsync(Customer customer);
-        Task<Customer?> UpdateAsync(int id, Customer customer);
+        Task<Customer?> UpdateProfileAsync(int id, Customer customer);
         Task<bool> DeleteAsync(int id);
 
         //Custom Query Operations

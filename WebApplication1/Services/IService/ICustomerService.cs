@@ -13,7 +13,7 @@ namespace WebApplication1.Services.IService
         Task<Customer> CreateCustomerWithTransactionAsync(Customer customer);
 
         //Single Repository Operations (save immediately)
-        Task<Customer> UpdateCustomerWithSaveAsync(int id, Customer customer);
+        Task<Customer> UpdateCustomerProfileWithSaveAsync(int id, Customer customer);
 
         //Custom Query Operations
         Task<PaginationResultDto<Customer>> GetAllWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);

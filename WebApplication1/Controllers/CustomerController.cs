@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
+using WebApplication1.DTOs.RequestDto.UserProfileUpdate;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -89,15 +90,15 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Admin, Customer")] // JWT is required
-        public async Task<IActionResult> Update(int id, [FromBody] CustomerRequestDto customerUpdateDto)
+        [HttpPut("profile/{id}")]
+        [Authorize(Roles = "Customer")] // JWT is required
+        public async Task<IActionResult> UpdateProfile(int id, [FromBody] CustomerProfileUpdateRequestDto customerProfileUpdateDto)
         {
             try
             {
                 // RequestDto -> Model
-                var customer = _mapper.Map<Customer>(customerUpdateDto);
-                var updated = await _service.UpdateCustomerWithSaveAsync(id, customer);
+                var customer = _mapper.Map<Customer>(customerProfileUpdateDto);
+                var updated = await _service.UpdateCustomerProfileWithSaveAsync(id, customer);
 
                 // Model -> ResponseDto
                 var responseDto = _mapper.Map<CustomerResponseDto>(updated);

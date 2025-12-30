@@ -52,6 +52,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return existing;
         }
 
+        public async Task<Employee?> UpdateProfileAsync(int id, Employee employee)
+        {
+            var existing = await _context.Employees.FindAsync(id);
+            if (existing == null)
+                return null;
+
+            existing.EmployeeName = employee.EmployeeName;  
+
+            _context.Employees.Update(existing);
+            return existing;
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var employee = await _context.Employees.FindAsync(id);

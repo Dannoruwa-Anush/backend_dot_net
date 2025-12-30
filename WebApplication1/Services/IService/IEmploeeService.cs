@@ -14,6 +14,7 @@ namespace WebApplication1.Services.IService
 
         //Single Repository Operations (save immediately)
         Task<Employee> UpdateEmployeeWithSaveAsync(int id, Employee employee);
+        Task<Employee> UpdateEmployeeProfileWithSaveAsync(int id, Employee employee);
 
         //Custom Query Operations
         Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? positionId, string? searchKey = null);

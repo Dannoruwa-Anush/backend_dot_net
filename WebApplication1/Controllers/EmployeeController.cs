@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto;
+using WebApplication1.DTOs.RequestDto.UserProfileUpdate;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -101,6 +102,34 @@ namespace WebApplication1.Controllers
 
                 var responseDto = _mapper.Map<EmployeeResponseDto>(updated);
                 var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee updated successfully", responseDto);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Employee not found"));
+
+                if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new ApiResponseDto<string>(400, "Employee with the given name already exists"));
+
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
+        }
+
+        [HttpPut("profile/{id}")]
+        [Authorize(Roles = "Employee")] // JWT is required
+        public async Task<IActionResult> UpdateProfile(int id, [FromBody] EmployeeProfileUpdateRequestDto employeeProfileUpdateDto)
+        {
+            try
+            {
+                // RequestDto -> Model
+                var employee = _mapper.Map<Employee>(employeeProfileUpdateDto);
+                var updated = await _service.UpdateEmployeeProfileWithSaveAsync(id, employee);
+
+                var responseDto = _mapper.Map<EmployeeResponseDto>(updated);
+                var response = new ApiResponseDto<EmployeeResponseDto>(200, "Employee profile updated successfully", responseDto);
                 return Ok(response);
             }
             catch (Exception ex)

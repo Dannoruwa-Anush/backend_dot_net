@@ -82,6 +82,24 @@ namespace WebApplication1.Services.ServiceImpl
             throw new Exception("Employee update failed.");
         }
 
+        public async Task<Employee> UpdateEmployeeProfileWithSaveAsync(int id, Employee employee)
+        {
+            var existingEmployee = await _repository.GetByIdAsync(id);
+            if (existingEmployee == null)
+                throw new Exception("Employee not found");
+
+            var updatedEmployee = await _repository.UpdateProfileAsync(id, employee);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (updatedEmployee != null)
+            {
+                _logger.LogInformation("Employee profile updated: Id={Id}, EmployeeName={Name}", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
+                return updatedEmployee;
+            }
+
+            throw new Exception("Employee profile update failed.");
+        }
+
         //Custom Query Operations
         public async Task<PaginationResultDto<Employee>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? positionId, string? searchKey = null)
         {

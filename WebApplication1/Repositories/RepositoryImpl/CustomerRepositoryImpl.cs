@@ -38,7 +38,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task AddAsync(Customer customer) =>
             await _context.Customers.AddAsync(customer);
 
-        public async Task<Customer?> UpdateAsync(int id, Customer customer)
+        public async Task<Customer?> UpdateProfileAsync(int id, Customer customer)
         {
             var existing = await _context.Customers.FindAsync(id);
             if (existing == null)

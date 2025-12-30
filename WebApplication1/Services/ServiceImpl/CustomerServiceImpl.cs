@@ -64,7 +64,7 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        public async Task<Customer> UpdateCustomerWithSaveAsync(int id, Customer customer)
+        public async Task<Customer> UpdateCustomerProfileWithSaveAsync(int id, Customer customer)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -74,16 +74,16 @@ namespace WebApplication1.Services.ServiceImpl
             if (duplicate)
                 throw new Exception($"Customer with phoneNo '{customer.PhoneNo}' already exists.");
 
-            var updatedCustomer = await _repository.UpdateAsync(id, customer);
+            var updatedCustomer = await _repository.UpdateProfileAsync(id, customer);
             await _unitOfWork.SaveChangesAsync();
 
             if (updatedCustomer != null)
             {
-                _logger.LogInformation("Customer updated: Id={Id}, PhoneNo={PhoneNo}", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
+                _logger.LogInformation("Customer profile updated: Id={Id}, PhoneNo={PhoneNo}", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
                 return updatedCustomer;
             }
 
-            throw new Exception("Customer update failed.");
+            throw new Exception("Customer profile update failed.");
         }
 
         //Custom Query Operations

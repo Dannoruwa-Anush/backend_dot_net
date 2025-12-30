@@ -12,6 +12,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<Employee?> GetWithUserDetailsByIdAsync(int id);
         Task AddAsync(Employee employee);
         Task<Employee?> UpdateAsync(int id, Employee employee);
+        Task<Employee?> UpdateProfileAsync(int id, Employee employee);
         Task<bool> DeleteAsync(int id);
 
         //Custom Query Operations
