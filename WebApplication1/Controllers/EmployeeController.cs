@@ -92,7 +92,7 @@ namespace WebApplication1.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")] // JWT is required
-        public async Task<IActionResult> Update(int id, [FromBody] EmployeeRequestDto employeeUpdateDto)
+        public async Task<IActionResult> Update(int id, [FromBody] EmployeeUpdateRequestDto employeeUpdateDto)
         {
             try
             {

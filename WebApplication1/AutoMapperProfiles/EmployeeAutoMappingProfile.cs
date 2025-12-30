@@ -16,6 +16,8 @@ namespace WebApplication1.AutoMapperProfiles
             CreateMap<EmployeeRequestDto, Employee>();
 
             CreateMap<EmployeeProfileUpdateRequestDto, Employee>();
+            
+            CreateMap<EmployeeUpdateRequestDto, Employee>();
         }
     }
 }
