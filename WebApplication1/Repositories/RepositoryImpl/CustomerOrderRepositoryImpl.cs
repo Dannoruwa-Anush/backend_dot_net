@@ -81,7 +81,10 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             // Start query
             var query = _context.CustomerOrders
-                .Include(o => o.Customer) // Include customer for email/phone search
+                .Include(o => o.Customer)
+                    .ThenInclude(ou => ou.User)
+                .Include(o => o.CustomerOrderElectronicItems)
+                    .ThenInclude(oi => oi.ElectronicItem)
                 .AsQueryable();
 
             // Apply filters
