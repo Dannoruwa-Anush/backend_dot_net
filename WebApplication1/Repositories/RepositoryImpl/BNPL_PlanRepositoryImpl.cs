@@ -48,6 +48,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             var query = _context.BNPL_PLANs
                         .Include(bpl => bpl.BNPL_PlanType)
+                        .Include(bpl => bpl.CustomerOrder)
                         .AsNoTracking()
                         .AsQueryable();
 
