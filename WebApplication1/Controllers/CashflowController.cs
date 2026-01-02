@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
@@ -27,6 +28,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
             var cashflow = await _service.GetCashflowByIdAsync(id);
@@ -40,17 +42,20 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet]
+        [HttpGet("paged")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? cashflowStatusId = null, [FromQuery] string? searchKey = null)
         {
             try
             {
-                var result = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
 
-                var response = new ApiResponseDto<PaginationResultDto<Cashflow>>(
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<CashflowResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<CashflowResponseDto>>(
                     200,
                     "Cashflow records retrieved successfully",
-                    result
+                    paginationResponse
                 );
 
                 return Ok(response);
