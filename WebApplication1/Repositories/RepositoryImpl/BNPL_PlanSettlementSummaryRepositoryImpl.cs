@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 
@@ -69,6 +70,58 @@ namespace WebApplication1.Repositories.RepositoryImpl
             {
                 snapshot.IsLatest = false;
             }
+        }
+
+        //Custom Query Operations
+        public async Task<PaginationResultDto<BNPL_PlanSettlementSummary>> GetAllLatestSnapshotWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
+        {
+            var query = _context.BNPL_PlanSettlementSummaries
+                        .Include(s => s.BNPL_PLAN)
+                            .ThenInclude(so => so!.CustomerOrder)
+                            .ThenInclude(sc => sc!.Customer)
+                        .Where(s => s.IsLatest)
+                        .AsNoTracking()
+                        .AsQueryable();
+
+            // Apply filters from helper
+            query = ApplySearch(query, searchKey);
+
+            query = query.OrderByDescending(c => c.CreatedAt);
+
+            // Total count after filters
+            var totalCount = await query.CountAsync();
+
+            // Pagination
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Return paginated result
+            return new PaginationResultDto<BNPL_PlanSettlementSummary>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
+        // Helper method: Search filter (email, phone, order date)
+        private IQueryable<BNPL_PlanSettlementSummary> ApplySearch(IQueryable<BNPL_PlanSettlementSummary> query, string? searchKey)
+        {
+            if (!string.IsNullOrWhiteSpace(searchKey))
+            {
+                searchKey = searchKey.Trim().ToLower();
+
+                query = query.Where(p =>
+                    p.BNPL_PLAN!.CustomerOrder!.OrderID.ToString().Contains(searchKey) ||
+                    p.BNPL_PLAN!.BNPL_PlanType!.Bnpl_PlanTypeID.ToString().Contains(searchKey) ||
+                    (p.BNPL_PLAN!.CustomerOrder!.Customer.User.Email != null && p.BNPL_PLAN!.CustomerOrder!.Customer.User.Email.ToLower().Contains(searchKey)) ||
+                    (p.BNPL_PLAN!.CustomerOrder!.Customer.PhoneNo != null && p.BNPL_PLAN!.CustomerOrder!.Customer.PhoneNo.ToLower().Contains(searchKey))
+                );
+            }
+            return query;
         }
     }
 }

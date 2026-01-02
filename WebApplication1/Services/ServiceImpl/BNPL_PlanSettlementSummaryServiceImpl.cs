@@ -1,5 +1,6 @@
 using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
@@ -290,5 +291,12 @@ namespace WebApplication1.Services.ServiceImpl
             latestSnapshot.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Obsolete;
         }
         //-----------------[End: Settlement Generation]---------------
+
+        
+        //Custom Query Operations
+        public async Task<PaginationResultDto<BNPL_PlanSettlementSummary>> GetAllLatestSnapshotWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
+        {
+            return await _repository.GetAllLatestSnapshotWithPaginationAsync(pageNumber, pageSize, searchKey);
+        }
     }
 }

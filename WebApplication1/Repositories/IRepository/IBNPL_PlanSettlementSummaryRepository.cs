@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 
 namespace WebApplication1.Repositories.IRepository
@@ -10,5 +11,8 @@ namespace WebApplication1.Repositories.IRepository
         Task<BNPL_PlanSettlementSummary?> GetLatestSnapshotWithOrderDetailsAsync(int orderId);
         Task MarkPreviousSnapshotsAsNotLatestAsync(int planId);
         Task MarkPreviousSnapshotsAsNotLatestBatchAsync(List<int> planIds);
+
+        //Custom Query Operations
+        Task<PaginationResultDto<BNPL_PlanSettlementSummary>> GetAllLatestSnapshotWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
     }
 }

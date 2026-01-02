@@ -10,7 +10,6 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class BNPL_PlanSettlementSummaryController : ControllerBase
     {
 
@@ -26,7 +25,8 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet("{id}")]
+        [HttpGet("{orderId}")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
         public async Task<IActionResult> GetByOrderId(int orderId)
         {
             var bnpl_snapshot = await _service.GetLatestSnapshotWithOrderDetailsAsync(orderId);
@@ -40,8 +40,33 @@ namespace WebApplication1.Controllers
             return Ok(response);
         }
 
+        //Custom Query Operations
+        [HttpGet("paged")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        public async Task<IActionResult> GetAllLatestSnapshotWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
+        {
+            try
+            {
+                var pageResultDto = await _service.GetAllLatestSnapshotWithPaginationAsync(pageNumber, pageSize, searchKey);
+                // Model -> ResponseDto   
+                var paginationResponse = _mapper.Map<PaginationResultDto<BNPL_PlanSettlementSummaryResponseDto>>(pageResultDto);
+                var response = new ApiResponseDto<PaginationResultDto<BNPL_PlanSettlementSummaryResponseDto>>(
+                    200,
+                    "Bnpl latest snapshots retrieved successfully with pagination",
+                    paginationResponse
+                );
+
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
+        }
+
         //Installment Payment Simulator
         [HttpPost("bnpl-snapshot-payment-simulate")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
         public async Task<IActionResult> SimulateBnplPlanSettlement([FromBody] BnplSnapshotPayingSimulationRequestDto request)
         {
             try
