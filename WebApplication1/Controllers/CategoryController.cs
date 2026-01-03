@@ -6,6 +6,7 @@ using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Controllers
 {
@@ -60,7 +61,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.ManagerOnly)] // JWT is required
         public async Task<IActionResult> Create([FromBody] CategoryRequestDto categoryCreateDto)
         {
             try
@@ -86,7 +87,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.ManagerOnly)] // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] CategoryRequestDto categoryUpdateDto)
         {
             try
@@ -115,7 +116,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOnly)]  // JWT is required
         public async Task<IActionResult> Delete(int id)
         {
             try
