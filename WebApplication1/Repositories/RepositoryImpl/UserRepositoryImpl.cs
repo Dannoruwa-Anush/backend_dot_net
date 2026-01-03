@@ -27,6 +27,9 @@ namespace WebApplication1.Repositories.RepositoryImpl.Auth
 
 
         public async Task<User?> GetByEmailAsync(string email) =>
-            await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            await _context.Users
+            .Include(u => u.Customer)
+            .Include(u => u.Employee)
+            .FirstOrDefaultAsync(u => u.Email == email);
     }
 }

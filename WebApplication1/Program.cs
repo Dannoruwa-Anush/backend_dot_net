@@ -160,6 +160,27 @@ builder.Services.AddAuthentication(options =>
     }
 );
 
+builder.Services
+    .AddAuthorizationBuilder()
+    .AddPolicy(AuthorizationPolicies.AdminOnly, policy =>
+        policy.RequireRole("Admin"))
+    .AddPolicy(AuthorizationPolicies.CustomerOnly, policy =>
+        policy.RequireRole("Customer"))
+    .AddPolicy(AuthorizationPolicies.AllEmployeesOnly, policy =>
+        policy.RequireRole("Employee"))
+    .AddPolicy(AuthorizationPolicies.ManagerOnly, policy =>
+        policy.RequireRole("Employee")
+              .RequireClaim("EmployeePosition", "Manager"))
+    .AddPolicy(AuthorizationPolicies.CashierOnly, policy =>
+        policy.RequireRole("Employee")
+              .RequireClaim("EmployeePosition", "Cashier"))
+    .AddPolicy(AuthorizationPolicies.CashierOrCustomer, policy =>
+        policy.RequireAssertion(context =>
+            (context.User.IsInRole("Employee") &&
+             context.User.HasClaim("EmployeePosition", "Cashier")) ||
+            context.User.IsInRole("Customer")
+        ));
+
 // -------------[CORS for Angular]--------------------
 builder.Services.AddCors(options =>
 {

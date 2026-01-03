@@ -7,6 +7,7 @@ using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService.Auth;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Services.ServiceImpl.Auth
@@ -75,6 +76,15 @@ namespace WebApplication1.Services.ServiceImpl.Auth
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
+
+            //Employee Position
+            if (user.Role == UserRoleEnum.Employee && user.Employee != null)
+            {
+                claims.Add(new Claim(
+                    "EmployeePosition",
+                    user.Employee.Position.ToString()
+                ));
+            }
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
