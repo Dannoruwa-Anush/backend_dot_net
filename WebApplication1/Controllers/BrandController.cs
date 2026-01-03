@@ -60,7 +60,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = AuthorizationPolicies.ManagerOnly)] // JWT is required
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Create([FromBody] BrandRequestDto brandCreateDto)
         {
             try

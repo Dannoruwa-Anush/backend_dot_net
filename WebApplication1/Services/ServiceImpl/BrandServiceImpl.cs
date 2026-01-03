@@ -2,6 +2,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Auth;
 using WebApplication1.UOW.IUOW;
 
 namespace WebApplication1.Services.ServiceImpl
@@ -15,15 +16,17 @@ namespace WebApplication1.Services.ServiceImpl
 
         // logger: for auditing
         private readonly ILogger<BrandServiceImpl> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
         // Constructor
-        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
+        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger, ICurrentUserService currentUserService)
         {
             // Dependency injection
             _repository               = repository;
             _unitOfWork               = unitOfWork;
             _electronicItemRepository = electronicItemRepository;
             _logger                   = logger;
+            _currentUserService      = currentUserService;
         }
 
         //CRUD operations
@@ -42,7 +45,12 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(brand);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Brand created: Id={Id}, BrandName={Name}", brand.BrandID, brand.BrandName);
+            var user = _currentUserService.UserProfile; 
+            _logger.LogInformation(
+            "Brand created: Id={BrandId}, Name={BrandName} by UserID={UserId}, Email={Email}, Role={Role}, Position={Position}",
+            brand.BrandID, brand.BrandName, user.UserID, user.Email, user.Role, user.EmployeePosition
+        );
+
             return brand;
         }
 

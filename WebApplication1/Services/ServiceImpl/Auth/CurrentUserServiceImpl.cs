@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using WebApplication1.Services.IService.Auth;
+using WebApplication1.Utils.Records;
 
 namespace WebApplication1.Services.ServiceImpl.Auth
 {
@@ -30,5 +31,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         public string? Role => User?.FindFirst(ClaimTypes.Role)?.Value;
 
         public string? EmployeePosition => User?.FindFirst("EmployeePosition")?.Value;
+
+        public CurrentUserProfile UserProfile => new CurrentUserProfile(UserID, Email, Role, EmployeePosition);
     }
 }
