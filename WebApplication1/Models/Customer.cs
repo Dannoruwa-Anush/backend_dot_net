@@ -34,10 +34,10 @@ namespace WebApplication1.Models
         public required User User { get; set; }
         //******* [End: User (1) — Customer (1)] ******
 
-        //******* [Start: Customer (1) — CustomerOrder (M)] ****
+        //******* [Start: Customer (0..1) — CustomerOrder (M)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(CustomerOrder.Customer))]
         public ICollection<CustomerOrder> CustomerOrders { get; set; } = new List<CustomerOrder>();
-        //******* [End: Customer (1) — CustomerOrder (M)] ******
+        //******* [End: Customer (0..1) — CustomerOrder (M)] ******
     }
 }

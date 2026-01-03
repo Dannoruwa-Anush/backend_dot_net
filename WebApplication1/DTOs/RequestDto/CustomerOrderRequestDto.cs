@@ -9,6 +9,7 @@ namespace WebApplication1.DTOs.RequestDto
         public List<CustomerOrderElectronicItemRequestDto> CustomerOrderElectronicItems { get; set; } = new List<CustomerOrderElectronicItemRequestDto>();
     
         //FK
-        public int CustomerID { get; set; }
+        // CustomerID is nullable to support cashier's direct orders
+        public int? CustomerID { get; set; }
     }
 }

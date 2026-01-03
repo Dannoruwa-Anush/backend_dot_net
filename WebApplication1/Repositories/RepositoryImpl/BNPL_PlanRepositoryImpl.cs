@@ -99,7 +99,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 query = query.Where(p =>
                     p.OrderID.ToString().Contains(searchKey) ||
                     p.Bnpl_PlanTypeID.ToString().Contains(searchKey) ||
-                    (p.CustomerOrder!.Customer.User.Email != null && p.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey)) ||
+                    (p.CustomerOrder!.Customer!.User.Email != null && p.CustomerOrder.Customer.User.Email.ToLower().Contains(searchKey)) ||
                     (p.CustomerOrder.Customer.PhoneNo != null && p.CustomerOrder.Customer.PhoneNo.ToLower().Contains(searchKey))
                 );
             }

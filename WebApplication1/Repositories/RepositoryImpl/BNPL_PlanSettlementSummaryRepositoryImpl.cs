@@ -117,7 +117,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 query = query.Where(p =>
                     p.BNPL_PLAN!.CustomerOrder!.OrderID.ToString().Contains(searchKey) ||
                     p.BNPL_PLAN!.BNPL_PlanType!.Bnpl_PlanTypeID.ToString().Contains(searchKey) ||
-                    (p.BNPL_PLAN!.CustomerOrder!.Customer.User.Email != null && p.BNPL_PLAN!.CustomerOrder!.Customer.User.Email.ToLower().Contains(searchKey)) ||
+                    (p.BNPL_PLAN!.CustomerOrder!.Customer!.User.Email != null && p.BNPL_PLAN!.CustomerOrder!.Customer.User.Email.ToLower().Contains(searchKey)) ||
                     (p.BNPL_PLAN!.CustomerOrder!.Customer.PhoneNo != null && p.BNPL_PLAN!.CustomerOrder!.Customer.PhoneNo.ToLower().Contains(searchKey))
                 );
             }

@@ -51,7 +51,7 @@ namespace WebApplication1.Models
         //******* [End: BNPL_PlanType (1) — BNPL_PLAN (M)] ******
 
 
-        //******* [Start: CustomerOrder (1) — BNPL_PLAN (1)] ****
+        //******* [Start: CustomerOrder (1) — BNPL_PLAN (0..1)] ****
         //FK
         public int OrderID { get; set; }
 
@@ -59,7 +59,7 @@ namespace WebApplication1.Models
         [ForeignKey(nameof(OrderID))]
         [InverseProperty(nameof(CustomerOrder.BNPL_PLAN))]
         public CustomerOrder? CustomerOrder { get; set; }
-        //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
+        //******* [End: CustomerOrder (1) — BNPL_PLAN (0..1)] ******
 
 
         //******* [Start: BNPL_PLAN (1) — BNPL_Installment (M)] ****

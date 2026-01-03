@@ -52,7 +52,7 @@ namespace WebApplication1.Services.ServiceImpl
                     PdfPTable customerTable = new PdfPTable(1);
                     customerTable.DefaultCell.Border = Rectangle.NO_BORDER;
                     customerTable.AddCell(new Phrase("Customer", fontBold));
-                    customerTable.AddCell(new Phrase(customer.CustomerName, fontNormal));
+                    customerTable.AddCell(new Phrase(customer!.CustomerName, fontNormal));
                     customerTable.AddCell(new Phrase(customer.Address, fontNormal));
                     customerTable.AddCell(new Phrase(customer.PhoneNo, fontNormal));
                     doc.Add(customerTable);

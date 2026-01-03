@@ -23,7 +23,8 @@ namespace WebApplication1.DTOs.ResponseDto
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
         // Include simplified info about FK: Customer 
-        public required CustomerResponseDto CustomerResponseDto { get; set; }
+        // CustomerID is nullable to support cashier's direct orders
+        public CustomerResponseDto? CustomerResponseDto { get; set; }
 
         // Include simplified info about child items: CustomerOrderElectronicItem 
         public ICollection<CustomerOrderElectronicItemResponseDto> CustomerOrderElectronicItemResponseDto { get; set; } = new List<CustomerOrderElectronicItemResponseDto>();

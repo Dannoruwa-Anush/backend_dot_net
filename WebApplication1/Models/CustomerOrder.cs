@@ -48,15 +48,16 @@ namespace WebApplication1.Models
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 
-        //******* [Start: Customer (1) — CustomerOrder (M)] ****
+        //******* [Start: Customer (0..1) — CustomerOrder (M)] ****
         //FK
-        public int CustomerID { get; set; }
+        // CustomerID is nullable to support cashier's direct orders
+        public int? CustomerID { get; set; }
 
         // Many Side: Navigation property
         [ForeignKey(nameof(CustomerID))]
         [InverseProperty(nameof(Customer.CustomerOrders))]
-        public required Customer Customer { get; set; }
-        //******* [End: Customer (1) — CustomerOrder (M)] ******
+        public Customer? Customer { get; set; } //Nullable navigation property to allow cashier's direct orders
+        //******* [End: Customer (0..1) — CustomerOrder (M)] ******
 
 
         //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
@@ -66,12 +67,12 @@ namespace WebApplication1.Models
         //******* [End: CustomerOrder (1) — Cashflow (M)] ******
 
 
-        //******* [Start: CustomerOrder (1) — BNPL_PLAN (1)] ****
+        //******* [Start: CustomerOrder (1) — BNPL_PLAN (0..1)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(BNPL_PLAN.CustomerOrder))]
         public BNPL_PLAN? BNPL_PLAN { get; set; }
         //Nullable (?) : some orders are fully paid upfront, so they have no BNPL plan
-        //******* [End: CustomerOrder (1) — BNPL_PLAN (1)] ******
+        //******* [End: CustomerOrder (1) — BNPL_PLAN (0..1)] ******
 
         //******* [Start: CustomerOrderElectronicItem(M) —- CustomerOrder(1)] *******
         // One Side: Navigation property

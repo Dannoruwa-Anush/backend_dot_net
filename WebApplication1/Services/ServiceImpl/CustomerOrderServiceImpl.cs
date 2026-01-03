@@ -43,9 +43,6 @@ namespace WebApplication1.Services.ServiceImpl
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var customer = await _customerService.GetCustomerByIdAsync(customerOrder.CustomerID)
-                    ?? throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
-
                 var itemIds = customerOrder.CustomerOrderElectronicItems.Select(i => i.E_ItemID).ToList();
                 if (itemIds.Count != itemIds.Distinct().Count())
                     throw new InvalidOperationException("Order contains duplicate electronic items.");
@@ -77,10 +74,26 @@ namespace WebApplication1.Services.ServiceImpl
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
                 customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Pending;
 
+                if (customerOrder.CustomerID.HasValue)
+                {
+                    // Order placed by customer
+
+                    var customer = await _customerService.GetCustomerByIdAsync(customerOrder.CustomerID.Value)
+                        ?? throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
+
+                    _logger.LogInformation("Customer order created for customer: Id={CustomerId}, OrderId={OrderId}, TotalAmount={Total}", customerOrder.CustomerID, customerOrder.OrderID, totalAmount);
+                }
+                else
+                {
+                    // Order placed by cashier
+
+                    _logger.LogInformation("Direct order created: OrderId={OrderId}, TotalAmount={Total}",
+                        customerOrder.OrderID, totalAmount);
+                }
+
                 await _repository.AddAsync(customerOrder);
                 await _unitOfWork.CommitAsync();
 
-                _logger.LogInformation("Customer order created: Id={Id}, TotalAmount={Total}", customerOrder.OrderID, totalAmount);
                 return customerOrder;
             }
             catch (Exception ex)

@@ -27,7 +27,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<IEnumerable<CustomerOrder>> GetAllWithCustomerDetailsAsync() =>
             await _context.CustomerOrders
                 .Include(o => o.Customer)
-                    .ThenInclude(ou => ou.User)
+                    .ThenInclude(ou => ou!.User)
                 .ToListAsync();
 
         public async Task<CustomerOrder?> GetByIdAsync(int id) =>
@@ -36,7 +36,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<CustomerOrder?> GetWithCustomerOrderDetailsByIdAsync(int id) =>
             await _context.CustomerOrders
                 .Include(o => o.Customer)
-                    .ThenInclude(ou => ou.User)
+                    .ThenInclude(ou => ou!.User)
                 .Include(o => o.CustomerOrderElectronicItems)
                     .ThenInclude(oi => oi.ElectronicItem)
                 .Include(o => o.BNPL_PLAN!)
@@ -82,7 +82,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             // Start query
             var query = _context.CustomerOrders
                 .Include(o => o.Customer)
-                    .ThenInclude(ou => ou.User)
+                    .ThenInclude(ou => ou!.User)
                 .Include(o => o.CustomerOrderElectronicItems)
                     .ThenInclude(oi => oi.ElectronicItem)
                 .AsQueryable();
@@ -141,7 +141,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             {
                 searchKey = searchKey.Trim().ToLower();
                 query = query.Where(o =>
-                    (o.Customer.User.Email != null && o.Customer.User.Email.ToLower().Contains(searchKey)) ||
+                    (o.Customer!.User.Email != null && o.Customer.User.Email.ToLower().Contains(searchKey)) ||
                     (o.Customer.PhoneNo != null && o.Customer.PhoneNo.ToLower().Contains(searchKey)) ||
                     o.OrderDate.ToString("yyyy-MM-dd").Contains(searchKey)
                 );

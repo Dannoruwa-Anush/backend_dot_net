@@ -130,6 +130,7 @@ namespace WebApplication1.Data
                 entity.HasMany(c => c.CustomerOrders)
                       .WithOne(o => o.Customer)
                       .HasForeignKey(o => o.CustomerID)
+                      .IsRequired(false)
                       .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related CustomerOrders exist
             });
 
