@@ -6,7 +6,7 @@ using WebApplication1.Models.Base;
 namespace WebApplication1.Models
 {
     [Index(nameof(BrandName), IsUnique = true)] // Ensures uniqueness at DB level
-    public class Brand : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class Brand : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int BrandID { get; set; }

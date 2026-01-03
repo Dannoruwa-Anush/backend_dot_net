@@ -7,7 +7,7 @@ using WebApplication1.Utils.Project_Enums;
 namespace WebApplication1.Models
 {
     [Index(nameof(Bnpl_PlanID), nameof(InstallmentNo), IsUnique = true)]
-    public class BNPL_Installment : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class BNPL_Installment : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int InstallmentID { get; set; }

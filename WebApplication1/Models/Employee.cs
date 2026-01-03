@@ -6,7 +6,7 @@ using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class Employee : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class Employee : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int EmployeeID { get; set; }

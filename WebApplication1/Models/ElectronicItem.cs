@@ -6,7 +6,7 @@ using WebApplication1.Models.Base;
 namespace WebApplication1.Models
 {
     [Index(nameof(ElectronicItemName), IsUnique = true)]
-    public class ElectronicItem : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class ElectronicItem : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int ElectronicItemID { get; set; }

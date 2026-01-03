@@ -6,7 +6,7 @@ using WebApplication1.Models.Base;
 namespace WebApplication1.Models
 {
     [Index(nameof(CategoryName), IsUnique = true)]
-    public class Category : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class Category : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int CategoryID { get; set; }

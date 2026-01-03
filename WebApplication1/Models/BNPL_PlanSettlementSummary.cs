@@ -5,7 +5,7 @@ using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class BNPL_PlanSettlementSummary : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class BNPL_PlanSettlementSummary : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int SettlementID { get; set; }

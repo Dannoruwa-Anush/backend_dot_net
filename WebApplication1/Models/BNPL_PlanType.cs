@@ -6,7 +6,7 @@ using WebApplication1.Models.Base;
 namespace WebApplication1.Models
 {
     [Index(nameof(Bnpl_PlanTypeName), IsUnique = true)] // Ensures uniqueness at DB level
-    public class BNPL_PlanType : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class BNPL_PlanType : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int Bnpl_PlanTypeID { get; set; }

@@ -4,7 +4,7 @@ using WebApplication1.Models.Base;
 
 namespace WebApplication1.Models
 {
-    public class CustomerOrderElectronicItem : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class CustomerOrderElectronicItem : BaseModel //(In base model: Audit fields)
     {
         //This is joint table (CustomerOrder(M) - ElectronicItem(M))
 

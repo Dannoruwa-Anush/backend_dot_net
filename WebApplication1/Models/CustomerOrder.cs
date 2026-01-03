@@ -5,7 +5,7 @@ using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class CustomerOrder : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class CustomerOrder : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int OrderID { get; set; }

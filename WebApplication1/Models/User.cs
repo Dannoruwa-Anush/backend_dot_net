@@ -7,7 +7,7 @@ using WebApplication1.Utils.Project_Enums;
 namespace WebApplication1.Models
 {
     [Index(nameof(Email), IsUnique = true)]
-    public class User : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class User : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int UserID { get; set; }

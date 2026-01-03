@@ -5,7 +5,7 @@ using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Models
 {
-    public class Cashflow : BaseModel //(In base model: CreatedAt, UpdatedAt)
+    public class Cashflow : BaseModel //(In base model: Audit fields)
     {
         [Key]
         public int CashflowID { get; set; }
