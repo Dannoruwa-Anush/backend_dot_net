@@ -80,15 +80,19 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
 //--------------------[Unit of work DI]------------
 builder.Services.AddScoped<IAppUnitOfWork, AppUnitOfWorkImpl>();
 
+//--------------------[Http Context Accessor DI]------------
+builder.Services.AddHttpContextAccessor(); // Needed for CurrentUserService
+
 //--------------------[Services DI]-----------------
-builder.Services.AddScoped<IBrandService, BrandServiceImpl>()
-                .AddScoped<ICategoryService, CategoryServiceImpl>()
+builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
+                .AddScoped<ICurrentUserService, CurrentUserServiceImpl>()
 
                 .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IInvoiceService, InvoiceServiceImpl>()
 
+                .AddScoped<IBrandService, BrandServiceImpl>()
+                .AddScoped<ICategoryService, CategoryServiceImpl>()
                 .AddScoped<IElectronicItemService, ElectronicItemServiceImpl>()
-                .AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<IEmployeeService, EmployeeServiceImpl>()
                 .AddScoped<ICustomerService, CustomerServiceImpl>()
                 .AddScoped<ICustomerOrderService, CustomerOrderServiceImpl>()

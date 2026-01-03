@@ -25,6 +25,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
         // Constructor
         public AuthServiceImpl(IUserRepository repository, IAppUnitOfWork unitOfWork, IOptions<JwtSettings> jwtOptions, ILogger<AuthServiceImpl> logger)
         {
+            // Dependency injection
             _repository     = repository;
             _unitOfWork     = unitOfWork;
             _jwtSettings    = jwtOptions.Value;

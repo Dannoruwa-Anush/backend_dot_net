@@ -2,13 +2,21 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 using WebApplication1.Models.Base;
+using WebApplication1.Services.IService.Auth;
 using WebApplication1.Utils.Helpers;
 
 namespace WebApplication1.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        private readonly ICurrentUserService _currentUserService;
+
+        // Constructor
+        public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUserService) : base(options)
+        {
+            // Dependency injection
+            _currentUserService = currentUserService;
+        }
 
         //Tables in DB.
         public DbSet<Brand> Brands { get; set; }
@@ -23,7 +31,7 @@ namespace WebApplication1.Data
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
-        public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries{ get; set; }
+        public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries { get; set; }
         //---
 
         //-------- [Start: configure model] -----------
@@ -136,7 +144,7 @@ namespace WebApplication1.Data
                 entity.Property(o => o.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken();   
+                    .IsConcurrencyToken();
 
                 // (1) — (M) Cashflow
                 entity.HasMany(o => o.Cashflows)
@@ -175,7 +183,7 @@ namespace WebApplication1.Data
                 entity.Property(oi => oi.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken();    
+                    .IsConcurrencyToken();
             });
 
             // -------------------------------------------------------------
@@ -304,25 +312,25 @@ namespace WebApplication1.Data
                 entity.Property(s => s.Total_PayableSettlement)
                     .HasColumnType("decimal(18,2)");
 
-                entity.Property(s => s.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount) 
-                    .HasColumnType("decimal(18,2)");   
+                entity.Property(s => s.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount)
+                    .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.Paid_AgainstTotalArrears)
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.Paid_AgainstTotalLateInterest)
-                      .HasColumnType("decimal(18,2)");  
+                      .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.Total_OverpaymentCarriedToNext)
                       .HasColumnType("decimal(18,2)");
 
                 entity.Property(s => s.IsLatest)
-                    .HasDefaultValue(true);  
+                    .HasDefaultValue(true);
 
                 entity.Property(s => s.RowVersion)
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
-                    .IsConcurrencyToken();  
+                    .IsConcurrencyToken();
             });
         }
         //-------- [End: configure model] -------------
@@ -334,7 +342,7 @@ namespace WebApplication1.Data
         {
             ApplySriLankaTimeZone();
             ApplyTimestamps();
-            ApplyRowVersion(); 
+            ApplyRowVersion();
             return base.SaveChanges();
         }
 
@@ -342,7 +350,8 @@ namespace WebApplication1.Data
         {
             ApplySriLankaTimeZone();
             ApplyTimestamps();
-            ApplyRowVersion(); 
+            ApplyRowVersion();
+            ApplyAuditInformation();
             return await base.SaveChangesAsync(cancellationToken);
         }
 
@@ -407,5 +416,27 @@ namespace WebApplication1.Data
             }
         }
         //-------- [End: Concurrency Handle - RowVersion] ---------------
+
+
+        //-------- [Start: ApplyAuditInformation] ---------------
+        private void ApplyAuditInformation()
+        {
+            var userId = _currentUserService.UserID;
+
+            foreach (var entry in ChangeTracker.Entries<BaseModel>())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedByUserID = userId;
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.UpdatedByUserID = userId;
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+        }
+        //-------- [End: ApplyAuditInformation] ---------------
     }
 }
