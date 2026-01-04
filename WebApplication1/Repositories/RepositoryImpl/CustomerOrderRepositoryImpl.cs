@@ -154,6 +154,15 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.CustomerOrders.AnyAsync(o => o.CustomerID == customerId);
         }
 
+        public async Task<bool> ExistsPendingOrderForCustomerAsync(int customerId)
+        {
+            return await _context.CustomerOrders.AnyAsync(o =>
+                o.CustomerID == customerId &&
+                o.OrderStatus == OrderStatusEnum.Pending &&
+                o.OrderPaymentStatus == OrderPaymentStatusEnum.Pending
+            );
+        }
+
         public async Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null)
         {
             // Start query

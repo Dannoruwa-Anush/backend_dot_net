@@ -17,6 +17,7 @@ namespace WebApplication1.Repositories.IRepository
         //Custom Query Operations 
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<bool> ExistsByCustomerAsync(int customerId);
+        Task<bool> ExistsPendingOrderForCustomerAsync(int customerId);
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
     }
 }
