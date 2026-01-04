@@ -5,12 +5,12 @@ using WebApplication1.Services.IService;
 
 namespace WebApplication1.Services.ServiceImpl
 {
-    public class InvoiceServiceImpl : IInvoiceService
+    public class DocumentGenerationServiceImpl : IDocumentGenerationService
     {
         private readonly IWebHostEnvironment _env;
 
         // Constructor
-        public InvoiceServiceImpl(IWebHostEnvironment env)
+        public DocumentGenerationServiceImpl(IWebHostEnvironment env)
         {
             // Dependency injection
             _env = env;

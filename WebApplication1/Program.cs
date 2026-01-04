@@ -88,7 +88,7 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<ICurrentUserService, CurrentUserServiceImpl>()
 
                 .AddScoped<IFileService, FileServiceImpl>()
-                .AddScoped<IInvoiceService, InvoiceServiceImpl>()
+                .AddScoped<IDocumentGenerationService, DocumentGenerationServiceImpl>()
 
                 .AddScoped<IBrandService, BrandServiceImpl>()
                 .AddScoped<ICategoryService, CategoryServiceImpl>()

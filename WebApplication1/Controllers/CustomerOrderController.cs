@@ -15,17 +15,17 @@ namespace WebApplication1.Controllers
     public class CustomerOrderController : ControllerBase
     {
         private readonly ICustomerOrderService _service;
-        private readonly IInvoiceService _invoiceService;
+        private readonly IDocumentGenerationService _documentGenerationService;
         private readonly IWebHostEnvironment _env;
 
         private readonly IMapper _mapper;
 
         // Constructor
-        public CustomerOrderController(ICustomerOrderService service, IInvoiceService invoiceService, IWebHostEnvironment env, IMapper mapper)
+        public CustomerOrderController(ICustomerOrderService service, IDocumentGenerationService documentGenerationService, IWebHostEnvironment env, IMapper mapper)
         {
             // Dependency injection
             _service = service;
-            _invoiceService = invoiceService;
+            _documentGenerationService = documentGenerationService;
             _env = env;
             _mapper = mapper;
         }
@@ -182,7 +182,7 @@ namespace WebApplication1.Controllers
             var orderDto = _mapper.Map<CustomerOrderResponseDto>(customerOrder);
 
             // Generate invoice PDF using service
-            var relativePath = await _invoiceService.GenerateInvoicePdfAsync(orderDto);
+            var relativePath = await _documentGenerationService.GenerateInvoicePdfAsync(orderDto);
             var fullPath = Path.Combine(_env.WebRootPath, relativePath);
 
             if (!System.IO.File.Exists(fullPath))
