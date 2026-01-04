@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -11,7 +12,7 @@ namespace WebApplication1.Services.IService
         Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id);
 
         //Multiple Repository Operations (transactional)
-        Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrder customerOrder);
+        Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrderRequestDto createRequest);
         Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto requet);
 
         //Custom Query Operations

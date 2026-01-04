@@ -66,13 +66,11 @@ namespace WebApplication1.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Employee, Customer")] // JWT is required
-        public async Task<IActionResult> Create([FromBody] CustomerOrderRequestDto customerCreateDto)
+        public async Task<IActionResult> Create([FromBody] CustomerOrderRequestDto customerOrderCreateDto)
         {
             try
             {
-                // RequestDto -> Model
-                var customerOrder = _mapper.Map<CustomerOrder>(customerCreateDto);
-                var created = await _service.CreateCustomerOrderWithTransactionAsync(customerOrder);
+                var created = await _service.CreateCustomerOrderWithTransactionAsync(customerOrderCreateDto);
 
                 // Model -> ResponseDto
                 var responseDto = _mapper.Map<CustomerOrderResponseDto>(created);

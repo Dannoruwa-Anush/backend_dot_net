@@ -1,3 +1,6 @@
+using AutoMapper;
+using WebApplication1.DTOs.RequestDto;
+using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.RequestDto.StatusChange;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -17,19 +20,37 @@ namespace WebApplication1.Services.ServiceImpl
 
         private readonly ICustomerService _customerService;
         private readonly IElectronicItemService _electronicItemService;
+        private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
+        private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
+        private readonly IBNPL_PlanService _bNPL_PlanService;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
+        private readonly IMapper _mapper;
 
         // Constructor
-        public CustomerOrderServiceImpl(ICustomerOrderRepository repository, IAppUnitOfWork unitOfWork, ICustomerService customerService, IElectronicItemService electronicItemService, ILogger<CustomerOrderServiceImpl> logger)
+        public CustomerOrderServiceImpl(
+            ICustomerOrderRepository repository,
+            IAppUnitOfWork unitOfWork,
+            ICustomerService customerService,
+            IElectronicItemService electronicItemService,
+            IBNPL_InstallmentService bNPL_InstallmentService,
+            IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
+            IBNPL_PlanService bNPL_PlanService,
+            ILogger<CustomerOrderServiceImpl> logger,
+            IMapper mapper)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _customerService = customerService;
             _electronicItemService = electronicItemService;
+
+            _bNPL_InstallmentService = bNPL_InstallmentService;
+            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
+            _bNPL_PlanService = bNPL_PlanService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<CustomerOrder>> GetAllCustomerOrdersAsync() =>
@@ -38,60 +59,32 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<CustomerOrder?> GetCustomerOrderByIdAsync(int id) =>
             await _repository.GetWithCustomerOrderDetailsByIdAsync(id);
 
-        public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrder customerOrder)
+
+
+        // -------- [Start: create an order + bnpl_plan + bnpl_installments + initial bnpl_snapshot] -------- 
+        public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrderRequestDto createRequest)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var itemIds = customerOrder.CustomerOrderElectronicItems.Select(i => i.E_ItemID).ToList();
-                if (itemIds.Count != itemIds.Distinct().Count())
-                    throw new InvalidOperationException("Order contains duplicate electronic items.");
+                var customerOrder = _mapper.Map<CustomerOrder>(createRequest);
+                await BuildOrderItemsAndTotalAsync(customerOrder);
 
-                var itemDict = await LoadElectronicItemsAsync(itemIds);
+                // -----------------------------
+                // Create an invoice (draft)
+                // -----------------------------
 
-                decimal totalAmount = 0;
-                foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
-                {
-                    if (!itemDict.TryGetValue(orderItem.E_ItemID, out var electronicItem))
-                        throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
-
-                    if (orderItem.Quantity <= 0)
-                        throw new InvalidOperationException($"Invalid quantity for item {orderItem.E_ItemID}.");
-
-                    if (electronicItem.QOH < orderItem.Quantity)
-                        throw new InvalidOperationException($"Insufficient stock for {electronicItem.ElectronicItemName}");
-
-                    orderItem.UnitPrice = electronicItem.Price;
-                    orderItem.SubTotal = orderItem.Quantity * electronicItem.Price;
-                    totalAmount += orderItem.SubTotal;
-
-                    // Deduct stock
-                    electronicItem.QOH -= orderItem.Quantity;
-                }
-
-                customerOrder.TotalAmount = totalAmount;
-                customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                customerOrder.OrderStatus = OrderStatusEnum.Pending;
-                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Pending;
-
-                if (customerOrder.CustomerID.HasValue)
-                {
-                    // Order placed by customer
-
-                    var customer = await _customerService.GetCustomerByIdAsync(customerOrder.CustomerID.Value)
-                        ?? throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
-
-                    _logger.LogInformation("Customer order created for customer: Id={CustomerId}, OrderId={OrderId}, TotalAmount={Total}", customerOrder.CustomerID, customerOrder.OrderID, totalAmount);
-                }
-                else
-                {
-                    // Order placed by cashier
-
-                    _logger.LogInformation("Direct order created: OrderId={OrderId}, TotalAmount={Total}",
-                        customerOrder.OrderID, totalAmount);
-                }
-
+                // -----------------------------
+                // Save order (get OrderID)
+                // -----------------------------
                 await _repository.AddAsync(customerOrder);
+                await _unitOfWork.SaveChangesAsync();
+
+                // -----------------------------
+                // Handle payment (BNPL / Full)
+                // -----------------------------
+                await HandleOrderPaymentAsync(customerOrder, createRequest);
+
                 await _unitOfWork.CommitAsync();
 
                 return customerOrder;
@@ -104,12 +97,157 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
+        //Helper Method : BuildOrderItemsAndTotalAsync
+        private async Task BuildOrderItemsAndTotalAsync(CustomerOrder customerOrder)
+        {
+            var itemIds = customerOrder.CustomerOrderElectronicItems.Select(i => i.E_ItemID).ToList();
+            if (itemIds.Count != itemIds.Distinct().Count())
+                throw new InvalidOperationException("Order contains duplicate electronic items.");
+
+            var itemDict = await LoadElectronicItemsAsync(itemIds);
+
+            decimal totalAmount = 0;
+            foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
+            {
+                if (!itemDict.TryGetValue(orderItem.E_ItemID, out var electronicItem))
+                    throw new InvalidOperationException($"Electronic item {orderItem.E_ItemID} not found.");
+
+                if (orderItem.Quantity <= 0)
+                    throw new InvalidOperationException($"Invalid quantity for item {orderItem.E_ItemID}.");
+
+                if (electronicItem.QOH < orderItem.Quantity)
+                    throw new InvalidOperationException($"Insufficient stock for {electronicItem.ElectronicItemName}");
+
+                orderItem.UnitPrice = electronicItem.Price;
+                orderItem.SubTotal = orderItem.Quantity * electronicItem.Price;
+                totalAmount += orderItem.SubTotal;
+
+                // Deduct stock
+                electronicItem.QOH -= orderItem.Quantity;
+            }
+
+            customerOrder.TotalAmount = totalAmount;
+            customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            customerOrder.OrderStatus = OrderStatusEnum.Pending;
+            customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Pending;
+            ApplyOnlineOrderAutoCancellation(customerOrder);
+
+            if (customerOrder.CustomerID.HasValue)
+            {
+                // Order placed by customer
+                var customer = await _customerService.GetCustomerByIdAsync(customerOrder.CustomerID.Value)
+                    ?? throw new InvalidOperationException($"Customer {customerOrder.CustomerID} not found.");
+
+                _logger.LogInformation("Customer order created for customer: Id={CustomerId}, OrderId={OrderId}, TotalAmount={Total}", customerOrder.CustomerID, customerOrder.OrderID, totalAmount);
+            }
+            else
+            {
+                // Order placed by cashier
+                _logger.LogInformation("Direct order created: OrderId={OrderId}, TotalAmount={Total}",
+                    customerOrder.OrderID, totalAmount);
+            }
+        }
+
         //Helper Method : LoadElectronicItemsAsync
         private async Task<Dictionary<int, ElectronicItem>> LoadElectronicItemsAsync(IEnumerable<int> ids)
         {
             var items = await _electronicItemService.GetAllElectronicItemsByIdsAsync(ids.ToList());
             return items.ToDictionary(x => x.ElectronicItemID);
         }
+
+        //Helper Method : HandlePaymentAsync
+        private async Task HandleOrderPaymentAsync(
+            CustomerOrder order,
+            CustomerOrderRequestDto request)
+        {
+            bool isBnpl =
+                request.Bnpl_PlanTypeID.HasValue &&
+                request.InstallmentCount.HasValue &&
+                request.InitialPayment.HasValue;
+
+            if (isBnpl)
+            {
+                await HandleBnplOrderAsync(order, request);
+            }
+            else
+            {
+                HandleFullPaymentOrder(order);
+            }
+        }
+
+        //Helper Method : HandleFullPaymentOrder
+        private void HandleFullPaymentOrder(CustomerOrder order)
+        {
+            order.IsBnplPlanExist = false;
+            order.BNPL_PLAN = null;
+        }
+
+        //Helper Method : HandleBnplOrderAsync
+        private async Task HandleBnplOrderAsync(CustomerOrder order, CustomerOrderRequestDto request)
+        {
+            if (request.InitialPayment <= 0)
+                throw new InvalidOperationException("Initial payment must be greater than zero.");
+
+            if (request.InitialPayment >= order.TotalAmount)
+                throw new InvalidOperationException("Initial payment must be less than total amount.");
+
+            // Calculate installment amount
+            var bnplCalc =
+                await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(
+                    new BNPLInstallmentCalculatorRequestDto
+                    {
+                        TotalOrderAmount = order.TotalAmount,
+                        InitialPayment = request.InitialPayment!.Value,
+                        Bnpl_PlanTypeID = request.Bnpl_PlanTypeID!.Value,
+                        InstallmentCount = request.InstallmentCount!.Value
+                    });
+
+            // Build BNPL plan
+            var bnplPlan =
+                await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(
+                    new BNPL_PLAN
+                    {
+                        OrderID = order.OrderID,
+                        Bnpl_InitialPayment = request.InitialPayment.Value,
+                        Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
+                        Bnpl_TotalInstallmentCount = request.InstallmentCount.Value,
+                        Bnpl_PlanTypeID = request.Bnpl_PlanTypeID.Value,
+                        Bnpl_Status = BnplStatusEnum.Draft,
+                    });
+
+            // Build installments
+            var installments =
+                await _bNPL_InstallmentService
+                    .BuildBnplInstallmentBulkAddRequestAsync(bnplPlan);
+
+            foreach (var inst in installments)
+                bnplPlan.BNPL_Installments.Add(inst);
+
+            // Settlement snapshot
+            var snapshot =
+                _bnpl_planSettlementSummaryService
+                    .BuildSettlementGenerateRequestForPlan(bnplPlan);
+
+            if (snapshot != null)
+                bnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
+
+            // Reflect BNPL state in order
+            order.BNPL_PLAN = bnplPlan;
+            order.IsBnplPlanExist = true;
+        }
+
+        //Helper Method: ApplyOnlineOrderAutoCancellation
+        private void ApplyOnlineOrderAutoCancellation(CustomerOrder order)
+        {
+            if (order.OrderSource == OrderSourceEnum.OnlineShop)
+            {
+                order.PendingPaymentOrderAutoCancelledDate =
+                    order.OrderDate.AddMinutes(5);
+            }
+        }
+        // -------- [End: create an order + bnpl_plan + bnpl_installments + initial bnpl_snapshot] -------- 
+
+
 
         //Custom Query Operations
         public async Task<CustomerOrder?> GetCustomerOrderWithFinancialDetailsByIdAsync(int id) =>
