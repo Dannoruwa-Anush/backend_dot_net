@@ -31,7 +31,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             // Start query
             var query = _context.Cashflows
-                .Include(cf => cf.CustomerOrder) // include for OrderID search
+                //.Include(cf => cf.CustomerOrder) // include for OrderID search
                 .AsQueryable();
 
             // Apply filters
@@ -77,7 +77,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 searchKey = searchKey.Trim().ToLower();
 
                 query = query.Where(cf =>
-                    cf.OrderID.ToString().Contains(searchKey) ||
+                    //cf.OrderID.ToString().Contains(searchKey) ||
                     cf.CreatedAt.ToString("yyyy-MM-dd").Contains(searchKey)
                 );
             }
@@ -93,7 +93,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<decimal> SumCashflowsByOrderAsync(int orderId)
         {
             return await _context.Cashflows
-                .Where(cf => cf.OrderID == orderId && cf.CashflowStatus == CashflowStatusEnum.Paid)
+                //.Where(cf => cf.OrderID == orderId && cf.CashflowStatus == CashflowStatusEnum.Paid)
                 .SumAsync(cf => cf.AmountPaid);
         }
     }

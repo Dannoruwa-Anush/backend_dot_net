@@ -51,7 +51,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(p => p.BNPL_Installments)
                 .Include(o => o.BNPL_PLAN!)
                     .ThenInclude(p => p.BNPL_PlanSettlementSummaries)
-                .Include(o => o.Cashflows)
+                //.Include(o => o.Cashflows)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
         }
 

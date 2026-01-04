@@ -66,7 +66,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             {
                 // Create a cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
-                existingOrder.Cashflows.Add(cashflow);
+                //existingOrder.Cashflows.Add(cashflow);
 
                 // Update order payment status
                 existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
@@ -85,10 +85,10 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         }
 
         //Bnpl initial payment
-        public async Task<BNPL_PLAN> ProcessInitialBnplPaymentAsync(BnplInitialPaymentRequestDto request)
+        public async Task<bool> ProcessInitialBnplPaymentAsync(BnplInitialPaymentRequestDto request)
         {
-            if (request.InitialPayment <= 0)
-                throw new Exception("Initial payment amount should be a positive number");
+            //if (request.InitialPayment <= 0)
+                //throw new Exception("Initial payment amount should be a positive number");
 
             var existingOrder = await _customerOrderService.GetCustomerOrderByIdAsync(request.OrderId);
             if (existingOrder == null)
@@ -99,6 +99,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+                /*
                 var bnplCalc = await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(
                     new BNPLInstallmentCalculatorRequestDto
                     {
@@ -129,6 +130,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 if (snapshot != null)
                     newBnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
 
+                */
+                
                 // Build cashflow
                 var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
                     new PaymentRequestDto
@@ -139,15 +142,15 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     CashflowTypeEnum.BnplInitialPayment
                 );
 
-                existingOrder.BNPL_PLAN = newBnplPlan;
-                existingOrder.Cashflows.Add(cashflow);
+                existingOrder.BNPL_PLAN!.Bnpl_Status = BnplStatusEnum.Active;
+                //existingOrder.Cashflows.Add(cashflow);
                 existingOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
 
                 // Save all together
                 await _unitOfWork.CommitAsync();
 
                 _logger.LogInformation("Bnpl initial payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", existingOrder.OrderID, request.InitialPayment);
-                return newBnplPlan;
+                return true;
             }
             catch (Exception ex)
             {
@@ -158,11 +161,12 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         }
 
         //Bnpl installment payment
-        public async Task<BnplInstallmentPaymentResultDto> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
+        public async Task<bool> ProcessBnplInstallmentPaymentAsync(PaymentRequestDto paymentRequest)
         {
+            /*
             if (paymentRequest.PaymentAmount <= 0)
                 throw new Exception("Payment amount should be a positive number");
-
+            */
             var existingOrder = await _customerOrderService.GetCustomerOrderWithFinancialDetailsByIdAsync(paymentRequest.OrderId);
 
             if (existingOrder == null)
@@ -188,11 +192,11 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     },
                     CashflowTypeEnum.BnplInstallmentPayment
                 );
-                existingOrder.Cashflows.Add(cashflow);
+                //existingOrder.Cashflows.Add(cashflow);
 
                 await _unitOfWork.CommitAsync();
                 _logger.LogInformation("Installment payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", existingOrder.OrderID, paymentRequest.PaymentAmount);
-                return paymentResult;
+                return true;
             }
             catch (Exception ex)
             {

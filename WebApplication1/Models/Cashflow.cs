@@ -31,15 +31,15 @@ namespace WebApplication1.Models
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 
-        //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
+        //******* [Start: Invoice (1) — Cashflow (0..1)] ****
         //FK
-        public int OrderID { get; set; }
+        public int InvoiceID { get; set; }
 
-        // Many Side: Navigation property
-        [ForeignKey(nameof(OrderID))]
-        [InverseProperty(nameof(CustomerOrder.Cashflows))]
-        public CustomerOrder? CustomerOrder { get; set; }
-        //******* [End: CustomerOrder (1) — Cashflow (M)] ******
-
+        // One Side: Navigation property
+        [ForeignKey(nameof(InvoiceID))]
+        [InverseProperty(nameof(Invoice.Cashflow))]
+        //public required Invoice Invoice { get; set; }
+        public Invoice? Invoice { get; set; } ///testing
+        //******* [Start: Invoice (1) — Cashflow (0..1)] ****
     }
 }

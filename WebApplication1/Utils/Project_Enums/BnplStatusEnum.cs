@@ -2,9 +2,10 @@ namespace WebApplication1.Utils.Project_Enums
 {
     public enum BnplStatusEnum
     {
-        Active = 1,
-        Completed = 2,
-        Cancelled = 3,
-        Defaulted = 4,
+        Draft = 1,
+        Active = 2,
+        Completed = 3,
+        Cancelled = 4,
+        Defaulted = 5,
     }
 }

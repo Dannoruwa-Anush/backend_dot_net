@@ -55,7 +55,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             var newCashflow = new Cashflow
             {
-                OrderID = paymentRequest.OrderId,
+                //OrderID = paymentRequest.OrderId,
+                InvoiceID = paymentRequest.InvoiceId,
                 AmountPaid = paymentRequest.PaymentAmount,
                 CashflowDate = now,
                 CashflowStatus = status,

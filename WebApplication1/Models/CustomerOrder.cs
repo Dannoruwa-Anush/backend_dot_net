@@ -7,6 +7,9 @@ namespace WebApplication1.Models
 {
     public class CustomerOrder : BaseModel //(In base model: Audit fields)
     {
+        //--------------------------
+        // Basic Info
+        //--------------------------
         [Key]
         public int OrderID { get; set; }
 
@@ -17,6 +20,17 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Order date is required")]
         public DateTime OrderDate { get; set; }
 
+        //--------------------------
+        // Order Source
+        //--------------------------
+        [Required]
+        [Column(TypeName = "nvarchar(20)")]
+        [EnumDataType(typeof(OrderSourceEnum))]
+        public OrderSourceEnum OrderSource { get; set; } = OrderSourceEnum.PhysicalShop;
+
+        //--------------------------
+        // Order Status lifecycle
+        //--------------------------
         public DateTime? ShippedDate { get; set; }
 
         public DateTime? DeliveredDate { get; set; }
@@ -26,10 +40,10 @@ namespace WebApplication1.Models
         public DateTime? CancellationRequestDate { get; set; }
 
         [MaxLength(100)]
-        public string? CancellationReason { get; set; } 
-        
-        public bool? CancellationApproved { get; set; } 
-        
+        public string? CancellationReason { get; set; }
+
+        public bool? CancellationApproved { get; set; }
+
         [MaxLength(100)]
         public string? CancellationRejectionReason { get; set; }
 
@@ -38,6 +52,11 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(OrderStatusEnum))]
         public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
 
+        //--------------------------
+        // Payment Status lifecycle
+        //--------------------------
+        // only for online : now + 5 min.
+        public DateTime? PendingPaymentOrderAutoCancelledDate { get; set; }
         public DateTime? PaymentCompletedDate { get; set; }
 
         [Required]
@@ -45,8 +64,22 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(OrderPaymentStatusEnum))]
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Pending;
 
+        public bool IsBnplPlanExist { get; set; } = false;
+
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
+        public byte[] RowVersion { get; set; } = new byte[8]; // for optimistic concurrency.
+
+        //******* [Start: CustomerOrder (M) - PhysicalShopSession (0..1)] ****
+        //FK
+        // PhysicalShopSessionId is nullable to online orders
+        public int? PhysicalShopSessionId { get; set; }
+
+        // Many Side: Navigation property
+        [ForeignKey(nameof(PhysicalShopSessionId))]
+        [InverseProperty(nameof(PhysicalShopSession.CustomerOrders))]
+        public PhysicalShopSession? PhysicalShopSession { get; set; } //Nullable navigation property to allow online orders
+        //******* [End: CustomerOrder (M) - PhysicalShopSession (0..1)] ******
+
 
         //******* [Start: Customer (0..1) — CustomerOrder (M)] ****
         //FK
@@ -60,11 +93,11 @@ namespace WebApplication1.Models
         //******* [End: Customer (0..1) — CustomerOrder (M)] ******
 
 
-        //******* [Start: CustomerOrder (1) — Cashflow (M)] ****
+        //******* [Start: CustomerOrder (1) — Invoice (M)] ****
         // One Side: Navigation property
-        [InverseProperty(nameof(Cashflow.CustomerOrder))]
-        public ICollection<Cashflow> Cashflows { get; set; } = new List<Cashflow>();
-        //******* [End: CustomerOrder (1) — Cashflow (M)] ******
+        [InverseProperty(nameof(Invoice.CustomerOrder))]
+        public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        //******* [End: CustomerOrder (1) — Invoice (M)] ******
 
 
         //******* [Start: CustomerOrder (1) — BNPL_PLAN (0..1)] ****
@@ -73,6 +106,7 @@ namespace WebApplication1.Models
         public BNPL_PLAN? BNPL_PLAN { get; set; }
         //Nullable (?) : some orders are fully paid upfront, so they have no BNPL plan
         //******* [End: CustomerOrder (1) — BNPL_PLAN (0..1)] ******
+
 
         //******* [Start: CustomerOrderElectronicItem(M) —- CustomerOrder(1)] *******
         // One Side: Navigation property

@@ -265,12 +265,14 @@ namespace WebApplication1.Services.ServiceImpl
         {
             HandleRestock(order);
 
+            /*
             // Refund all cashflows
             foreach (var cf in order.Cashflows)
             {
                 cf.CashflowStatus = CashflowStatusEnum.Refunded;
                 cf.RefundDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
             }
+            */
 
             // Update order payment status to refunded
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Refunded;
@@ -284,6 +286,7 @@ namespace WebApplication1.Services.ServiceImpl
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             // Refund cashflows
+            /*
             foreach (var cf in order.Cashflows)
             {
                 if (cf.CashflowStatus != CashflowStatusEnum.Refunded)
@@ -292,6 +295,7 @@ namespace WebApplication1.Services.ServiceImpl
                     cf.RefundDate = now;
                 }
             }
+            */
 
             // Cancel BNPL plan
             if (order.BNPL_PLAN != null)

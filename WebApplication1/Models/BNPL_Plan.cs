@@ -25,7 +25,7 @@ namespace WebApplication1.Models
         public int Bnpl_RemainingInstallmentCount { get; set; }
 
         [Required(ErrorMessage = "Bnpl Start date is required")]
-        public DateTime Bnpl_StartDate { get; set; }
+        public DateTime? Bnpl_StartDate { get; set; } //set after the initial payment is completed
 
         public DateTime? Bnpl_NextDueDate { get; set; }
 
@@ -36,7 +36,7 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(BnplStatusEnum))]
-        public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Active;
+        public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Draft;
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
@@ -67,6 +67,7 @@ namespace WebApplication1.Models
         [InverseProperty(nameof(BNPL_Installment.BNPL_PLAN))]
         public ICollection<BNPL_Installment> BNPL_Installments { get; set; } = new List<BNPL_Installment>();
         //******* [End: BNPL_PLAN (1) — BNPL_Installment (M)] ******
+
 
         //******* [Start: BNPL_PLAN (1) — BNPL_PlanSettlementSummary (M)] ****
         // One Side: Navigation property

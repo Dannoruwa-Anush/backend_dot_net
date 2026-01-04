@@ -59,15 +59,14 @@ namespace WebApplication1.Services.ServiceImpl
             if (request.InstallmentCount <= 0)
                 throw new Exception("Installment count must be greater than zero.");
 
-            var customerOrder = await _customerOrderRepository.GetByIdAsync(request.OrderID);
-            if (customerOrder == null)
-                throw new Exception("Customer order not found");
+            if (request.TotalOrderAmount <= 0 || request.InitialPayment <= 0)
+                throw new Exception("Both total order amount and initial payment must be greater than zero.");
 
-            if (customerOrder.TotalAmount <= request.InitialPayment)
+            if (request.TotalOrderAmount <= request.InitialPayment)
                 throw new Exception("Initial payment must be less than total order amount.");
 
             // Core calculation
-            decimal principalAmount = customerOrder.TotalAmount - request.InitialPayment;
+            decimal principalAmount = request.TotalOrderAmount - request.InitialPayment;
             decimal monthlyInterestRate = planType.InterestRate / 100m;
             int installmentCount = request.InstallmentCount;
 

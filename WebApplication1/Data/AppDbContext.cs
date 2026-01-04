@@ -148,11 +148,13 @@ namespace WebApplication1.Data
                     .IsConcurrencyToken();
 
                 // (1) — (M) Cashflow
+                /*
                 entity.HasMany(o => o.Cashflows)
                       .WithOne(p => p.CustomerOrder)
                       .HasForeignKey(p => p.OrderID)
                       .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Cashflows exist
-
+                */
+                
                 // (1) — (0..1) BNPL_PLAN
                 entity.HasOne(o => o.BNPL_PLAN)
                       .WithOne(p => p.CustomerOrder)
