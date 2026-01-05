@@ -43,6 +43,9 @@ namespace WebApplication1.Migrations
                     b.Property<int>("Bnpl_PlanID")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -380,7 +383,7 @@ namespace WebApplication1.Migrations
                     b.Property<int?>("CreatedByUserID")
                         .HasColumnType("int");
 
-                    b.Property<int>("OrderID")
+                    b.Property<int>("InvoiceID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("RefundDate")
@@ -404,7 +407,8 @@ namespace WebApplication1.Migrations
 
                     b.HasIndex("CreatedByUserID");
 
-                    b.HasIndex("OrderID");
+                    b.HasIndex("InvoiceID")
+                        .IsUnique();
 
                     b.HasIndex("UpdatedByUserID");
 
@@ -538,10 +542,17 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("DeliveredDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("IsBnplPlanExist")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("OrderPaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("OrderSource")
                         .IsRequired()
                         .HasColumnType("nvarchar(20)");
 
@@ -551,6 +562,12 @@ namespace WebApplication1.Migrations
 
                     b.Property<DateTime?>("PaymentCompletedDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("PendingPaymentOrderAutoCancelledDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("PhysicalShopSessionId")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -574,6 +591,8 @@ namespace WebApplication1.Migrations
                     b.HasIndex("CreatedByUserID");
 
                     b.HasIndex("CustomerID");
+
+                    b.HasIndex("PhysicalShopSessionId");
 
                     b.HasIndex("UpdatedByUserID");
 
@@ -729,6 +748,101 @@ namespace WebApplication1.Migrations
                         .IsUnique();
 
                     b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
+                {
+                    b.Property<int>("InvoiceID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InvoiceID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("InstallmentNo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InvoiceAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("InvoiceStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("InvoiceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("OrderID")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("BINARY(8)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("InvoiceID");
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("OrderID");
+
+                    b.HasIndex("UpdatedByUserID");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>
+                {
+                    b.Property<int>("PhysicalShopSessionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PhysicalShopSessionID"));
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("PhysicalShopSessionID");
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("UpdatedByUserID");
+
+                    b.ToTable("PhysicalShopSessions");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.User", b =>
@@ -889,11 +1003,10 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedByUserID");
 
-                    b.HasOne("WebApplication1.Models.CustomerOrder", "CustomerOrder")
-                        .WithMany("Cashflows")
-                        .HasForeignKey("OrderID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasOne("WebApplication1.Models.Invoice", "Invoice")
+                        .WithOne("Cashflow")
+                        .HasForeignKey("WebApplication1.Models.Cashflow", "InvoiceID")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("WebApplication1.Models.User", "UpdatedBy")
                         .WithMany()
@@ -901,7 +1014,7 @@ namespace WebApplication1.Migrations
 
                     b.Navigation("CreatedBy");
 
-                    b.Navigation("CustomerOrder");
+                    b.Navigation("Invoice");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -954,6 +1067,11 @@ namespace WebApplication1.Migrations
                         .HasForeignKey("CustomerID")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("WebApplication1.Models.PhysicalShopSession", "PhysicalShopSession")
+                        .WithMany("CustomerOrders")
+                        .HasForeignKey("PhysicalShopSessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("WebApplication1.Models.User", "UpdatedBy")
                         .WithMany()
                         .HasForeignKey("UpdatedByUserID");
@@ -961,6 +1079,8 @@ namespace WebApplication1.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("PhysicalShopSession");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -1049,6 +1169,44 @@ namespace WebApplication1.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.CustomerOrder", "CustomerOrder")
+                        .WithMany("Invoices")
+                        .HasForeignKey("OrderID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("CustomerOrder");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.User", b =>
                 {
                     b.HasOne("WebApplication1.Models.User", "CreatedBy")
@@ -1095,14 +1253,24 @@ namespace WebApplication1.Migrations
                 {
                     b.Navigation("BNPL_PLAN");
 
-                    b.Navigation("Cashflows");
-
                     b.Navigation("CustomerOrderElectronicItems");
+
+                    b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.ElectronicItem", b =>
                 {
                     b.Navigation("CustomerOrderElectronicItems");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
+                {
+                    b.Navigation("Cashflow");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>
+                {
+                    b.Navigation("CustomerOrders");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.User", b =>

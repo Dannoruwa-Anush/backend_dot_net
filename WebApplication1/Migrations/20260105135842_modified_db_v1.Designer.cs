@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251125062430_ConcurrencyCheck_RowVersion_Corrected")]
-    partial class ConcurrencyCheck_RowVersion_Corrected
+    [Migration("20260105135842_modified_db_v1")]
+    partial class modified_db_v1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,9 +33,6 @@ namespace WebApplication1.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InstallmentID"));
 
-                    b.Property<decimal>("AmountPaid_AgainstArrears")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal>("AmountPaid_AgainstBase")
                         .HasColumnType("decimal(18,2)");
 
@@ -49,8 +46,14 @@ namespace WebApplication1.Migrations
                     b.Property<int>("Bnpl_PlanID")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
 
                     b.Property<int>("InstallmentNo")
                         .HasColumnType("int");
@@ -70,7 +73,7 @@ namespace WebApplication1.Migrations
                     b.Property<decimal>("LateInterest")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("OverPaymentCarried")
+                    b.Property<decimal>("OverpaymentCarriedToNext")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("RefundDate")
@@ -87,7 +90,14 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("InstallmentID");
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.HasIndex("Bnpl_PlanID", "InstallmentNo")
                         .IsUnique();
@@ -137,6 +147,9 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<int>("OrderID")
                         .HasColumnType("int");
 
@@ -148,12 +161,19 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("Bnpl_PlanID");
 
                     b.HasIndex("Bnpl_PlanTypeID");
 
+                    b.HasIndex("CreatedByUserID");
+
                     b.HasIndex("OrderID")
                         .IsUnique();
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("BNPL_PLANs");
                 });
@@ -166,8 +186,22 @@ namespace WebApplication1.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SettlementID"));
 
+                    b.Property<int?>("ActiveLatestKey")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("int")
+                        .HasComputedColumnSql("IF(`Bnpl_PlanSettlementSummary_Status` = 1 AND `IsLatest` = 1, `Bnpl_PlanID`, NULL)", true);
+
                     b.Property<int>("Bnpl_PlanID")
                         .HasColumnType("int");
+
+                    b.Property<string>("Bnpl_PlanSettlementSummaryRef")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Bnpl_PlanSettlementSummary_PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Bnpl_PlanSettlementSummary_Status")
                         .IsRequired()
@@ -176,40 +210,62 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("CurrentInstallmentNo")
+                    b.Property<int?>("CreatedByUserID")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("InstallmentBaseAmount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("CurrentInstallmentNo")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsLatest")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
 
+                    b.Property<decimal>("NotYetDueCurrentInstallmentBaseAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Paid_AgainstNotYetDueCurrentInstallmentBaseAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Paid_AgainstTotalArrears")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Paid_AgainstTotalLateInterest")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("BINARY(8)");
 
-                    b.Property<decimal>("TotalCurrentArrears")
+                    b.Property<decimal>("Total_InstallmentBaseArrears")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("TotalCurrentLateInterest")
+                    b.Property<decimal>("Total_LateInterest")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("TotalCurrentOverPayment")
+                    b.Property<decimal>("Total_OverpaymentCarriedToNext")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("TotalPayableSettlement")
+                    b.Property<decimal>("Total_PayableSettlement")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("SettlementID");
 
+                    b.HasIndex("ActiveLatestKey")
+                        .IsUnique();
+
                     b.HasIndex("Bnpl_PlanID");
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("BNPL_PlanSettlementSummaries");
                 });
@@ -237,6 +293,9 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("InterestRate")
                         .HasColumnType("decimal(5,2)");
 
@@ -246,10 +305,17 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("Bnpl_PlanTypeID");
 
                     b.HasIndex("Bnpl_PlanTypeName")
                         .IsUnique();
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("BNPL_PlanTypes");
                 });
@@ -270,13 +336,23 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
 
                     b.HasKey("BrandID");
 
                     b.HasIndex("BrandName")
                         .IsUnique();
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("Brands");
                 });
@@ -307,7 +383,10 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("OrderID")
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InvoiceID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("RefundDate")
@@ -321,12 +400,20 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("CashflowID");
 
                     b.HasIndex("CashflowRef")
                         .IsUnique();
 
-                    b.HasIndex("OrderID");
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("InvoiceID")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("Cashflows");
                 });
@@ -347,13 +434,23 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
 
                     b.HasKey("CategoryID");
 
                     b.HasIndex("CategoryName")
                         .IsUnique();
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("Categories");
                 });
@@ -374,6 +471,9 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<string>("CustomerName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -387,13 +487,20 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserID")
                         .HasColumnType("int");
 
                     b.HasKey("CustomerID");
 
+                    b.HasIndex("CreatedByUserID");
+
                     b.HasIndex("PhoneNo")
                         .IsUnique();
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.HasIndex("UserID")
                         .IsUnique();
@@ -429,16 +536,26 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("CustomerID")
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CustomerID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("DeliveredDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("IsBnplPlanExist")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("OrderPaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("OrderSource")
                         .IsRequired()
                         .HasColumnType("nvarchar(20)");
 
@@ -448,6 +565,12 @@ namespace WebApplication1.Migrations
 
                     b.Property<DateTime?>("PaymentCompletedDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("PendingPaymentOrderAutoCancelledDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("PhysicalShopSessionId")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -463,9 +586,18 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("OrderID");
 
+                    b.HasIndex("CreatedByUserID");
+
                     b.HasIndex("CustomerID");
+
+                    b.HasIndex("PhysicalShopSessionId");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("CustomerOrders");
                 });
@@ -480,6 +612,9 @@ namespace WebApplication1.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -498,9 +633,16 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("OrderID", "E_ItemID");
 
+                    b.HasIndex("CreatedByUserID");
+
                     b.HasIndex("E_ItemID");
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("CustomerOrderElectronicItems");
                 });
@@ -521,6 +663,9 @@ namespace WebApplication1.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
 
                     b.Property<string>("ElectronicItemImage")
                         .HasMaxLength(255)
@@ -545,14 +690,21 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("ElectronicItemID");
 
                     b.HasIndex("BrandID");
 
                     b.HasIndex("CategoryID");
 
+                    b.HasIndex("CreatedByUserID");
+
                     b.HasIndex("ElectronicItemName")
                         .IsUnique();
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("ElectronicItems");
                 });
@@ -568,6 +720,9 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<string>("EmployeeName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -580,15 +735,117 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserID")
                         .HasColumnType("int");
 
                     b.HasKey("EmployeeID");
 
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("UpdatedByUserID");
+
                     b.HasIndex("UserID")
                         .IsUnique();
 
                     b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
+                {
+                    b.Property<int>("InvoiceID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InvoiceID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("InstallmentNo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InvoiceAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("InvoiceStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("InvoiceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("OrderID")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("BINARY(8)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("InvoiceID");
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("OrderID");
+
+                    b.HasIndex("UpdatedByUserID");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>
+                {
+                    b.Property<int>("PhysicalShopSessionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PhysicalShopSessionID"));
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("PhysicalShopSessionID");
+
+                    b.HasIndex("CreatedByUserID");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("UpdatedByUserID");
+
+                    b.ToTable("PhysicalShopSessions");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.User", b =>
@@ -601,6 +858,9 @@ namespace WebApplication1.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedByUserID")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -619,10 +879,17 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("UpdatedByUserID")
+                        .HasColumnType("int");
+
                     b.HasKey("UserID");
+
+                    b.HasIndex("CreatedByUserID");
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("UpdatedByUserID");
 
                     b.ToTable("Users");
                 });
@@ -635,7 +902,19 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
                     b.Navigation("BNPL_PLAN");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.BNPL_PLAN", b =>
@@ -646,14 +925,26 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
                     b.HasOne("WebApplication1.Models.CustomerOrder", "CustomerOrder")
                         .WithOne("BNPL_PLAN")
                         .HasForeignKey("WebApplication1.Models.BNPL_PLAN", "OrderID")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
                     b.Navigation("BNPL_PlanType");
 
+                    b.Navigation("CreatedBy");
+
                     b.Navigation("CustomerOrder");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.BNPL_PlanSettlementSummary", b =>
@@ -664,43 +955,145 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
                     b.Navigation("BNPL_PLAN");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.BNPL_PlanType", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Brand", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Cashflow", b =>
                 {
-                    b.HasOne("WebApplication1.Models.CustomerOrder", "CustomerOrder")
-                        .WithMany("Cashflows")
-                        .HasForeignKey("OrderID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
 
-                    b.Navigation("CustomerOrder");
+                    b.HasOne("WebApplication1.Models.Invoice", "Invoice")
+                        .WithOne("Cashflow")
+                        .HasForeignKey("WebApplication1.Models.Cashflow", "InvoiceID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Category", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Customer", b =>
                 {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
                     b.HasOne("WebApplication1.Models.User", "User")
                         .WithOne("Customer")
                         .HasForeignKey("WebApplication1.Models.Customer", "UserID")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.CustomerOrder", b =>
                 {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
                     b.HasOne("WebApplication1.Models.Customer", "Customer")
                         .WithMany("CustomerOrders")
                         .HasForeignKey("CustomerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WebApplication1.Models.PhysicalShopSession", "PhysicalShopSession")
+                        .WithMany("CustomerOrders")
+                        .HasForeignKey("PhysicalShopSessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("PhysicalShopSession");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.CustomerOrderElectronicItem", b =>
                 {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
                     b.HasOne("WebApplication1.Models.ElectronicItem", "ElectronicItem")
                         .WithMany("CustomerOrderElectronicItems")
                         .HasForeignKey("E_ItemID")
@@ -713,9 +1106,17 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
                     b.Navigation("CustomerOrder");
 
                     b.Navigation("ElectronicItem");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.ElectronicItem", b =>
@@ -732,19 +1133,96 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
                     b.Navigation("Brand");
 
                     b.Navigation("Category");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Employee", b =>
                 {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
                     b.HasOne("WebApplication1.Models.User", "User")
                         .WithOne("Employee")
                         .HasForeignKey("WebApplication1.Models.Employee", "UserID")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.CustomerOrder", "CustomerOrder")
+                        .WithMany("Invoices")
+                        .HasForeignKey("OrderID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("CustomerOrder");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.User", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserID");
+
+                    b.HasOne("WebApplication1.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserID");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.BNPL_PLAN", b =>
@@ -778,14 +1256,24 @@ namespace WebApplication1.Migrations
                 {
                     b.Navigation("BNPL_PLAN");
 
-                    b.Navigation("Cashflows");
-
                     b.Navigation("CustomerOrderElectronicItems");
+
+                    b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.ElectronicItem", b =>
                 {
                     b.Navigation("CustomerOrderElectronicItems");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
+                {
+                    b.Navigation("Cashflow");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>
+                {
+                    b.Navigation("CustomerOrders");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.User", b =>
