@@ -2,7 +2,9 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -12,15 +14,20 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
+
+        // Service-Level (Technical) Logging
         private readonly ILogger<ElectronicItemServiceImpl> _logger;
 
         // Constructor
-        public ElectronicItemServiceImpl(IElectronicItemRepository repository, IAppUnitOfWork unitOfWork, ILogger<ElectronicItemServiceImpl> logger)
+        public ElectronicItemServiceImpl(IElectronicItemRepository repository, IAppUnitOfWork unitOfWork, IAuditLogService auditLogService, ILogger<ElectronicItemServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
-            _logger     = logger;
+            _auditLogService = auditLogService;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -28,9 +35,9 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.GetAllWithBrandCategoryDetailsAsync();
 
 
-        public async Task<ElectronicItem?> GetElectronicItemByIdAsync(int id)=>
+        public async Task<ElectronicItem?> GetElectronicItemByIdAsync(int id) =>
             await _repository.GetWithBrandCategoryDetailsByIdAsync(id);
-        
+
         public async Task<ElectronicItem> AddElectronicItemWithSaveAsync(ElectronicItem electronicItem)
         {
             var duplicate = await _repository.ExistsByNameAsync(electronicItem.ElectronicItemName);
@@ -40,7 +47,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(electronicItem);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Electronic item created: Id={Id}, Name={Name}", electronicItem.ElectronicItemID, electronicItem.ElectronicItemName);
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Electronic item", electronicItem.ElectronicItemID, electronicItem.ElectronicItemName);
             return electronicItem;
         }
 
@@ -57,38 +64,33 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedElectronicItem = await _repository.UpdateAsync(id, electronicItem);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedElectronicItem != null)
-            {
-                _logger.LogInformation("Electronic item updated: Id={Id}, Name={Name}", updatedElectronicItem.ElectronicItemID, updatedElectronicItem.ElectronicItemName);
-                return updatedElectronicItem;
-            }
+            if (updatedElectronicItem == null)
+                throw new Exception("Electronic item update failed.");
 
-            throw new Exception("Electronic item update failed.");
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Electronic item", updatedElectronicItem.ElectronicItemID, updatedElectronicItem.ElectronicItemName);
+            return updatedElectronicItem;
         }
 
         public async Task DeleteElectronicItemWithSaveAsync(int id)
         {
             var deleted = await _repository.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
-            
-            if (!deleted)
-            {
-                _logger.LogWarning("Attempted to delete electronic item with id {Id}, but it does not exist.", id);
-                throw new Exception("Electronic item not found");
-            }
 
-            _logger.LogInformation("Electronic item deleted successfully: Id={Id}", id);
+            if (!deleted)
+                throw new Exception("Electronic item not found");
+
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "Electronic item", id, $"ElectronicItemId={id}");
         }
 
         //Custom Query Operations
         public async Task<PaginationResultDto<ElectronicItem>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? categoryId = null, int? brandId = null, string? searchKey = null) =>
             await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, categoryId, brandId, searchKey);
 
-        public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByCategoryIdAsync(int categoryId)=>
+        public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByCategoryIdAsync(int categoryId) =>
             await _repository.GetAllByCategoryAsync(categoryId);
 
 
-        public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByBrandIdAsync(int brandId)=>
+        public async Task<IEnumerable<ElectronicItem>> GetAllElectronicItemsByBrandIdAsync(int brandId) =>
             await _repository.GetAllByBrandAsync(brandId);
 
         public async Task<List<ElectronicItem>> GetAllElectronicItemsByIdsAsync(List<int> ids) =>

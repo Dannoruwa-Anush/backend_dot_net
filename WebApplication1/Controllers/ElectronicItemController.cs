@@ -6,6 +6,7 @@ using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Controllers
 {
@@ -143,7 +144,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOnly)]  // JWT is required
         public async Task<IActionResult> Delete(int id)
         {
             try
