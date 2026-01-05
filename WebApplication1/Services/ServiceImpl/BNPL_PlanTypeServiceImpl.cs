@@ -2,7 +2,9 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -14,16 +16,21 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanRepository _bnpl_planRepository;
 
         //logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
+
+        // Service-Level (Technical) Logging
         private readonly ILogger<BNPL_PlanTypeServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IAppUnitOfWork unitOfWork, IBNPL_PlanRepository bnpl_planRepository, ILogger<BNPL_PlanTypeServiceImpl> logger)
+        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IAppUnitOfWork unitOfWork, IBNPL_PlanRepository bnpl_planRepository, IAuditLogService auditLogService, ILogger<BNPL_PlanTypeServiceImpl> logger)
         {
             // Dependency injection
-            _repository          = repository;
-            _unitOfWork          = unitOfWork;
+            _repository = repository;
+            _unitOfWork = unitOfWork;
             _bnpl_planRepository = bnpl_planRepository;
-            _logger              = logger;
+            _auditLogService = auditLogService;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -42,10 +49,10 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(bNPL_PlanType);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("BNPL Plan Type created: Id={Id}, Name={Name}", bNPL_PlanType.Bnpl_PlanTypeID, bNPL_PlanType.Bnpl_PlanTypeName);
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "BNPL Plan Type", bNPL_PlanType.Bnpl_PlanTypeID, bNPL_PlanType.Bnpl_PlanTypeName);
             return bNPL_PlanType;
         }
-        
+
         public async Task<BNPL_PlanType> UpdateBNPL_PlanTypeWithSaveAsync(int id, BNPL_PlanType bNPL_PlanType)
         {
             var existing = await _repository.GetByIdAsync(id);
@@ -59,13 +66,11 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedBNPL_PlanType = await _repository.UpdateAsync(id, bNPL_PlanType);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedBNPL_PlanType != null)
-            {
-                _logger.LogInformation("BNPL Plan Type updated: Id={Id}, Name={Name}", updatedBNPL_PlanType.Bnpl_PlanTypeID, updatedBNPL_PlanType.Bnpl_PlanTypeName);
-                return updatedBNPL_PlanType;
-            }
+            if (updatedBNPL_PlanType == null)
+                throw new Exception("BNPL plan type update failed.");
 
-            throw new Exception("BNPL plan type update failed.");
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "BNPL Plan Type", updatedBNPL_PlanType.Bnpl_PlanTypeID, updatedBNPL_PlanType.Bnpl_PlanTypeName);
+            return updatedBNPL_PlanType;
         }
 
         public async Task DeleteBNPL_PlanTypeWithSaveAsync(int id)
@@ -81,14 +86,11 @@ namespace WebApplication1.Services.ServiceImpl
             // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
-            
-            if (!deleted)
-            {
-                _logger.LogWarning("Attempted to delete BNPL  plan type with id {Id}, but it does not exist.", id);
-                throw new Exception("BNPL plan type not found");
-            }
 
-            _logger.LogInformation("BNPL plan type deleted successfully: Id={Id}", id);
+            if (!deleted)
+                throw new Exception("BNPL plan type not found");
+
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "BNPL plan type", id, $"BNPLPlanTypeId={id}");
         }
 
         //Custom Query Operations
