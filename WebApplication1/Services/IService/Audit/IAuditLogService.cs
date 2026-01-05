@@ -1,6 +1,6 @@
 using WebApplication1.Utils.Project_Enums;
 
-namespace WebApplication1.Services.IService.Helper
+namespace WebApplication1.Services.IService.Audit
 {
     public interface IAuditLogService
     {

@@ -1,8 +1,8 @@
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.Services.IService.Auth;
-using WebApplication1.Services.IService.Helper;
 using WebApplication1.Utils.Project_Enums;
 
-namespace WebApplication1.Services.ServiceImpl.Helper
+namespace WebApplication1.Services.ServiceImpl.Audit
 {
     public class AuditLogServiceImpl : IAuditLogService
     {

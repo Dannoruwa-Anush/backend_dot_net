@@ -20,6 +20,8 @@ using WebApplication1.UOW.UOWImpl;
 using WebApplication1.Services.IService.Helper;
 using WebApplication1.Services.ServiceImpl.Helper;
 using WebApplication1.AutoMapperProfiles.BnplCal;
+using WebApplication1.Services.ServiceImpl.Audit;
+using WebApplication1.Services.IService.Audit;
 
 var builder = WebApplication.CreateBuilder(args);
 
