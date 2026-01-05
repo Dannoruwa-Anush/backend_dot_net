@@ -85,7 +85,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = AuthorizationPolicies.ManagerOnly)]  // JWT is required
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] BrandRequestDto brandUpdateDto)
         {
             try

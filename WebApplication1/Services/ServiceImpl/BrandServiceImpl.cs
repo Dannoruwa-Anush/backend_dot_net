@@ -3,7 +3,9 @@ using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
 using WebApplication1.Services.IService.Auth;
+using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -15,18 +17,21 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IElectronicItemRepository _electronicItemRepository;
 
         // logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
+        
+        // Service-Level (Technical) Logging
         private readonly ILogger<BrandServiceImpl> _logger;
-        private readonly ICurrentUserService _currentUserService;
 
         // Constructor
-        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger, ICurrentUserService currentUserService)
+        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, IAuditLogService auditLogService, ILogger<BrandServiceImpl> logger)
         {
             // Dependency injection
-            _repository               = repository;
-            _unitOfWork               = unitOfWork;
+            _repository = repository;
+            _unitOfWork = unitOfWork;
             _electronicItemRepository = electronicItemRepository;
-            _logger                   = logger;
-            _currentUserService      = currentUserService;
+            _auditLogService = auditLogService;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -45,12 +50,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(brand);
             await _unitOfWork.SaveChangesAsync();
 
-            var user = _currentUserService.UserProfile; 
-            _logger.LogInformation(
-            "Brand created: Id={BrandId}, Name={BrandName} by UserID={UserId}, Email={Email}, Role={Role}, Position={Position}",
-            brand.BrandID, brand.BrandName, user.UserID, user.Email, user.Role, user.EmployeePosition
-        );
-
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Brand", brand.BrandID, brand.BrandName);
             return brand;
         }
 
@@ -67,13 +67,11 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedBrand = await _repository.UpdateAsync(id, brand);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedBrand != null)
-            {
-                _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandID, updatedBrand.BrandName);
-                return updatedBrand;
-            }
+            if (updatedBrand == null)
+                throw new Exception("Category update failed.");
 
-            throw new Exception("Category update failed.");
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Brand", updatedBrand.BrandID, updatedBrand.BrandName);
+            return updatedBrand;
         }
 
         public async Task DeleteBrandWithSaveAsync(int id)
@@ -89,14 +87,11 @@ namespace WebApplication1.Services.ServiceImpl
             // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
-            
-            if (!deleted)
-            {
-                _logger.LogWarning("Attempted to delete brand with id {Id}, but it does not exist.", id);
-                throw new KeyNotFoundException("Brand not found.");
-            }
 
-            _logger.LogInformation("Brand deleted successfully: Id={Id}", id);
+            if (!deleted)
+                throw new KeyNotFoundException("Brand not found.");
+
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "Brand", id, $"BrandId={id}");
         }
 
         //Custom Query Operations
