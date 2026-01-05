@@ -2,7 +2,9 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -12,14 +14,19 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
+
+        // Service-Level (Technical) Logging
         private readonly ILogger<CustomerServiceImpl> _logger;
 
         // Constructor
-        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, ILogger<CustomerServiceImpl> logger)
+        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, IAuditLogService auditLogService, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -53,7 +60,7 @@ namespace WebApplication1.Services.ServiceImpl
                 await _repository.AddAsync(customer);
                 await _unitOfWork.CommitAsync();
 
-                _logger.LogInformation("Customer created: Id={Id}, PhoneNo={PhoneNo}", customer.CustomerID, customer.PhoneNo);
+                _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Customer", customer.CustomerID, customer.PhoneNo);
                 return customer;
             }
             catch (Exception ex)
@@ -77,13 +84,11 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedCustomer = await _repository.UpdateProfileAsync(id, customer);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedCustomer != null)
-            {
-                _logger.LogInformation("Customer profile updated: Id={Id}, PhoneNo={PhoneNo}", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
-                return updatedCustomer;
-            }
+            if (updatedCustomer == null)
+                throw new Exception("Customer profile update failed.");
 
-            throw new Exception("Customer profile update failed.");
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Customer", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
+            return updatedCustomer;
         }
 
         //Custom Query Operations
