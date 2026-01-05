@@ -11,7 +11,6 @@ using WebApplication1.Utils.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using WebApplication1.Repositories.RepositoryImpl.Auth;
 using WebApplication1.Services.IService.Auth;
 using WebApplication1.AutoMapperProfiles.Auth;
 using WebApplication1.Services.ServiceImpl.Auth;

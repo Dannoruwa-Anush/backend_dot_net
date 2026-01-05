@@ -3,7 +3,7 @@ using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 
-namespace WebApplication1.Repositories.RepositoryImpl.Auth
+namespace WebApplication1.Repositories.RepositoryImpl
 {
     public class UserRepositoryImpl : IUserRepository
     {
