@@ -2,7 +2,6 @@ using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {

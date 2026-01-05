@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 

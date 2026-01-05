@@ -2,7 +2,6 @@ using WebApplication1.DTOs.RequestDto.BnplCal;
 using WebApplication1.DTOs.ResponseDto.BnplCal;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {

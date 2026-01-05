@@ -1,8 +1,6 @@
 using WebApplication1.DTOs.RequestDto;
-using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.IService
 {
@@ -18,6 +16,5 @@ namespace WebApplication1.Services.IService
         //Shared Internal Operations Used by Multiple Repositories
         Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, CustomerOrderRequestDto request);
         Task<Invoice> CreateInstallmentInvoiceAsync(CustomerOrder order, int installmentNo);
-        Task PayInvoiceAsync(int invoiceId); //todo invoice status update   
     }
 }

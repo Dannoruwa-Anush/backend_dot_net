@@ -97,22 +97,5 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, searchKey);
         }
-
-        public async Task PayInvoiceAsync(int invoiceId)
-        {
-            var invoice = await _repository.GetByIdAsync(invoiceId);
-
-            /*
-                        invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
-
-                        invoice.Cashflow = new Cashflow
-                        {
-                            Amount = invoice.InvoiceAmount,
-                            TransactionDate = DateTime.UtcNow
-                        };
-            */
-            await _unitOfWork.SaveChangesAsync();
-        }
-
     }
 }

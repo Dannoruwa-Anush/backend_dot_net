@@ -51,11 +51,10 @@ namespace WebApplication1.Services.ServiceImpl
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             // Build reference
-            var cashflowRef = $"CF-{paymentRequest.OrderId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
+            var cashflowRef = $"CF-{paymentRequest.InvoiceId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
 
             var newCashflow = new Cashflow
             {
-                //OrderID = paymentRequest.OrderId,
                 InvoiceID = paymentRequest.InvoiceId,
                 AmountPaid = paymentRequest.PaymentAmount,
                 CashflowDate = now,

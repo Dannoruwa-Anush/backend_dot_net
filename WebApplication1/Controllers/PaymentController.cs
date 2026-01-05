@@ -2,10 +2,9 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.DTOs.RequestDto.Payment;
-using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
-using WebApplication1.DTOs.ResponseDto.Payment.Bnpl;
 using WebApplication1.Services.IService.Helper;
+using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Controllers
 {
@@ -25,6 +24,43 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
 
+        [HttpPost("process-payment")]
+        [Authorize(Policy = AuthorizationPolicies.CashierOrCustomer)]  // JWT is required
+        public async Task<IActionResult> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest)
+        {
+            try
+            {
+                await _service.ProcessPaymentAsync(paymentRequest);
+                return Ok(new ApiResponseDto<string>(
+                    200,
+                    "Payment processed and stored."
+                ));
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Invoice not found"));
+
+                return StatusCode(500, new ApiResponseDto<string>(
+                    500,
+                    "An internal server error occurred. Please try again later."
+                ));
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+//**********************************************************************************
+/*
         [HttpPost("process-full-payment")]
         [Authorize(Roles = "Employee, Customer")] // JWT is required
         public async Task<IActionResult> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest)
@@ -104,5 +140,6 @@ namespace WebApplication1.Controllers
                 ));
             }
         }
+*/
     }
 }

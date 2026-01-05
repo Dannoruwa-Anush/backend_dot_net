@@ -5,8 +5,8 @@ namespace WebApplication1.DTOs.RequestDto.Payment
 {
     public class PaymentRequestDto
     {
-        [Required]
-        public int OrderId { get; set; }
+        //[Required]
+        //public int OrderId { get; set; }
 
         [Required]
         public int InvoiceId { get; set; }

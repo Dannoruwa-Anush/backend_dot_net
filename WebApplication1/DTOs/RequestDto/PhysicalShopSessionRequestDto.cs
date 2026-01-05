@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace WebApplication1.DTOs.RequestDto
 {
     public class PhysicalShopSessionRequestDto
