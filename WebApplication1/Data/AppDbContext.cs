@@ -27,13 +27,13 @@ namespace WebApplication1.Data
         public DbSet<Customer> Customers { get; set; }
         public DbSet<CustomerOrder> CustomerOrders { get; set; }
         public DbSet<CustomerOrderElectronicItem> CustomerOrderElectronicItems { get; set; }
+        public DbSet<Invoice> Invoices { get; set; }
         public DbSet<Cashflow> Cashflows { get; set; }
         public DbSet<BNPL_PlanType> BNPL_PlanTypes { get; set; }
         public DbSet<BNPL_PLAN> BNPL_PLANs { get; set; }
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
         public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries { get; set; }
         public DbSet<PhysicalShopSession> PhysicalShopSessions { get; set; }
-        public DbSet<Invoice> Invoices { get; set; }
         //---
 
         //-------- [Start: configure model] -----------
@@ -149,14 +149,12 @@ namespace WebApplication1.Data
                     .IsRequired()
                     .IsConcurrencyToken();
 
-                // (1) — (M) Cashflow
-                /*
-                entity.HasMany(o => o.Cashflows)
-                      .WithOne(p => p.CustomerOrder)
+                // (1) — (M) Invoice
+                entity.HasMany(o => o.Invoices)
+                      .WithOne(i => i.CustomerOrder)
                       .HasForeignKey(p => p.OrderID)
-                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Cashflows exist
-                */
-                
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Invoices exist
+
                 // (1) — (0..1) BNPL_PLAN
                 entity.HasOne(o => o.BNPL_PLAN)
                       .WithOne(p => p.CustomerOrder)
@@ -169,6 +167,13 @@ namespace WebApplication1.Data
                       .WithOne(oi => oi.CustomerOrder)
                       .HasForeignKey(oi => oi.OrderID)
                       .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related CustomerOrderElectronicItems exist
+
+                // (M) — (0..1) PhysicalShopSession
+                entity.HasOne(o => o.PhysicalShopSession)
+                      .WithMany(os => os.CustomerOrders)
+                      .HasForeignKey(os => os.PhysicalShopSessionId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_PlanType exist
             });
 
             // -------------------------------------------------------------
@@ -189,6 +194,40 @@ namespace WebApplication1.Data
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
                     .IsConcurrencyToken();
+            });
+
+            // -------------------------------------------------------------
+            // PhysicalShopSession
+            // -------------------------------------------------------------
+            modelBuilder.Entity<PhysicalShopSession>(entity =>
+            {
+                //Only one active session can exist
+                entity.HasIndex(p => p.IsActive)
+                    .IsUnique()
+                    .HasFilter("[IsActive] = 1");
+
+                // (0..1) — (M) CustomerOrder handled in CustomerOrder entity
+            });
+
+            // -------------------------------------------------------------
+            // Invoice
+            // -------------------------------------------------------------
+            modelBuilder.Entity<Invoice>(entity =>
+            {
+                entity.Property(i => i.InvoiceAmount)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(i => i.RowVersion)
+                    .HasColumnType("BINARY(8)")
+                    .IsRequired()
+                    .IsConcurrencyToken();
+
+                // (1) — (0..1) Cashflow
+                entity.HasOne(i => i.Cashflow)
+                      .WithOne(ic => ic.Invoice)
+                      .HasForeignKey<BNPL_PLAN>(p => p.OrderID)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Cashflow exist   
             });
 
             // -------------------------------------------------------------

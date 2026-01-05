@@ -27,6 +27,9 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(InvoiceStatusEnum))]
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Draft;
 
+        [ConcurrencyCheck]
+        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
+        
         //******* [Start: CustomerOrder (1) — Invoice (M)] ****
         //FK
         public int OrderID { get; set; }
