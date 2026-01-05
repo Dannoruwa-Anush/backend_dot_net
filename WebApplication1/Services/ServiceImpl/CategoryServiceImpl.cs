@@ -2,7 +2,9 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -10,20 +12,25 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICategoryRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
-        
+
         private readonly IElectronicItemRepository _electronicItemRepository;
 
         //logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
+
+        // Service-Level (Technical) Logging
         private readonly ILogger<CategoryServiceImpl> _logger;
 
         // Constructor
-        public CategoryServiceImpl(ICategoryRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, ILogger<CategoryServiceImpl> logger)
+        public CategoryServiceImpl(ICategoryRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, IAuditLogService auditLogService, ILogger<CategoryServiceImpl> logger)
         {
             // Dependency injection
-            _repository               = repository;
-            _unitOfWork               = unitOfWork;
+            _repository = repository;
+            _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
             _electronicItemRepository = electronicItemRepository;
-            _logger                   = logger;
+            _logger = logger;
         }
 
         //CRUD operations
@@ -42,14 +49,14 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(category);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Category created: Id={Id}, CategoryName={Name}", category.CategoryID, category.CategoryName);
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Category", category.CategoryID, category.CategoryName);
             return category;
         }
 
         public async Task<Category> UpdateCategoryWithSaveAsync(int id, Category category)
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) 
+            if (existing == null)
                 throw new Exception("Category not found");
 
             var duplicate = await _repository.ExistsByCategoryNameAsync(category.CategoryName, id);
@@ -59,13 +66,11 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedCategory = await _repository.UpdateAsync(id, category);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedCategory != null)
-            {
-                _logger.LogInformation("Category updated: Id={Id}, CategoryName={Name}", updatedCategory.CategoryID, updatedCategory.CategoryName);
-                return updatedCategory;
-            }
+            if (updatedCategory == null)
+                throw new Exception("Category update failed.");
 
-            throw new Exception("Category update failed.");
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Category", updatedCategory.CategoryID, updatedCategory.CategoryName);
+            return updatedCategory;
         }
 
         public async Task DeleteCategoryWithSaveAsync(int id)
@@ -81,14 +86,11 @@ namespace WebApplication1.Services.ServiceImpl
             // Proceed with deletion if safe
             var deleted = await _repository.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
-            
-            if (!deleted)
-            {
-                _logger.LogWarning("Attempted to delete category with id {Id}, but it does not exist.", id);
-                throw new Exception("Category not found");
-            }
 
-            _logger.LogInformation("Category deleted successfully: Id={Id}", id);
+            if (!deleted)
+                throw new Exception("Category not found");
+
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "Category", id, $"CategoryId={id}");
         }
 
         //Custom Query Operations
