@@ -33,6 +33,7 @@ namespace WebApplication1.Data
         public DbSet<BNPL_Installment> BNPL_Installments { get; set; }
         public DbSet<BNPL_PlanSettlementSummary> BNPL_PlanSettlementSummaries { get; set; }
         public DbSet<PhysicalShopSession> PhysicalShopSessions { get; set; }
+        public DbSet<Invoice> Invoices { get; set; }
         //---
 
         //-------- [Start: configure model] -----------

@@ -51,6 +51,7 @@ builder.Services.AddAutoMapper(
     typeof(BNPL_InstallmentAutoMapperProfiles),
     typeof(BNPL_PlanSettlementSummaryAutoMapperProfile),
     typeof(PhysicalShopSessionAutoMapperProfile),
+    typeof(InvoiceAutoMapperProfile),
 
     //Helpers
     typeof(BNPLInstallmentCalculatorAutoMapperProfile)
@@ -76,7 +77,8 @@ builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
                 .AddScoped<IBNPL_PlanRepository, BNPL_PlanRepositoryImpl>()
                 .AddScoped<IBNPL_InstallmentRepository, BNPL_InstallmentRepositoryImpl>()
                 .AddScoped<IBNPL_PlanSettlementSummaryRepository, BNPL_PlanSettlementSummaryRepositoryImpl>()
-                .AddScoped<IPhysicalShopSessionRepository, PhysicalShopSessionRepositoryImpl>();
+                .AddScoped<IPhysicalShopSessionRepository, PhysicalShopSessionRepositoryImpl>()
+                .AddScoped<IInvoiceRepository, InvoiceRepositoryImpl>();
 
 //--------------------[Unit of work DI]------------
 builder.Services.AddScoped<IAppUnitOfWork, AppUnitOfWorkImpl>();
@@ -104,7 +106,8 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<IBNPL_PlanSettlementSummaryService, BNPL_PlanSettlementSummaryServiceImpl>()
                 .AddScoped<IPaymentService, PaymentServiceImpl>()
                 .AddScoped<IDueDateAdjustmentService, DueDateAdjustmentServiceImpl>()
-                .AddScoped<IPhysicalShopSessionService, PhysicalShopSessionServiceImpl>();
+                .AddScoped<IPhysicalShopSessionService, PhysicalShopSessionServiceImpl>()
+                .AddScoped<IInvoiceService, InvoiceServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
