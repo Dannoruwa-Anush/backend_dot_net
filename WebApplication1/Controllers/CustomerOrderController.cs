@@ -170,6 +170,7 @@ namespace WebApplication1.Controllers
             }
         }
 
+        /*
         [HttpGet("invoice/{id}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetOrderInvoiceByOrderId(int id)
@@ -196,5 +197,6 @@ namespace WebApplication1.Controllers
             var fileUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
             return Ok(new ApiResponseDto<string>(200, "Invoice generated successfully", fileUrl));
         }
+        */
     }
 }

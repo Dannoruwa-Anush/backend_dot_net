@@ -4,6 +4,6 @@ namespace WebApplication1.Services.IService
 {
     public interface IDocumentGenerationService
     {
-        Task<string> GenerateInvoicePdfAsync(CustomerOrderResponseDto order);
+        Task<string> GenerateInvoicePdfAsync(CustomerOrderResponseDto order, InvoiceResponseDto invoice);
     }
 }

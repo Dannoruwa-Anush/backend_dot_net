@@ -16,6 +16,8 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Draft;
 
+        public string? InvoiceFileUrl { get; set; }
+
         // Include simplified info about FK: Order
         public required CustomerOrderResponseDto CustomerOrderResponseDto { get; set; }
 

@@ -28,5 +28,9 @@ namespace WebApplication1.DTOs.ResponseDto
 
         // Include simplified info about child items: CustomerOrderElectronicItem 
         public ICollection<CustomerOrderElectronicItemResponseDto> CustomerOrderElectronicItemResponseDto { get; set; } = new List<CustomerOrderElectronicItemResponseDto>();
+    
+        // Include simplified info about child items: Invoice
+        // Only for draft invoice 
+        public InvoiceResponseDto? CurrentInvoice { get; set; }
     }
 }

@@ -16,7 +16,7 @@ namespace WebApplication1.Services.ServiceImpl
             _env = env;
         }
 
-        public async Task<string> GenerateInvoicePdfAsync(CustomerOrderResponseDto order)
+        public async Task<string> GenerateInvoicePdfAsync(CustomerOrderResponseDto order, InvoiceResponseDto invoice)
         {
             string folderPath = Path.Combine(_env.WebRootPath, "invoices");
             Directory.CreateDirectory(folderPath);
@@ -29,8 +29,10 @@ namespace WebApplication1.Services.ServiceImpl
                 using (FileStream fs = new FileStream(filePath, FileMode.Create))
                 {
                     Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
-                    PdfWriter.GetInstance(doc, fs);
+                    PdfWriter writer = PdfWriter.GetInstance(doc, fs);
                     doc.Open();
+
+                    AddWatermark(writer, invoice.InvoiceStatus.ToString());
 
                     var fontTitle = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
                     var fontNormal = FontFactory.GetFont(FontFactory.HELVETICA, 10);
@@ -98,6 +100,32 @@ namespace WebApplication1.Services.ServiceImpl
             });
 
             return $"invoices/{fileName}";
+        }
+
+        // Helper Method : Add Watermark
+        private void AddWatermark(PdfWriter writer, string text)
+        {
+            PdfContentByte canvas =
+                writer.DirectContentUnder;
+
+            BaseFont font =
+                BaseFont.CreateFont(
+                    BaseFont.HELVETICA_BOLD,
+                    BaseFont.WINANSI,
+                    BaseFont.EMBEDDED);
+
+            canvas.SaveState();
+            canvas.SetColorFill(new BaseColor(200, 200, 200));
+            canvas.SetFontAndSize(font, 60);
+
+            canvas.ShowTextAligned(
+                Element.ALIGN_CENTER,
+                text.ToUpper(),
+                297,
+                421,
+                45);
+
+            canvas.RestoreState();
         }
     }
 }

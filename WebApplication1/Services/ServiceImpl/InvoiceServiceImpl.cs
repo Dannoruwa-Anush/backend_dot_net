@@ -1,8 +1,10 @@
+using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -24,15 +26,70 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //CRUD operations
-        public async Task<IEnumerable<Invoice>> GetAllInvoicesAsync()=>
+        public async Task<IEnumerable<Invoice>> GetAllInvoicesAsync() =>
             await _repository.GetAllAsync();
 
         public async Task<Invoice?> GetInvoiceByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public Task<Invoice> BuildInvoiceAddRequestAsync()
+        public Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, CustomerOrderRequestDto request)
         {
-            throw new NotImplementedException();
+            if (order == null)
+                throw new ArgumentNullException(nameof(order));
+
+            // ============================
+            // FULL PAYMENT ORDER
+            // ============================
+            if (!request.Bnpl_PlanTypeID.HasValue)
+            {
+                return Task.FromResult(new Invoice
+                {
+                    OrderID = order.OrderID,
+                    InvoiceAmount = order.TotalAmount,
+                    InvoiceType = InvoiceTypeEnum.Full_Payment_Invoice,
+                    InvoiceStatus = InvoiceStatusEnum.Draft
+                });
+            }
+
+            // ============================
+            // BNPL - INITIAL PAYMENT ONLY
+            // ============================
+            return Task.FromResult(new Invoice
+            {
+                OrderID = order.OrderID,
+                InvoiceAmount = request.InitialPayment!.Value,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice,
+                InvoiceStatus = InvoiceStatusEnum.Draft,
+                InstallmentNo = 0
+            });
+        }
+
+        public async Task<Invoice> CreateInstallmentInvoiceAsync(CustomerOrder order, int installmentNo)
+        {
+            decimal remaining =
+                order.TotalAmount - order.Invoices
+                    .Where(i => i.InvoiceType ==
+                        InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice)
+                    .Sum(i => i.InvoiceAmount);
+
+            int totalInstallments = order.BNPL_PLAN!.Bnpl_TotalInstallmentCount;
+
+            decimal installmentAmount =
+                Math.Round(remaining / totalInstallments, 2);
+
+            var invoice = new Invoice
+            {
+                OrderID = order.OrderID,
+                InvoiceAmount = installmentAmount,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment_Invoice,
+                InvoiceStatus = InvoiceStatusEnum.Draft,
+                InstallmentNo = installmentNo
+            };
+
+            order.Invoices.Add(invoice);
+            await _unitOfWork.SaveChangesAsync();
+
+            return invoice;
         }
 
         //Custom Query Operations
@@ -40,5 +97,22 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, searchKey);
         }
+
+        public async Task PayInvoiceAsync(int invoiceId)
+        {
+            var invoice = await _repository.GetByIdAsync(invoiceId);
+
+            /*
+                        invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
+
+                        invoice.Cashflow = new Cashflow
+                        {
+                            Amount = invoice.InvoiceAmount,
+                            TransactionDate = DateTime.UtcNow
+                        };
+            */
+            await _unitOfWork.SaveChangesAsync();
+        }
+
     }
 }

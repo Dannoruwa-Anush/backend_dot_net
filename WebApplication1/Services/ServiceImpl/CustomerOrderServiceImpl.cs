@@ -23,6 +23,7 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
         private readonly IBNPL_PlanService _bNPL_PlanService;
+        private readonly IInvoiceService _invoiceService;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
@@ -38,6 +39,7 @@ namespace WebApplication1.Services.ServiceImpl
             IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
             IBNPL_PlanService bNPL_PlanService,
             ILogger<CustomerOrderServiceImpl> logger,
+            IInvoiceService invoiceService,
             IMapper mapper)
         {
             // Dependency injection
@@ -49,6 +51,7 @@ namespace WebApplication1.Services.ServiceImpl
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
+            _invoiceService = invoiceService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -62,8 +65,7 @@ namespace WebApplication1.Services.ServiceImpl
 
 
         // -------- [Start: create an order + bnpl_plan + bnpl_installments + initial bnpl_snapshot] -------- 
-        public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(
-    CustomerOrderRequestDto createRequest)
+        public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrderRequestDto createRequest)
         {
             await _unitOfWork.BeginTransactionAsync();
 
@@ -116,6 +118,10 @@ namespace WebApplication1.Services.ServiceImpl
                 // --------------------------------
                 // Invoice Craetion (Drft)
                 // --------------------------------
+                var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, createRequest);
+                customerOrder.Invoices.Add(invoice);
+
+                await _unitOfWork.SaveChangesAsync();
 
                 // --------------------------------
                 // Creation log (AFTER OrderID exists)
@@ -123,6 +129,7 @@ namespace WebApplication1.Services.ServiceImpl
                 LogOrderCreation(customerOrder);
 
                 await _unitOfWork.CommitAsync();
+
                 return customerOrder;
             }
             catch (Exception ex)

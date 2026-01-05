@@ -1,3 +1,4 @@
+using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
@@ -15,6 +16,8 @@ namespace WebApplication1.Services.IService
         Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, string? searchKey = null);
 
         //Shared Internal Operations Used by Multiple Repositories
-        Task<Invoice> BuildInvoiceAddRequestAsync(/*CustomerOrderRequestDto customerOrderRequest, InvoiceTypeEnum invoiceType*/);
+        Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, CustomerOrderRequestDto request);
+        Task<Invoice> CreateInstallmentInvoiceAsync(CustomerOrder order, int installmentNo);
+        Task PayInvoiceAsync(int invoiceId); //todo invoice status update   
     }
 }
