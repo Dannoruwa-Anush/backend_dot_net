@@ -11,7 +11,9 @@ namespace WebApplication1.Services.IService
 
         //Single Repository Operations (save immediately)
         Task<PhysicalShopSession> AddPhysicalShopSessionWithSaveAsync(PhysicalShopSession session);
-        Task<PhysicalShopSession> UpdatePhysicalShopSessionWithSaveAsync(int id, PhysicalShopSession session);
+        
+        //Multiple Repository Operations (transactional)
+        Task<PhysicalShopSession> ModifyPhysicalShopSessionWithTransactionAsync(int id, PhysicalShopSession session);
 
         //Custom Query Operations
     }

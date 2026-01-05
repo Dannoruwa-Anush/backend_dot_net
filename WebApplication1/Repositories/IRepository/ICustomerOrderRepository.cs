@@ -19,7 +19,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> ExistsByCustomerAsync(int customerId);
         Task<bool> ExistsPendingOrderForCustomerAsync(int customerId);
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
-
-        //getAllPendingOrdersForActiveSession
+        Task<IEnumerable<CustomerOrder>> GetAllPaymentPendingByPhysicalShopSessionIdAsync(int PhysicalShopSessionId);
     }
 }

@@ -33,6 +33,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             if (existing == null)
                 return null;
 
+            existing.OpenedAt = physicalShopSession.OpenedAt;
             existing.IsActive = physicalShopSession.IsActive;
             existing.ClosedAt = physicalShopSession.ClosedAt;
             _context.PhysicalShopSessions.Update(existing);

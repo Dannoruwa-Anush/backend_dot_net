@@ -43,6 +43,8 @@ namespace WebApplication1.Models
 
         public DateTime? LastPaymentDate { get; set; }
 
+        public DateTime? CancelledAt { get; set; }
+        
         public DateTime? RefundDate { get; set; }
 
         public DateTime? LastLateInterestAppliedDate { get; set; }

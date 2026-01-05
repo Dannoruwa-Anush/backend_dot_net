@@ -197,5 +197,19 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 PageSize = pageSize
             };
         }
+
+        public async Task<IEnumerable<CustomerOrder>> GetAllPaymentPendingByPhysicalShopSessionIdAsync(int physicalShopSessionId)
+        {
+            return await _context.CustomerOrders
+                .AsNoTracking()
+                .Where(co =>
+                    co.PhysicalShopSessionId == physicalShopSessionId &&
+                    co.OrderSource == OrderSourceEnum.PhysicalShop &&
+                    co.OrderPaymentStatus == OrderPaymentStatusEnum.Pending &&
+                    co.OrderStatus != OrderStatusEnum.Cancelled
+                )
+                .OrderBy(co => co.OrderDate)
+                .ToListAsync();
+        }
     }
 }
