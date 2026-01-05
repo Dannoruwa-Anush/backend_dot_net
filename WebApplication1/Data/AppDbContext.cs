@@ -225,7 +225,7 @@ namespace WebApplication1.Data
                 // (1) — (0..1) Cashflow
                 entity.HasOne(i => i.Cashflow)
                       .WithOne(ic => ic.Invoice)
-                      .HasForeignKey<BNPL_PLAN>(p => p.OrderID)
+                      .HasForeignKey<Cashflow>(c => c.InvoiceID)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Cashflow exist   
             });
