@@ -2,7 +2,9 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -13,15 +15,20 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
+
+        // Service-Level (Technical) Logging
         private readonly ILogger<EmployeeServiceImpl> _logger;
 
         // Constructor
-        public EmployeeServiceImpl(IEmployeeRepository repository, IUserRepository userRepository, IAppUnitOfWork unitOfWork, ILogger<EmployeeServiceImpl> logger)
+        public EmployeeServiceImpl(IEmployeeRepository repository, IUserRepository userRepository, IAppUnitOfWork unitOfWork, IAuditLogService auditLogService, ILogger<EmployeeServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -53,7 +60,7 @@ namespace WebApplication1.Services.ServiceImpl
                 await _repository.AddAsync(employee);
                 await _unitOfWork.CommitAsync();
 
-                _logger.LogInformation("Employee created: Id={Id}, EmploeeName={Name}", employee.EmployeeID, employee.EmployeeName);
+                _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Employee", employee.EmployeeID, employee.EmployeeName);
                 return employee;
             }
             catch (Exception ex)
@@ -73,13 +80,11 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedEmployee = await _repository.UpdateAsync(id, employee);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedEmployee != null)
-            {
-                _logger.LogInformation("Employee updated: Id={Id}, EmployeeName={Name}", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
-                return updatedEmployee;
-            }
+            if (updatedEmployee == null)
+                throw new Exception("Employee update failed.");
 
-            throw new Exception("Employee update failed.");
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Employee", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
+            return updatedEmployee;
         }
 
         public async Task<Employee> UpdateEmployeeProfileWithSaveAsync(int id, Employee employee)
@@ -91,13 +96,11 @@ namespace WebApplication1.Services.ServiceImpl
             var updatedEmployee = await _repository.UpdateProfileAsync(id, employee);
             await _unitOfWork.SaveChangesAsync();
 
-            if (updatedEmployee != null)
-            {
-                _logger.LogInformation("Employee profile updated: Id={Id}, EmployeeName={Name}", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
-                return updatedEmployee;
-            }
-
-            throw new Exception("Employee profile update failed.");
+            if (updatedEmployee == null)
+                throw new Exception("Employee profile update failed.");
+                
+            _logger.LogInformation("Employee profile updated: Id={Id}, EmployeeName={Name}", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
+            return updatedEmployee;
         }
 
         //Custom Query Operations

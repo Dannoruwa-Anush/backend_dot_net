@@ -7,6 +7,7 @@ using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Controllers
 {
@@ -28,7 +29,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
-        [Authorize(Roles = "Admin")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOnly)]  // JWT is required
         public async Task<IActionResult> GetAll()
         {
             var employees = await _service.GetAllEmployeesAsync();
@@ -61,7 +62,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOnly)]  // JWT is required
         public async Task<IActionResult> Create([FromBody] EmployeeRequestDto employeeCreateDto)
         {
             try
@@ -91,7 +92,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOnly)]  // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] EmployeeUpdateRequestDto employeeUpdateDto)
         {
             try
@@ -119,7 +120,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("profile/{id}")]
-        [Authorize(Roles = "Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AllEmployeesOnly)]  // JWT is required
         public async Task<IActionResult> UpdateProfile(int id, [FromBody] EmployeeProfileUpdateRequestDto employeeProfileUpdateDto)
         {
             try
@@ -148,7 +149,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
-        [Authorize(Roles = "Admin")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOnly)]  // JWT is required
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? positionId = null, [FromQuery] string? searchKey = null)
         {
             try
