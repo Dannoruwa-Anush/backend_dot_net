@@ -186,11 +186,17 @@ builder.Services
     .AddPolicy(AuthorizationPolicies.CashierOnly, policy =>
         policy.RequireRole("Employee")
               .RequireClaim("EmployeePosition", "Cashier"))
-    .AddPolicy(AuthorizationPolicies.CashierOrCustomer, policy =>
+    .AddPolicy(AuthorizationPolicies.CustomerOrCashier, policy =>
         policy.RequireAssertion(context =>
             (context.User.IsInRole("Employee") &&
              context.User.HasClaim("EmployeePosition", "Cashier")) ||
             context.User.IsInRole("Customer")
+        ))
+    .AddPolicy(AuthorizationPolicies.AdminOrManager, policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            (context.User.IsInRole("Employee") &&
+            context.User.HasClaim("EmployeePosition", "Manager"))
         ));
 
 // -------------[CORS for Angular]--------------------

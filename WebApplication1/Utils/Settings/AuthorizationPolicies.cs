@@ -10,6 +10,9 @@ namespace WebApplication1.Utils.Settings
         // Employee position level
         public const string ManagerOnly = "ManagerOnly";
         public const string CashierOnly = "CashierOnly";
-        public const string CashierOrCustomer = "CashierOrCustomer";
+
+        // User or Employee
+        public const string AdminOrManager = "AdminOrManager";
+        public const string CustomerOrCashier = "CustomerOrCashier";
     }
 }
