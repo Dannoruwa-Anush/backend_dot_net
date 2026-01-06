@@ -47,7 +47,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
             var employee = await _service.GetEmployeeByIdAsync(id);
@@ -172,7 +172,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("user/{userId}")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetByUserId(int userId)
         {
             var employee = await _service.GetEmployeeByUserIdAsync(userId);

@@ -7,6 +7,7 @@ using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Controllers
 {
@@ -28,7 +29,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetAll()
         {
             var customers = await _service.GetAllCustomersAsync();
@@ -121,7 +122,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchKey = null)
         {
             try

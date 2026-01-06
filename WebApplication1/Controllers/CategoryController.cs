@@ -61,7 +61,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> Create([FromBody] CategoryRequestDto categoryCreateDto)
         {
             try
@@ -87,7 +87,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] CategoryRequestDto categoryUpdateDto)
         {
             try

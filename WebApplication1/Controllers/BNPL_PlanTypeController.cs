@@ -28,7 +28,7 @@ namespace WebApplication1.Controllers
 
         //CRUD operations
         [HttpGet]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetAll()
         {
             var bNPL_PlanTypes = await _service.GetAllBNPL_PlanTypesAsync();
@@ -47,7 +47,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
             var bNPL_PlanType = await _service.GetBNPL_PlanTypeByIdAsync(id);
@@ -62,7 +62,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> Create([FromBody] BNPL_PlanTypeRequestDto bNPL_PlanTypeCreateDto)
         {
             try
@@ -92,7 +92,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> Update(int id, [FromBody] BNPL_PlanTypeRequestDto bNPL_PlanTypeUpdateDto)
         {
             try
@@ -145,7 +145,7 @@ namespace WebApplication1.Controllers
 
         //Custom Query Operations
         [HttpGet("paged")]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
         public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, string? searchKey = null)
         {
             try
