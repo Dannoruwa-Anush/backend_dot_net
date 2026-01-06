@@ -14,5 +14,6 @@ namespace WebApplication1.Utils.Settings
         // User or Employee
         public const string AdminOrManager = "AdminOrManager";
         public const string CustomerOrCashier = "CustomerOrCashier";
+        public const string AdminOrCustomerOrManager = "AdminOrCustomerOrManager";
     }
 }

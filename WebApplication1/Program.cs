@@ -197,6 +197,13 @@ builder.Services
             context.User.IsInRole("Admin") ||
             (context.User.IsInRole("Employee") &&
             context.User.HasClaim("EmployeePosition", "Manager"))
+        ))
+    .AddPolicy(AuthorizationPolicies.AdminOrCustomerOrManager, policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            context.User.IsInRole("Customer") ||
+            (context.User.IsInRole("Employee") &&
+            context.User.HasClaim("EmployeePosition", "Manager"))
         ));
 
 // -------------[CORS for Angular]--------------------
