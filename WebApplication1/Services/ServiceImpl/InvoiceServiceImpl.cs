@@ -47,7 +47,7 @@ namespace WebApplication1.Services.ServiceImpl
                     OrderID = order.OrderID,
                     InvoiceAmount = order.TotalAmount,
                     InvoiceType = InvoiceTypeEnum.Full_Payment_Invoice,
-                    InvoiceStatus = InvoiceStatusEnum.Draft
+                    InvoiceStatus = InvoiceStatusEnum.Opened
                 });
             }
 
@@ -59,7 +59,7 @@ namespace WebApplication1.Services.ServiceImpl
                 OrderID = order.OrderID,
                 InvoiceAmount = request.InitialPayment!.Value,
                 InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice,
-                InvoiceStatus = InvoiceStatusEnum.Draft,
+                InvoiceStatus = InvoiceStatusEnum.Opened,
                 InstallmentNo = 0
             });
         }
@@ -82,7 +82,7 @@ namespace WebApplication1.Services.ServiceImpl
                 OrderID = order.OrderID,
                 InvoiceAmount = installmentAmount,
                 InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment_Invoice,
-                InvoiceStatus = InvoiceStatusEnum.Draft,
+                InvoiceStatus = InvoiceStatusEnum.Opened,
                 InstallmentNo = installmentNo
             };
 

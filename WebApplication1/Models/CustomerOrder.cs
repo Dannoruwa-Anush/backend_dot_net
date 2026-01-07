@@ -3,6 +3,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 using WebApplication1.Models.Base;
 using WebApplication1.Utils.Project_Enums;
 
+/*
+1. [frontend] Add Products to shopping cart (cart-unlock: Add/change products, qty)
+2. [frontend] Checkout order (cart-lock: products in shopping cart)
+2. [frontend] Choose order mode (Pay_Now, Bnpl)
+3. [frontend] Review (check order details [cancel/confirm])
+4. [backendend/create table record] After Order Confirmation: order, invoice (Opened) bnpl plan, bnpl_installmets, bnpl_snapshot creates and waiting for payment
+5. [backendend/update record status] Process Payment: 
+                5.1 if payment received: invoice (paid), 
+                5.2 if order is cancelled before the payment: invoice (Voided), 
+                5.3 if order is refund_approved after the payment: invoice (Refunded), 
+*/
 namespace WebApplication1.Models
 {
     public class CustomerOrder : BaseModel //(In base model: Audit fields)

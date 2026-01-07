@@ -2,9 +2,9 @@ namespace WebApplication1.Utils.Project_Enums
 {
     public enum InvoiceStatusEnum
     {
-        Draft = 1,      // Created, no payment yet
-        Paid = 2,       // Payment recieved
-        Refunded = 3,   // Paid, then refunded (credit issued)
-        Cancelled = 4   // Draft invoice voided (no payment)
+        Opened = 1,        // Invoice created, stock allocated, BNPL created, awaiting payment
+        Voided = 2,      // Invoice created but cancelled before payment (stock released)
+        Paid = 3,        // Payment received
+        Refunded = 4     // Paid, then refunded
     }
 }

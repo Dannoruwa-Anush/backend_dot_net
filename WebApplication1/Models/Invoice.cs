@@ -14,6 +14,14 @@ namespace WebApplication1.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal InvoiceAmount { get; set; }
 
+        //--------------------------
+        // Invoice Status lifecycle
+        //--------------------------
+        public DateTime? OpenedAt { get; set; }
+        public DateTime? VoidedAt { get; set; }
+        public DateTime? PaidAt { get; set; }
+        public DateTime? RefundedAt { get; set; }
+
         // For bnpl installment payment
         public int? InstallmentNo { get; set; }
 
@@ -25,7 +33,7 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(InvoiceStatusEnum))]
-        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Draft;
+        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Opened;
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
