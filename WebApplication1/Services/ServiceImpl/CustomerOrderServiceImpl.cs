@@ -244,7 +244,7 @@ namespace WebApplication1.Services.ServiceImpl
                             Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
                             Bnpl_TotalInstallmentCount = request.InstallmentCount.Value,
                             Bnpl_PlanTypeID = request.Bnpl_PlanTypeID.Value,
-                            Bnpl_Status = BnplStatusEnum.Draft
+                            Bnpl_Status = BnplStatusEnum.Requested
                         });
 
             var installments =

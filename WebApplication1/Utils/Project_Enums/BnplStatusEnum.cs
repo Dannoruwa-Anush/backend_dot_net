@@ -2,10 +2,10 @@ namespace WebApplication1.Utils.Project_Enums
 {
     public enum BnplStatusEnum
     {
-        Draft = 1,
-        Active = 2,
-        Completed = 3,
-        Cancelled = 4,
-        Defaulted = 5,
+        Requested = 1,  // BNPL order created, awaiting initial payment
+        Active = 2,     // Initial payment completed, BNPL plan is in active
+        Completed = 3,  // BNPL plan fully paid and completed
+        Cancelled = 4,  // BNPL plan cancelled due to order cancellation
+        Defaulted = 5,  // Payment not completed on time, plan defaulted
     }
 }

@@ -25,18 +25,21 @@ namespace WebApplication1.Models
         public int Bnpl_RemainingInstallmentCount { get; set; }
 
         [Required(ErrorMessage = "Bnpl Start date is required")]
-        public DateTime? Bnpl_StartDate { get; set; } //set after the initial payment is completed
+        public DateTime? Bnpl_StartDate { get; set; } //set after the bnpl paln is requested
 
         public DateTime? Bnpl_NextDueDate { get; set; }
 
-        public DateTime? CompletedAt { get; set; }
-
-        public DateTime? CancelledAt { get; set; }
-
+        //---------------------------
+        // Bnpl plan Status lifecycle
+        //---------------------------
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(BnplStatusEnum))]
-        public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Draft;
+        public BnplStatusEnum Bnpl_Status { get; set; } = BnplStatusEnum.Requested;
+
+        public DateTime? CompletedAt { get; set; }
+        public DateTime? CancelledAt { get; set; }
+        public DateTime? Defaulted { get; set; }
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
