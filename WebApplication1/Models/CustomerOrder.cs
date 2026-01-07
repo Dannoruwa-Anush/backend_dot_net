@@ -31,13 +31,15 @@ namespace WebApplication1.Models
         [Required(ErrorMessage = "Order date is required")]
         public DateTime OrderDate { get; set; }
 
-        //--------------------------
-        // Order Source
-        //--------------------------
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderSourceEnum))]
         public OrderSourceEnum OrderSource { get; set; } = OrderSourceEnum.PhysicalShop;
+
+        [Required]
+        [Column(TypeName = "nvarchar(20)")]
+        [EnumDataType(typeof(OrderPaymentModeEnum))]
+        public OrderPaymentModeEnum OrderPaymentMode { get; set; } = OrderPaymentModeEnum.Pay_Bnpl;
 
         //--------------------------
         // Order Status lifecycle

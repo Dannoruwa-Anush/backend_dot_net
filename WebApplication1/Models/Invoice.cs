@@ -17,6 +17,11 @@ namespace WebApplication1.Models
         //--------------------------
         // Invoice Status lifecycle
         //--------------------------
+        [Required]
+        [Column(TypeName = "nvarchar(20)")]
+        [EnumDataType(typeof(InvoiceStatusEnum))]
+        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Opened;
+        
         public DateTime? OpenedAt { get; set; }
         public DateTime? VoidedAt { get; set; }
         public DateTime? PaidAt { get; set; }
@@ -29,11 +34,6 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(InvoiceTypeEnum))]
         public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice;
-
-        [Required]
-        [Column(TypeName = "nvarchar(20)")]
-        [EnumDataType(typeof(InvoiceStatusEnum))]
-        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Opened;
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
