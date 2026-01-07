@@ -8,7 +8,7 @@ using WebApplication1.Utils.Project_Enums;
 2. [frontend] Checkout order (cart-lock: products in shopping cart)
 2. [frontend] Choose order mode (Pay_Now, Bnpl)
 3. [frontend] Review (check order details [cancel/confirm])
-4. [backendend/create table record] After Order Confirmation: order, invoice (Opened) bnpl plan, bnpl_installmets, bnpl_snapshot creates and waiting for payment
+4. [backendend/create table record] After Order Confirmation: order, invoice (Unpaid) bnpl plan, bnpl_installmets, bnpl_snapshot creates and waiting for payment
 5. [backendend/update record status] Process Payment: 
                 5.1 if payment received: invoice (paid), 
                 5.2 if order is cancelled before the payment: invoice (Voided), 

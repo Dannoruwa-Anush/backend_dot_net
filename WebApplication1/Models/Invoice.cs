@@ -20,9 +20,8 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(InvoiceStatusEnum))]
-        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Opened;
+        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
         
-        public DateTime? OpenedAt { get; set; }
         public DateTime? VoidedAt { get; set; }
         public DateTime? PaidAt { get; set; }
         public DateTime? RefundedAt { get; set; }

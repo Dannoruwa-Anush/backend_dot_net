@@ -14,7 +14,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice;
 
-        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Opened;
+        public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
 
         public string? InvoiceFileUrl { get; set; }
 
