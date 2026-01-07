@@ -158,7 +158,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.CustomerOrders.AnyAsync(o =>
                 o.CustomerID == customerId &&
                 o.OrderStatus == OrderStatusEnum.Pending &&
-                o.OrderPaymentStatus == OrderPaymentStatusEnum.Pending
+                o.OrderPaymentStatus == OrderPaymentStatusEnum.Awaiting_Payment
             );
         }
 
@@ -204,7 +204,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Where(co =>
                     co.PhysicalShopSessionId == physicalShopSessionId &&
                     co.OrderSource == OrderSourceEnum.PhysicalShop &&
-                    co.OrderPaymentStatus == OrderPaymentStatusEnum.Pending &&
+                    co.OrderPaymentStatus == OrderPaymentStatusEnum.Awaiting_Payment &&
                     co.OrderStatus != OrderStatusEnum.Cancelled
                 )
                 .OrderBy(co => co.OrderDate)

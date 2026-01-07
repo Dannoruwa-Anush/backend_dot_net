@@ -44,6 +44,11 @@ namespace WebApplication1.Models
         //--------------------------
         // Order Status lifecycle
         //--------------------------
+        [Required]
+        [Column(TypeName = "nvarchar(20)")]
+        [EnumDataType(typeof(OrderStatusEnum))]
+        public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
+
         public DateTime? ShippedDate { get; set; }
 
         public DateTime? DeliveredDate { get; set; }
@@ -60,11 +65,6 @@ namespace WebApplication1.Models
         [MaxLength(100)]
         public string? CancellationRejectionReason { get; set; }
 
-        [Required]
-        [Column(TypeName = "nvarchar(20)")]
-        [EnumDataType(typeof(OrderStatusEnum))]
-        public OrderStatusEnum OrderStatus { get; set; } = OrderStatusEnum.Pending;
-
         //--------------------------
         // Payment Status lifecycle
         //--------------------------
@@ -75,9 +75,7 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderPaymentStatusEnum))]
-        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Pending;
-
-        public bool IsBnplPlanExist { get; set; } = false;
+        public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Awaiting_Payment;
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; } = new byte[8]; // for optimistic concurrency.

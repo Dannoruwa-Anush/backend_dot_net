@@ -100,7 +100,7 @@ namespace WebApplication1.Services.ServiceImpl
                 // --------------------------------
                 customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
-                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Pending;
+                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Awaiting_Payment;
 
                 ApplyOnlineOrderAutoCancellation(customerOrder);
 
@@ -208,7 +208,7 @@ namespace WebApplication1.Services.ServiceImpl
         //Helper Method : HandleFullPaymentOrder
         private void HandleFullPaymentOrder(CustomerOrder order)
         {
-            order.IsBnplPlanExist = false;
+            order.OrderPaymentMode = OrderPaymentModeEnum.Pay_now_full;
             order.BNPL_PLAN = null;
         }
 
@@ -262,7 +262,7 @@ namespace WebApplication1.Services.ServiceImpl
                 bnplPlan.BNPL_PlanSettlementSummaries.Add(snapshot);
 
             order.BNPL_PLAN = bnplPlan;
-            order.IsBnplPlanExist = true;
+            order.OrderPaymentMode = OrderPaymentModeEnum.Pay_Bnpl;
         }
 
         //Helper Method: ApplyOnlineOrderAutoCancellation
@@ -424,7 +424,7 @@ namespace WebApplication1.Services.ServiceImpl
         {
             switch (order.OrderPaymentStatus)
             {
-                case OrderPaymentStatusEnum.Pending:
+                case OrderPaymentStatusEnum.Awaiting_Payment:
                     // No payments - just cancel order
                     HandleRestock(order);
                     break;

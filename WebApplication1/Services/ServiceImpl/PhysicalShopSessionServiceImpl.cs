@@ -74,10 +74,10 @@ namespace WebApplication1.Services.ServiceImpl
                         order.CancellationReason = "Physical shop session closed";
                         order.CancellationApproved = true;
                         order.OrderStatus = OrderStatusEnum.Cancelled;
-                        order.OrderPaymentStatus = OrderPaymentStatusEnum.Cancelled;
+                        order.OrderPaymentStatus = OrderPaymentStatusEnum.Awaiting_Payment;
 
                         // ---------------- BNPL handling ----------------
-                        if (order.IsBnplPlanExist && order.BNPL_PLAN != null)
+                        if (order.OrderPaymentMode == OrderPaymentModeEnum.Pay_Bnpl && order.BNPL_PLAN != null)
                         {
                             var bnpl = order.BNPL_PLAN;
 
