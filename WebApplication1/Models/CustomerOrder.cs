@@ -68,14 +68,14 @@ namespace WebApplication1.Models
         //--------------------------
         // Payment Status lifecycle
         //--------------------------
-        // only for online : now + 5 min.
-        public DateTime? PendingPaymentOrderAutoCancelledDate { get; set; }
-        public DateTime? PaymentCompletedDate { get; set; }
-
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(OrderPaymentStatusEnum))]
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Awaiting_Payment;
+
+        // only for online : now + 5 min.
+        public DateTime? PendingPaymentOrderAutoCancelledDate { get; set; }
+        public DateTime? PaymentCompletedDate { get; set; }
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; } = new byte[8]; // for optimistic concurrency.

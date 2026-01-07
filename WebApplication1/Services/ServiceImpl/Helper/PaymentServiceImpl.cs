@@ -101,6 +101,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (paymentRequest.PaymentAmount != order.TotalAmount)
                 throw new Exception("Full payment must match order total");
 
+            order.OrderStatus = OrderStatusEnum.Processing;
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
 
@@ -126,6 +127,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
 
             order.BNPL_PLAN!.Bnpl_Status = BnplStatusEnum.Active;
+            order.OrderStatus = OrderStatusEnum.Processing;
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
         }
 
