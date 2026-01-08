@@ -1,9 +1,9 @@
-using WebApplication1.DTOs.ResponseDto;
+using WebApplication1.Models;
 
 namespace WebApplication1.Services.IService
 {
     public interface IDocumentGenerationService
     {
-        Task<string> GenerateInvoicePdfAsync(CustomerOrderResponseDto order, InvoiceResponseDto invoice);
+        Task<string> GenerateInvoicePdfAsync(CustomerOrder order, Invoice invoice);
     }
 }

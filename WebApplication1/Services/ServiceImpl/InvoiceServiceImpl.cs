@@ -13,15 +13,17 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IInvoiceRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
 
+        private IDocumentGenerationService _documentGenerationService;
         //logger: for auditing
         private readonly ILogger<InvoiceServiceImpl> _logger;
 
         // Constructor
-        public InvoiceServiceImpl(IInvoiceRepository repository, IAppUnitOfWork unitOfWork, ILogger<InvoiceServiceImpl> logger)
+        public InvoiceServiceImpl(IInvoiceRepository repository, IAppUnitOfWork unitOfWork, IDocumentGenerationService documentGenerationService, ILogger<InvoiceServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _documentGenerationService = documentGenerationService;
             _logger = logger;
         }
 
@@ -32,65 +34,92 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Invoice?> GetInvoiceByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, CustomerOrderRequestDto request)
+        // ----------- [Start : Invoice Generation] -------------
+        public async Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, InvoiceTypeEnum invoiceType)
         {
             if (order == null)
                 throw new ArgumentNullException(nameof(order));
 
-            // ============================
-            // FULL PAYMENT ORDER
-            // ============================
-            if (!request.Bnpl_PlanTypeID.HasValue)
+            var invoice = invoiceType switch
             {
-                return Task.FromResult(new Invoice
-                {
-                    OrderID = order.OrderID,
-                    InvoiceAmount = order.TotalAmount,
-                    InvoiceType = InvoiceTypeEnum.Full_Payment,
-                    InvoiceStatus = InvoiceStatusEnum.Unpaid
-                });
-            }
+                InvoiceTypeEnum.Full_Payment =>
+                    BuildFullPaymentInvoice(order),
 
-            // ============================
-            // BNPL - INITIAL PAYMENT ONLY
-            // ============================
-            return Task.FromResult(new Invoice
-            {
-                OrderID = order.OrderID,
-                InvoiceAmount = request.Bnpl_InitialPayment!.Value,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment,
-                InvoiceStatus = InvoiceStatusEnum.Unpaid,
-                InstallmentNo = 0
-            });
-        }
+                InvoiceTypeEnum.Bnpl_Initial_Payment =>
+                    BuildBnplInitialInvoice(order),
 
-        public async Task<Invoice> CreateInstallmentInvoiceAsync(CustomerOrder order, int installmentNo)
-        {
-            decimal remaining =
-                order.TotalAmount - order.Invoices
-                    .Where(i => i.InvoiceType ==
-                        InvoiceTypeEnum.Bnpl_Initial_Payment)
-                    .Sum(i => i.InvoiceAmount);
+                InvoiceTypeEnum.Bnpl_Installment_Payment =>
+                    BuildInstallmentInvoice(order),
 
-            int totalInstallments = order.BNPL_PLAN!.Bnpl_TotalInstallmentCount;
-
-            decimal installmentAmount =
-                Math.Round(remaining / totalInstallments, 2);
-
-            var invoice = new Invoice
-            {
-                OrderID = order.OrderID,
-                InvoiceAmount = installmentAmount,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment,
-                InvoiceStatus = InvoiceStatusEnum.Unpaid,
-                InstallmentNo = installmentNo
+                _ => throw new InvalidOperationException("Unsupported invoice type")
             };
 
             order.Invoices.Add(invoice);
             await _unitOfWork.SaveChangesAsync();
 
+            // Generate PDF AFTER InvoiceID exists
+            await GenerateAndAttachInvoicePdfAsync(order, invoice);
+
             return invoice;
         }
+
+        // Helper method: invoice builder - full payment
+        private Invoice BuildFullPaymentInvoice(CustomerOrder order)
+        {
+            return new Invoice
+            {
+                OrderID = order.OrderID,
+                InvoiceAmount = order.TotalAmount,
+                InvoiceType = InvoiceTypeEnum.Full_Payment,
+                InvoiceStatus = InvoiceStatusEnum.Unpaid
+            };
+        }
+
+        // Helper method: invoice builder - bnpl initial payment
+        private Invoice BuildBnplInitialInvoice(CustomerOrder order)
+        {
+            var plan = order.BNPL_PLAN
+                ?? throw new InvalidOperationException("BNPL plan not found");
+
+            return new Invoice
+            {
+                OrderID = order.OrderID,
+                InvoiceAmount = plan.Bnpl_InitialPayment,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment,
+                InvoiceStatus = InvoiceStatusEnum.Unpaid,
+            };
+        }
+
+        // Helper method: invoice builder - bnpl installment payment
+        private Invoice BuildInstallmentInvoice(CustomerOrder order)
+        {
+            var plan = order.BNPL_PLAN
+                ?? throw new InvalidOperationException("BNPL plan not found");
+
+            var latestSettlement = plan.BNPL_PlanSettlementSummaries
+                .SingleOrDefault(s => s.IsLatest)
+                ?? throw new InvalidOperationException("Latest settlement not found");
+
+            return new Invoice
+            {
+                OrderID = order.OrderID,
+                InvoiceAmount = latestSettlement.Total_PayableSettlement,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment,
+                InvoiceStatus = InvoiceStatusEnum.Unpaid,
+                InstallmentNo = latestSettlement.CurrentInstallmentNo
+            };
+        }
+
+        // Helper method: attach invoice
+        private async Task GenerateAndAttachInvoicePdfAsync(CustomerOrder order, Invoice invoice)
+        {
+            var fileUrl = await _documentGenerationService.GenerateInvoicePdfAsync(order, invoice);
+
+            invoice.InvoiceFileUrl = fileUrl;
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+        // ----------- [End : Invoice Generation] -------------
 
         //Custom Query Operations
         public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null)

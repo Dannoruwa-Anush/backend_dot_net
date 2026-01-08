@@ -145,9 +145,17 @@ namespace WebApplication1.Services.ServiceImpl
                 // --------------------------------
                 // Invoice Craetion (Drft)
                 // --------------------------------
-                var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, createRequest);
-                customerOrder.Invoices.Add(invoice);
-
+                if(customerOrder.OrderPaymentMode == OrderPaymentModeEnum.Pay_now_full)
+                {
+                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Full_Payment);
+                    customerOrder.Invoices.Add(invoice);
+                }
+                else
+                {
+                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Bnpl_Initial_Payment);
+                    customerOrder.Invoices.Add(invoice);
+                }
+                
                 await _unitOfWork.SaveChangesAsync();
 
                 // --------------------------------
