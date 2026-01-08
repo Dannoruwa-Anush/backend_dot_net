@@ -9,6 +9,9 @@ namespace WebApplication1.DTOs.RequestDto
         [Required(ErrorMessage = "Order source is required")]
         public OrderSourceEnum OrderSource { get; set; } = OrderSourceEnum.PhysicalShop;
 
+        [Required(ErrorMessage = "Order payment mode is required")]
+        public OrderPaymentModeEnum OrderPaymentMode { get; set; } = OrderPaymentModeEnum.Pay_Bnpl;
+
         // Adding Electronic Items to the Order
         [Required(ErrorMessage = "At least one electronic item must be added")]
         public List<CustomerOrderElectronicItemRequestDto> CustomerOrderElectronicItems { get; set; } = new List<CustomerOrderElectronicItemRequestDto>();
@@ -20,9 +23,9 @@ namespace WebApplication1.DTOs.RequestDto
         //FK : Only for BNPL orders
         public int? Bnpl_PlanTypeID { get; set; }
 
-        public int? InstallmentCount { get; set; }
+        public int? Bnpl_InstallmentCount { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal? InitialPayment { get; set; }
+        public decimal? Bnpl_InitialPayment { get; set; }
     }
 }

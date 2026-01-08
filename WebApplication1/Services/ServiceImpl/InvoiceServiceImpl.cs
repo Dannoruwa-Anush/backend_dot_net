@@ -57,7 +57,7 @@ namespace WebApplication1.Services.ServiceImpl
             return Task.FromResult(new Invoice
             {
                 OrderID = order.OrderID,
-                InvoiceAmount = request.InitialPayment!.Value,
+                InvoiceAmount = request.Bnpl_InitialPayment!.Value,
                 InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
                 InstallmentNo = 0

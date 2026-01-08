@@ -192,8 +192,8 @@ namespace WebApplication1.Services.ServiceImpl
         {
             bool isBnpl =
                 request.Bnpl_PlanTypeID.HasValue &&
-                request.InstallmentCount.HasValue &&
-                request.InitialPayment.HasValue;
+                request.Bnpl_InstallmentCount.HasValue &&
+                request.Bnpl_InitialPayment.HasValue;
 
             if (isBnpl)
             {
@@ -215,11 +215,11 @@ namespace WebApplication1.Services.ServiceImpl
         //Helper Method : HandleBnplOrderAsync
         private async Task HandleBnplOrderAsync(CustomerOrder order, CustomerOrderRequestDto request)
         {
-            if (request.InitialPayment <= 0)
+            if (request.Bnpl_InitialPayment <= 0)
                 throw new InvalidOperationException(
                     "Initial payment must be greater than zero.");
 
-            if (request.InitialPayment >= order.TotalAmount)
+            if (request.Bnpl_InitialPayment >= order.TotalAmount)
                 throw new InvalidOperationException(
                     "Initial payment must be less than total amount.");
 
@@ -229,9 +229,9 @@ namespace WebApplication1.Services.ServiceImpl
                         new BNPLInstallmentCalculatorRequestDto
                         {
                             TotalOrderAmount = order.TotalAmount,
-                            InitialPayment = request.InitialPayment!.Value,
+                            InitialPayment = request.Bnpl_InitialPayment!.Value,
                             Bnpl_PlanTypeID = request.Bnpl_PlanTypeID!.Value,
-                            InstallmentCount = request.InstallmentCount!.Value
+                            InstallmentCount = request.Bnpl_InstallmentCount!.Value
                         });
 
             var bnplPlan =
@@ -240,9 +240,9 @@ namespace WebApplication1.Services.ServiceImpl
                         new BNPL_PLAN
                         {
                             OrderID = order.OrderID,
-                            Bnpl_InitialPayment = request.InitialPayment.Value,
+                            Bnpl_InitialPayment = request.Bnpl_InitialPayment.Value,
                             Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
-                            Bnpl_TotalInstallmentCount = request.InstallmentCount.Value,
+                            Bnpl_TotalInstallmentCount = request.Bnpl_InstallmentCount.Value,
                             Bnpl_PlanTypeID = request.Bnpl_PlanTypeID.Value,
                             Bnpl_Status = BnplStatusEnum.Requested
                         });
