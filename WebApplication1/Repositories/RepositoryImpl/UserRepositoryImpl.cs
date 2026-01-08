@@ -18,6 +18,15 @@ namespace WebApplication1.Repositories.RepositoryImpl
         // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
 
         //CRUD operations
+        public async Task<User?> GetByIdAsync(int id)=>
+            await _context.Users.FindAsync(id);
+
+        public async Task<User?> GetWithRoleProfileDetailsByIdAsync(int id)=>
+            await _context.Users
+                        .Include(u => u.Customer)
+                        .Include(u => u.Employee)
+                        .FirstOrDefaultAsync(u => u.UserID == id);
+
         public async Task AddAsync(User user) =>
             await _context.Users.AddAsync(user);
 

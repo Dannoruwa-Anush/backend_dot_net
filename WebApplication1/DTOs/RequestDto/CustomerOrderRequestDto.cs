@@ -18,7 +18,7 @@ namespace WebApplication1.DTOs.RequestDto
 
         //FK
         // CustomerID is nullable to support cashier's direct orders
-        public int? CustomerID { get; set; }
+        // CustomerID will be handle with JWT token
 
         //FK : Only for BNPL orders
         public int? Bnpl_PlanTypeID { get; set; }

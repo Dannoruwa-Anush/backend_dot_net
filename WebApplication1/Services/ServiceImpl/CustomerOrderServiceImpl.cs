@@ -6,6 +6,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Auth;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
@@ -18,6 +19,9 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICustomerOrderRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
 
+        private readonly IUserRepository _userRepository;
+
+        private readonly ICurrentUserService _currentUserService;
         private readonly ICustomerService _customerService;
         private readonly IElectronicItemService _electronicItemService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
@@ -33,6 +37,9 @@ namespace WebApplication1.Services.ServiceImpl
         public CustomerOrderServiceImpl(
             ICustomerOrderRepository repository,
             IAppUnitOfWork unitOfWork,
+            IUserRepository userRepository,
+
+            ICurrentUserService currentUserService,
             ICustomerService customerService,
             IElectronicItemService electronicItemService,
             IBNPL_InstallmentService bNPL_InstallmentService,
@@ -45,9 +52,11 @@ namespace WebApplication1.Services.ServiceImpl
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
+
+            _currentUserService = currentUserService;
             _customerService = customerService;
             _electronicItemService = electronicItemService;
-
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
@@ -71,14 +80,31 @@ namespace WebApplication1.Services.ServiceImpl
 
             try
             {
+                int? customerID = null;
+
+                // If logged-in user is a CUSTOMER → derive CustomerID
+                if (_currentUserService.Role == UserRoleEnum.Customer.ToString())
+                {
+                    var userId = _currentUserService.UserID
+                        ?? throw new UnauthorizedAccessException("User not authenticated");
+
+                    var user = await _userRepository.GetWithRoleProfileDetailsByIdAsync(userId)
+                        ?? throw new UnauthorizedAccessException("User not found");
+
+                    if (user.Customer == null)
+                        throw new InvalidOperationException("Customer profile not found");
+
+                    customerID = user.Customer.CustomerID;
+                }
+                
                 // --------------------------------
                 // Prevent multiple pending orders
                 // --------------------------------
-                if (createRequest.CustomerID.HasValue)
+                if (customerID.HasValue)
                 {
                     bool hasPending =
                         await _repository.ExistsPendingOrderForCustomerAsync(
-                            createRequest.CustomerID.Value);
+                            customerID.Value);
 
                     if (hasPending)
                         throw new InvalidOperationException(
@@ -89,6 +115,7 @@ namespace WebApplication1.Services.ServiceImpl
                 // Map request entity
                 // --------------------------------
                 var customerOrder = _mapper.Map<CustomerOrder>(createRequest);
+                customerOrder.CustomerID = customerID;
 
                 // --------------------------------
                 // Build items, stock, total
