@@ -9,19 +9,10 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal InvoiceAmount { get; set; }
 
-        // For bnpl installment payment
-        public int? InstallmentNo { get; set; }
-
         public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice;
 
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
 
         public string? InvoiceFileUrl { get; set; }
-
-        // Include simplified info about FK: Order
-        public required CustomerOrderResponseDto CustomerOrderResponseDto { get; set; }
-
-        // Include simplified info about FK: Cashflow
-        public CashflowResponseDto? CashflowResponseDto { get; set; }
     }
 }

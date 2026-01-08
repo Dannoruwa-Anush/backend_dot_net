@@ -30,7 +30,6 @@ namespace WebApplication1.DTOs.ResponseDto
         public ICollection<CustomerOrderElectronicItemResponseDto> CustomerOrderElectronicItemResponseDto { get; set; } = new List<CustomerOrderElectronicItemResponseDto>();
     
         // Include simplified info about child items: Invoice
-        // Only for draft invoice 
-        public InvoiceResponseDto? CurrentInvoice { get; set; }
+        public InvoiceResponseDto? LatestUnpaidInvoice { get; set; }
     }
 }
