@@ -27,21 +27,26 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.Invoices.FindAsync(id);
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, string? searchKey = null)
+        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null)
         {
-            // Start query
+            // Start query with necessary includes
             var query = _context.Invoices
                 .Include(i => i.CustomerOrder)
-                    .ThenInclude(ie => ie!.CustomerOrderElectronicItems)
+                    .ThenInclude(co => co!.CustomerOrderElectronicItems)
                 .Include(i => i.CustomerOrder)
-                    .ThenInclude(ib => ib!.BNPL_PLAN)
+                    .ThenInclude(co => co!.BNPL_PLAN)
+                .Include(i => i.CustomerOrder)
+                    .ThenInclude(co => co!.Customer)
+                        .ThenInclude(c => c!.User)
                 .AsQueryable();
 
             // Apply filters
             query = ApplyInvoiceTypeFilter(query, invoiceTypeId);
             query = ApplyInvoiceStatusFilter(query, invoiceStatusId);
+            query = ApplyCustomerFilter(query, customerId);
             query = ApplySearch(query, searchKey);
 
+            // Order by creation date (descending)
             query = query.OrderByDescending(i => i.CreatedAt);
 
             // Total count after filters
@@ -67,13 +72,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             if (invoiceTypeId.HasValue)
             {
-                var status = (InvoiceTypeEnum)invoiceTypeId.Value;
-                query = query.Where(i => i.InvoiceType == status);
+                var type = (InvoiceTypeEnum)invoiceTypeId.Value;
+                query = query.Where(i => i.InvoiceType == type);
             }
             return query;
         }
 
-        // Helper method: Invoice StatusFilter filter
+        // Helper method: Invoice Status filter
         private IQueryable<Invoice> ApplyInvoiceStatusFilter(IQueryable<Invoice> query, int? invoiceStatusId)
         {
             if (invoiceStatusId.HasValue)
@@ -84,16 +89,43 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return query;
         }
 
+        // Helper method: Customer filter
+        private IQueryable<Invoice> ApplyCustomerFilter(IQueryable<Invoice> query, int? customerId)
+        {
+            if (customerId.HasValue)
+            {
+                query = query.Where(i =>
+                    i.CustomerOrder != null &&
+                    i.CustomerOrder.CustomerID == customerId.Value
+                );
+            }
+            return query;
+        }
+
         // Helper method: Search filter (email, phone, order date)
         private IQueryable<Invoice> ApplySearch(IQueryable<Invoice> query, string? searchKey)
         {
             if (!string.IsNullOrWhiteSpace(searchKey))
             {
-                searchKey = searchKey.Trim().ToLower();
+                searchKey = searchKey.Trim();
+
                 query = query.Where(i =>
-                    (i.CustomerOrder!.Customer!.User.Email != null && i.CustomerOrder!.Customer.User.Email.ToLower().Contains(searchKey)) ||
-                    (i.CustomerOrder!.Customer.PhoneNo != null && i.CustomerOrder!.Customer.PhoneNo.ToLower().Contains(searchKey)) ||
-                    i.CustomerOrder!.OrderDate.ToString("yyyy-MM-dd").Contains(searchKey)
+                    i.CustomerOrder != null &&
+                    (
+                        (i.CustomerOrder.Customer != null &&
+                         i.CustomerOrder.Customer.User != null &&
+                         i.CustomerOrder.Customer.User.Email != null &&
+                         EF.Functions.Like(i.CustomerOrder.Customer.User.Email, $"%{searchKey}%")) ||
+
+                        (i.CustomerOrder.Customer != null &&
+                         i.CustomerOrder.Customer.PhoneNo != null &&
+                         EF.Functions.Like(i.CustomerOrder.Customer.PhoneNo, $"%{searchKey}%")) ||
+
+                        EF.Functions.Like(
+                            i.CustomerOrder.OrderDate.ToString("yyyy-MM-dd"),
+                            $"%{searchKey}%"
+                        )
+                    )
                 );
             }
             return query;

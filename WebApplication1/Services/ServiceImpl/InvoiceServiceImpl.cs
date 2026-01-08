@@ -46,7 +46,7 @@ namespace WebApplication1.Services.ServiceImpl
                 {
                     OrderID = order.OrderID,
                     InvoiceAmount = order.TotalAmount,
-                    InvoiceType = InvoiceTypeEnum.Full_Payment_Invoice,
+                    InvoiceType = InvoiceTypeEnum.Full_Payment,
                     InvoiceStatus = InvoiceStatusEnum.Unpaid
                 });
             }
@@ -58,7 +58,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 OrderID = order.OrderID,
                 InvoiceAmount = request.Bnpl_InitialPayment!.Value,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
                 InstallmentNo = 0
             });
@@ -69,7 +69,7 @@ namespace WebApplication1.Services.ServiceImpl
             decimal remaining =
                 order.TotalAmount - order.Invoices
                     .Where(i => i.InvoiceType ==
-                        InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice)
+                        InvoiceTypeEnum.Bnpl_Initial_Payment)
                     .Sum(i => i.InvoiceAmount);
 
             int totalInstallments = order.BNPL_PLAN!.Bnpl_TotalInstallmentCount;
@@ -81,7 +81,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 OrderID = order.OrderID,
                 InvoiceAmount = installmentAmount,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment_Invoice,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
                 InstallmentNo = installmentNo
             };
@@ -93,9 +93,9 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, string? searchKey = null)
+        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null)
         {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, searchKey);
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, customerId, searchKey);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal InvoiceAmount { get; set; }
 
-        public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment_Invoice;
+        public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment;
 
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
 
