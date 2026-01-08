@@ -77,95 +77,33 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrderRequestDto createRequest)
         {
             await _unitOfWork.BeginTransactionAsync();
-
             try
             {
-                int? customerID = null;
+                int? customerId = await ResolveCustomerIdAsync();
+                await EnsureNoPendingOrderAsync(customerId);
 
-                // If logged-in user is a CUSTOMER → derive CustomerID
-                if (_currentUserService.Role == UserRoleEnum.Customer.ToString())
-                {
-                    var userId = _currentUserService.UserID
-                        ?? throw new UnauthorizedAccessException("User not authenticated");
+                var order = _mapper.Map<CustomerOrder>(createRequest);
+                order.CustomerID = customerId;
 
-                    var user = await _userRepository.GetWithRoleProfileDetailsByIdAsync(userId)
-                        ?? throw new UnauthorizedAccessException("User not found");
+                await BuildOrderItemsAndTotalAsync(order);
 
-                    if (user.Customer == null)
-                        throw new InvalidOperationException("Customer profile not found");
+                InitializeOrderMetadata(order);
 
-                    customerID = user.Customer.CustomerID;
-                }
-                
-                // --------------------------------
-                // Prevent multiple pending orders
-                // --------------------------------
-                if (customerID.HasValue)
-                {
-                    bool hasPending =
-                        await _repository.ExistsPendingOrderForCustomerAsync(
-                            customerID.Value);
-
-                    if (hasPending)
-                        throw new InvalidOperationException(
-                            "You already have a pending order. Please complete or cancel it before placing a new order.");
-                }
-
-                // --------------------------------
-                // Map request entity
-                // --------------------------------
-                var customerOrder = _mapper.Map<CustomerOrder>(createRequest);
-                customerOrder.CustomerID = customerID;
-
-                // --------------------------------
-                // Build items, stock, total
-                // --------------------------------
-                await BuildOrderItemsAndTotalAsync(customerOrder);
-
-                // --------------------------------
-                // Order metadata
-                // --------------------------------
-                customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-                customerOrder.OrderStatus = OrderStatusEnum.Pending;
-                customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Awaiting_Payment;
-
-                ApplyOnlineOrderAutoCancellation(customerOrder);
-
-                // --------------------------------
                 // Persist order (generate OrderID)
-                // --------------------------------
-                await _repository.AddAsync(customerOrder);
+                await _repository.AddAsync(order);
                 await _unitOfWork.SaveChangesAsync();
 
-                // --------------------------------
-                // Handle payment (BNPL / Full)
-                // --------------------------------
-                await HandleOrderPaymentAsync(customerOrder, createRequest);
+                await HandleOrderPaymentAsync(order, createRequest);
 
-                // --------------------------------
-                // Invoice Craetion (Drft)
-                // --------------------------------
-                if(customerOrder.OrderPaymentMode == OrderPaymentModeEnum.Pay_now_full)
-                {
-                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Full_Payment);
-                    customerOrder.Invoices.Add(invoice);
-                }
-                else
-                {
-                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Bnpl_Initial_Payment);
-                    customerOrder.Invoices.Add(invoice);
-                }
-                
+                await CreateInitialInvoiceAsync(order);
+
                 await _unitOfWork.SaveChangesAsync();
 
-                // --------------------------------
-                // Creation log (AFTER OrderID exists)
-                // --------------------------------
-                LogOrderCreation(customerOrder);
+                LogOrderCreation(order);
 
                 await _unitOfWork.CommitAsync();
 
-                return customerOrder;
+                return order;
             }
             catch (Exception ex)
             {
@@ -175,11 +113,42 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        //Helper Method : BuildOrderItemsAndTotalAsync
-        private async Task BuildOrderItemsAndTotalAsync(CustomerOrder customerOrder)
+        //Helper Method: Resolve CustomerId By Analyzing JWT
+        private async Task<int?> ResolveCustomerIdAsync()
+        {
+            if (_currentUserService.Role != UserRoleEnum.Customer.ToString())
+                return null;
+
+            var userId = _currentUserService.UserID
+                ?? throw new UnauthorizedAccessException("User not authenticated");
+
+            var user =
+                await _userRepository.GetWithRoleProfileDetailsByIdAsync(userId)
+                ?? throw new UnauthorizedAccessException("User not found");
+
+            return user.Customer?.CustomerID
+                ?? throw new InvalidOperationException("Customer profile not found");
+        }
+
+        //Helper Method: Prevent Multiple Pending Customer Orders (only for customer)
+        private async Task EnsureNoPendingOrderAsync(int? customerId)
+        {
+            if (!customerId.HasValue)
+                return;
+
+            bool hasPending =
+                await _repository.ExistsPendingOrderForCustomerAsync(customerId.Value);
+
+            if (hasPending)
+                throw new InvalidOperationException(
+                    "You already have a pending order. Please complete or cancel it before placing a new order.");
+        }
+
+        //Helper method :BuildOrderItemsAndTotalAsync
+        private async Task BuildOrderItemsAndTotalAsync(CustomerOrder order)
         {
             var itemIds =
-                customerOrder.CustomerOrderElectronicItems
+                order.CustomerOrderElectronicItems
                     .Select(i => i.E_ItemID)
                     .ToList();
 
@@ -190,7 +159,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             decimal totalAmount = 0;
 
-            foreach (var orderItem in customerOrder.CustomerOrderElectronicItems)
+            foreach (var orderItem in order.CustomerOrderElectronicItems)
             {
                 if (!itemDict.TryGetValue(orderItem.E_ItemID, out var electronicItem))
                     throw new InvalidOperationException(
@@ -208,21 +177,42 @@ namespace WebApplication1.Services.ServiceImpl
                 orderItem.SubTotal = orderItem.Quantity * electronicItem.Price;
                 totalAmount += orderItem.SubTotal;
 
-                // Deduct stock
                 electronicItem.QOH -= orderItem.Quantity;
             }
 
-            customerOrder.TotalAmount = totalAmount;
+            order.TotalAmount = totalAmount;
         }
 
-        //Helper Method : LoadElectronicItemsAsync
+        //Helper Method: LoadElectronicItemsAsync
         private async Task<Dictionary<int, ElectronicItem>> LoadElectronicItemsAsync(IEnumerable<int> ids)
         {
-            var items = await _electronicItemService.GetAllElectronicItemsByIdsAsync(ids.ToList());
+            var items =
+                await _electronicItemService.GetAllElectronicItemsByIdsAsync(ids.ToList());
+
             return items.ToDictionary(x => x.ElectronicItemID);
         }
 
-        //Helper Method : HandlePaymentAsync
+        //Helper Method: Order Metadata Initialization
+        private void InitializeOrderMetadata(CustomerOrder order)
+        {
+            order.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+            order.OrderStatus = OrderStatusEnum.Pending;
+            order.OrderPaymentStatus = OrderPaymentStatusEnum.Awaiting_Payment;
+
+            ApplyOnlineOrderAutoCancellation(order);
+        }
+
+        //Helper Method: Cancel Online Order After the submission deadline
+        private void ApplyOnlineOrderAutoCancellation(CustomerOrder order)
+        {
+            if (order.OrderSource == OrderSourceEnum.OnlineShop)
+            {
+                order.PendingPaymentOrderAutoCancelledDate =
+                    order.OrderDate.AddMinutes(5);
+            }
+        }
+
+        //Helper Method: HandleOrderPaymentAsync
         private async Task HandleOrderPaymentAsync(CustomerOrder order, CustomerOrderRequestDto request)
         {
             bool isBnpl =
@@ -231,23 +221,12 @@ namespace WebApplication1.Services.ServiceImpl
                 request.Bnpl_InitialPayment.HasValue;
 
             if (isBnpl)
-            {
                 await HandleBnplOrderAsync(order, request);
-            }
             else
-            {
                 HandleFullPaymentOrder(order);
-            }
         }
 
-        //Helper Method : HandleFullPaymentOrder
-        private void HandleFullPaymentOrder(CustomerOrder order)
-        {
-            order.OrderPaymentMode = OrderPaymentModeEnum.Pay_now_full;
-            order.BNPL_PLAN = null;
-        }
-
-        //Helper Method : HandleBnplOrderAsync
+        //Helper Method: HandleBnplOrderAsync
         private async Task HandleBnplOrderAsync(CustomerOrder order, CustomerOrderRequestDto request)
         {
             if (request.Bnpl_InitialPayment <= 0)
@@ -259,28 +238,26 @@ namespace WebApplication1.Services.ServiceImpl
                     "Initial payment must be less than total amount.");
 
             var bnplCalc =
-                await _bNPL_PlanService
-                    .CalculateBNPL_PlanAmountPerInstallmentAsync(
-                        new BNPLInstallmentCalculatorRequestDto
-                        {
-                            TotalOrderAmount = order.TotalAmount,
-                            InitialPayment = request.Bnpl_InitialPayment!.Value,
-                            Bnpl_PlanTypeID = request.Bnpl_PlanTypeID!.Value,
-                            InstallmentCount = request.Bnpl_InstallmentCount!.Value
-                        });
+                await _bNPL_PlanService.CalculateBNPL_PlanAmountPerInstallmentAsync(
+                    new BNPLInstallmentCalculatorRequestDto
+                    {
+                        TotalOrderAmount = order.TotalAmount,
+                        InitialPayment = request.Bnpl_InitialPayment!.Value,
+                        Bnpl_PlanTypeID = request.Bnpl_PlanTypeID!.Value,
+                        InstallmentCount = request.Bnpl_InstallmentCount!.Value
+                    });
 
             var bnplPlan =
-                await _bNPL_PlanService
-                    .BuildBnpl_PlanAddRequestAsync(
-                        new BNPL_PLAN
-                        {
-                            OrderID = order.OrderID,
-                            Bnpl_InitialPayment = request.Bnpl_InitialPayment.Value,
-                            Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
-                            Bnpl_TotalInstallmentCount = request.Bnpl_InstallmentCount.Value,
-                            Bnpl_PlanTypeID = request.Bnpl_PlanTypeID.Value,
-                            Bnpl_Status = BnplStatusEnum.Requested
-                        });
+                await _bNPL_PlanService.BuildBnpl_PlanAddRequestAsync(
+                    new BNPL_PLAN
+                    {
+                        OrderID = order.OrderID,
+                        Bnpl_InitialPayment = request.Bnpl_InitialPayment.Value,
+                        Bnpl_AmountPerInstallment = bnplCalc.AmountPerInstallment,
+                        Bnpl_TotalInstallmentCount = request.Bnpl_InstallmentCount.Value,
+                        Bnpl_PlanTypeID = request.Bnpl_PlanTypeID.Value,
+                        Bnpl_Status = BnplStatusEnum.Requested
+                    });
 
             var installments =
                 await _bNPL_InstallmentService
@@ -300,14 +277,25 @@ namespace WebApplication1.Services.ServiceImpl
             order.OrderPaymentMode = OrderPaymentModeEnum.Pay_Bnpl;
         }
 
-        //Helper Method: ApplyOnlineOrderAutoCancellation
-        private void ApplyOnlineOrderAutoCancellation(CustomerOrder order)
+        //Helper Method: HandleFullPaymentOrder
+        private void HandleFullPaymentOrder(CustomerOrder order)
         {
-            if (order.OrderSource == OrderSourceEnum.OnlineShop)
-            {
-                order.PendingPaymentOrderAutoCancelledDate =
-                    order.OrderDate.AddMinutes(5);
-            }
+            order.OrderPaymentMode = OrderPaymentModeEnum.Pay_now_full;
+            order.BNPL_PLAN = null;
+        }
+
+        //Helper Method: CreateInitialInvoiceAsync
+        private async Task CreateInitialInvoiceAsync(CustomerOrder order)
+        {
+            InvoiceTypeEnum invoiceType =
+                order.OrderPaymentMode == OrderPaymentModeEnum.Pay_now_full
+                    ? InvoiceTypeEnum.Full_Payment
+                    : InvoiceTypeEnum.Bnpl_Initial_Payment;
+
+            var invoice =
+                await _invoiceService.BuildInvoiceAddRequestAsync(order, invoiceType);
+
+            order.Invoices.Add(invoice);
         }
 
         //Helper Method: LogOrderCreation
