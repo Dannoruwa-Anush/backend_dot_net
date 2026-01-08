@@ -774,9 +774,6 @@ namespace WebApplication1.Migrations
                     b.Property<decimal>("InvoiceAmount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("InvoiceFileUrl")
-                        .HasColumnType("nvarchar(255)");
-
                     b.Property<string>("InvoiceStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(20)");
