@@ -8,7 +8,7 @@ using WebApplication1.Services.IService;
 namespace WebApplication1.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] 
+    [Route("api/[controller]")]
     public class InvoiceController : ControllerBase
     {
         //Note: All inovice will be handled by OrderController/PaymentController
@@ -62,6 +62,34 @@ namespace WebApplication1.Controllers
             catch (Exception)
             {
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
+        }
+
+
+        [HttpGet("customer/{customerId}")]
+        [Authorize(Roles = "Admin, Employee, Customer")]
+        public async Task<IActionResult> ExistsUnpaidInvoiceByCustomerAsync(int customerId)
+        {
+            try
+            {
+                bool hasUnpaidInvoice =
+                    await _service.ExistsUnpaidInvoiceByCustomerAsync(customerId);
+
+                var response = new ApiResponseDto<bool>(
+                    200,
+                    "Unpaid invoice check completed successfully",
+                    hasUnpaidInvoice
+                );
+
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500,
+                    new ApiResponseDto<string>(
+                        500,
+                        "An internal server error occurred. Please try again later."
+                    ));
             }
         }
     }

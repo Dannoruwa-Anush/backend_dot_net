@@ -126,5 +126,8 @@ namespace WebApplication1.Services.ServiceImpl
         {
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, customerId, searchKey);
         }
+
+        public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId)=>
+            await _repository.ExistsUnpaidInvoiceByCustomerAsync(customerId);
     }
 }

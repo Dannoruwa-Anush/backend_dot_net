@@ -130,5 +130,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
             }
             return query;
         }
+
+        public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId)
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .AnyAsync(i =>
+                    i.InvoiceStatus == InvoiceStatusEnum.Unpaid &&
+                    i.CustomerOrder != null &&
+                    i.CustomerOrder.CustomerID == customerId
+                );
+        }
     }
 }

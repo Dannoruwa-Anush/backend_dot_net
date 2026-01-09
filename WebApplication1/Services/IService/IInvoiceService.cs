@@ -13,7 +13,8 @@ namespace WebApplication1.Services.IService
 
         //Custom Query Operations
         Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null);
-
+        Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId);
+        
         //Shared Internal Operations Used by Multiple Repositories
         Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, InvoiceTypeEnum invoiceType);
     }
