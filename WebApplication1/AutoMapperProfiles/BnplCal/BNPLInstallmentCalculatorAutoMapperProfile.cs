@@ -8,7 +8,7 @@ namespace WebApplication1.AutoMapperProfiles.BnplCal
         public BNPLInstallmentCalculatorAutoMapperProfile()
         {
             CreateMap<BNPLInstallmentCalculatorResultDto, BNPLInstallmentCalculatorResponseDto>()
-                .ForMember(dest => dest.BNPL_PlanTypeResponseDto, opt => opt.MapFrom(src => src.BNPL_PlanType));
+                .ForMember(dest => dest.BnplPlanTypeResponseDto, opt => opt.MapFrom(src => src.BNPL_PlanType));
         }
     }
 }

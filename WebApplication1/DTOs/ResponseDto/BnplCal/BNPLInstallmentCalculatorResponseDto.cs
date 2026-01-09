@@ -2,7 +2,7 @@ namespace WebApplication1.DTOs.ResponseDto.BnplCal{
     public class BNPLInstallmentCalculatorResponseDto
     {
         // Include simplified info about Bnpl_PlanType
-        public required BNPL_PlanTypeResponseDto BNPL_PlanTypeResponseDto { get; set; }
+        public required BNPL_PlanTypeResponseDto BnplPlanTypeResponseDto { get; set; }
 
         // Calculated Values
         public decimal AmountPerInstallment { get; set; }
