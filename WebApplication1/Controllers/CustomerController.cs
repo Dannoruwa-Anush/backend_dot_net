@@ -144,17 +144,34 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [HttpGet("user/{userId}")]
+        [HttpGet("user")]
         [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
-        public async Task<IActionResult> GetByUserId(int userId)
+        public async Task<IActionResult> GetByUser([FromQuery] int? userId, [FromQuery] string? email)
         {
-            var customer = await _service.GetCustomerByUserIdAsync(userId);
+            if (!userId.HasValue && string.IsNullOrEmpty(email))
+            {
+                return BadRequest(new ApiResponseDto<string>(400, "You must provide either userId or email."));
+            }
+
+            Customer? customer = null;
+
+            if (userId.HasValue)
+            {
+                customer = await _service.GetCustomerByUserIdAsync(userId.Value);
+            }
+            else if (!string.IsNullOrEmpty(email))
+            {
+                customer = await _service.GetCustomerByUserEmailAsync(email);
+            }
+
             if (customer == null)
+            {
                 return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
+            }
 
             // Model -> ResponseDto
-            var responseDtos = _mapper.Map<CustomerResponseDto>(customer);
-            var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", responseDtos);
+            var responseDto = _mapper.Map<CustomerResponseDto>(customer);
+            var response = new ApiResponseDto<CustomerResponseDto>(200, "Customer retrieved successfully", responseDto);
 
             return Ok(response);
         }

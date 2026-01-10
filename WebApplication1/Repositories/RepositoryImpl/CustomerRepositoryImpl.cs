@@ -120,5 +120,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
                  .Include(e => e.User)
                  .FirstOrDefaultAsync(e => e.UserID == userId);
         }
+
+        public async Task<Customer?> GetByUserEmailAsync(string email)
+        {
+            return await _context.Set<Customer>()
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.User.Email == email);
+        }
     }
 }

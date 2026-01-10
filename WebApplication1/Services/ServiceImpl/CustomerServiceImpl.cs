@@ -99,5 +99,8 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Customer?> GetCustomerByUserIdAsync(int userId) =>
             await _repository.GetByUserIdAsync(userId);
+
+        public async Task<Customer?> GetCustomerByUserEmailAsync(string email)=>
+            await _repository.GetByUserEmailAsync(email);
     }
 }

@@ -19,5 +19,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<bool> ExistsByPhoneNoAsync(string phoneNo);
         Task<bool> ExistsByPhoneNoAsync(string phoneNo, int excludeId);
         Task<Customer?> GetByUserIdAsync(int userId);
+        Task<Customer?> GetByUserEmailAsync(string email);
     }
 }
