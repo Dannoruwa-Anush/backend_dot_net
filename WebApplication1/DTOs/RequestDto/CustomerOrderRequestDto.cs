@@ -17,8 +17,10 @@ namespace WebApplication1.DTOs.RequestDto
         public List<CustomerOrderElectronicItemRequestDto> CustomerOrderElectronicItems { get; set; } = new List<CustomerOrderElectronicItemRequestDto>();
 
         //FK
-        // CustomerID is nullable to support cashier's direct orders
-        // CustomerID will be handle with JWT token
+        // CustomerID is nullable to support manager's direct orders
+        // Used ONLY when OrderSource == PhysicalShop
+        public int? PhysicalShopBillToCustomerID { get; set; }
+        // OnlineShop: CustomerID will be handle with JWT token
 
         //FK : Only for BNPL orders
         public int? Bnpl_PlanTypeID { get; set; }

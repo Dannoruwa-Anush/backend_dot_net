@@ -77,75 +77,107 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<CustomerOrder> CreateCustomerOrderWithTransactionAsync(CustomerOrderRequestDto createRequest)
         {
             await _unitOfWork.BeginTransactionAsync();
-
             try
             {
-                int? customerID = null;
+                int? orderCustomerID = null;
 
-                // If logged-in user is a CUSTOMER → derive CustomerID
-                if (_currentUserService.Role == UserRoleEnum.Customer.ToString())
+                // ------------------------------------
+                // ONLINE SHOP ORDER (Customer only)
+                // ------------------------------------
+                if (createRequest.OrderSource == OrderSourceEnum.OnlineShop)
                 {
+                    if (_currentUserService.Role != UserRoleEnum.Customer.ToString())
+                        throw new UnauthorizedAccessException(
+                            "Only customers can place online orders.");
+
                     var userId = _currentUserService.UserID
                         ?? throw new UnauthorizedAccessException("User not authenticated");
 
-                    var user = await _userRepository.GetWithRoleProfileDetailsByIdAsync(userId)
+                    var user = await _userRepository
+                        .GetWithRoleProfileDetailsByIdAsync(userId)
                         ?? throw new UnauthorizedAccessException("User not found");
 
                     if (user.Customer == null)
                         throw new InvalidOperationException("Customer profile not found");
 
-                    customerID = user.Customer.CustomerID;
+                    orderCustomerID = user.Customer.CustomerID;
                 }
-                
-                // --------------------------------
-                // Prevent multiple pending orders
-                // --------------------------------
-                if (customerID.HasValue)
+
+                // ------------------------------------
+                // PHYSICAL SHOP ORDER (Manager)
+                // ------------------------------------
+                else if (createRequest.OrderSource == OrderSourceEnum.PhysicalShop)
                 {
-                    bool hasPending =
-                        await _repository.ExistsPendingOrderForCustomerAsync(
-                            customerID.Value);
+                    if (createRequest.PhysicalShopBillToCustomerID.HasValue)
+                    {
+                        var customerExists = await _customerService.GetCustomerByIdAsync(createRequest.PhysicalShopBillToCustomerID.Value);
+
+                        if (customerExists == null)
+                            throw new InvalidOperationException("Selected customer does not exist.");
+
+                        orderCustomerID = createRequest.PhysicalShopBillToCustomerID.Value;
+                    }
+                }
+
+                // =====================================================
+                // Business Rules
+                // =====================================================
+                // BNPL requires registered customer
+                if (createRequest.OrderPaymentMode == OrderPaymentModeEnum.Pay_Bnpl
+                    && !orderCustomerID.HasValue)
+                {
+                    throw new InvalidOperationException(
+                        "BNPL orders require a registered customer.");
+                }
+
+                // Prevent multiple pending orders per customer
+                if (orderCustomerID.HasValue)
+                {
+                    bool hasPending = await _repository.ExistsPendingOrderForCustomerAsync(orderCustomerID.Value);
 
                     if (hasPending)
-                        throw new InvalidOperationException(
-                            "You already have a pending order. Please complete or cancel it before placing a new order.");
+                        throw new InvalidOperationException("Customer already has a pending order. Please complete or cancel it before placing a new order.");
                 }
 
-                // --------------------------------
-                // Map request entity
-                // --------------------------------
+                // =====================================================
+                // Map Request -> Entity
+                // =====================================================
                 var customerOrder = _mapper.Map<CustomerOrder>(createRequest);
-                customerOrder.CustomerID = customerID;
 
-                // --------------------------------
-                // Build items, stock, total
-                // --------------------------------
+                // Who the order belongs to
+                customerOrder.CustomerID = orderCustomerID;
+
+                // Who created the order (audit)
+                customerOrder.CreatedByUserID = _currentUserService.UserID ?? throw new UnauthorizedAccessException("User not authenticated");
+
+                // =====================================================
+                // Build Items, Stock & Totals
+                // =====================================================
                 await BuildOrderItemsAndTotalAsync(customerOrder);
 
-                // --------------------------------
-                // Order metadata
-                // --------------------------------
+                // =====================================================
+                // Order Metadata
+                // =====================================================
                 customerOrder.OrderDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
                 customerOrder.OrderStatus = OrderStatusEnum.Pending;
                 customerOrder.OrderPaymentStatus = OrderPaymentStatusEnum.Awaiting_Payment;
-
                 ApplyOnlineOrderAutoCancellation(customerOrder);
 
-                // --------------------------------
-                // Persist order (generate OrderID)
-                // --------------------------------
+                // =====================================================
+                // Persist Order (Generate OrderID)
+                // =====================================================
                 await _repository.AddAsync(customerOrder);
                 await _unitOfWork.SaveChangesAsync();
 
-                // --------------------------------
-                // Handle payment (BNPL / Full)
-                // --------------------------------
+                // =====================================================
+                // Handle Payment (BNPL / Full)
+                // =====================================================
                 await HandleOrderPaymentAsync(customerOrder, createRequest);
 
-                // --------------------------------
-                // Invoice Craetion (Drft)
-                // --------------------------------
-                if(customerOrder.OrderPaymentMode == OrderPaymentModeEnum.Pay_now_full)
+                // =====================================================
+                // Invoice Creation (Draft)
+                // =====================================================
+                if (customerOrder.OrderPaymentMode == OrderPaymentModeEnum.Pay_now_full)
                 {
                     var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Full_Payment);
                     customerOrder.Invoices.Add(invoice);
@@ -155,12 +187,12 @@ namespace WebApplication1.Services.ServiceImpl
                     var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Bnpl_Initial_Payment);
                     customerOrder.Invoices.Add(invoice);
                 }
-                
+
                 await _unitOfWork.SaveChangesAsync();
 
-                // --------------------------------
-                // Creation log (AFTER OrderID exists)
-                // --------------------------------
+                // =====================================================
+                // Audit Log (After OrderID exists)
+                // =====================================================
                 LogOrderCreation(customerOrder);
 
                 await _unitOfWork.CommitAsync();
