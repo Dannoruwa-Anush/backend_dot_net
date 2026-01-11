@@ -1,4 +1,5 @@
-using WebApplication1.DTOs.RequestDto;
+using System.Text.Json;
+using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
@@ -13,17 +14,22 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IInvoiceRepository _repository;
         private readonly IAppUnitOfWork _unitOfWork;
 
+        private readonly ICustomerOrderRepository _customerOrderRepository;
         private IDocumentGenerationService _documentGenerationService;
+        private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
+
         //logger: for auditing
         private readonly ILogger<InvoiceServiceImpl> _logger;
 
         // Constructor
-        public InvoiceServiceImpl(IInvoiceRepository repository, IAppUnitOfWork unitOfWork, IDocumentGenerationService documentGenerationService, ILogger<InvoiceServiceImpl> logger)
+        public InvoiceServiceImpl(IInvoiceRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IDocumentGenerationService documentGenerationService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<InvoiceServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _customerOrderRepository = customerOrderRepository;
             _documentGenerationService = documentGenerationService;
+            _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _logger = logger;
         }
 
@@ -48,9 +54,10 @@ namespace WebApplication1.Services.ServiceImpl
                 InvoiceTypeEnum.Bnpl_Initial_Payment =>
                     BuildBnplInitialInvoice(order),
 
-                InvoiceTypeEnum.Bnpl_Installment_Payment =>
-                    BuildInstallmentInvoice(order),
-
+                /*
+                                InvoiceTypeEnum.Bnpl_Installment_Payment =>
+                                    BuildInstallmentInvoice(order),
+                */
                 _ => throw new InvalidOperationException("Unsupported invoice type")
             };
 
@@ -91,6 +98,7 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         // Helper method: invoice builder - bnpl installment payment
+        /*
         private Invoice BuildInstallmentInvoice(CustomerOrder order)
         {
             var plan = order.BNPL_PLAN
@@ -109,6 +117,7 @@ namespace WebApplication1.Services.ServiceImpl
                 InstallmentNo = latestSettlement.CurrentInstallmentNo
             };
         }
+        */
 
         // Helper method: attach invoice
         private async Task GenerateAndAttachInvoicePdfAsync(CustomerOrder order, Invoice invoice)
@@ -127,7 +136,55 @@ namespace WebApplication1.Services.ServiceImpl
             return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, customerId, searchKey);
         }
 
-        public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId)=>
+        public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId) =>
             await _repository.ExistsUnpaidInvoiceByCustomerAsync(customerId);
+
+        public async Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(
+            BnplSnapshotPayingSimulationRequestDto request)
+        {
+            var order =
+                await _customerOrderRepository.GetWithFinancialDetailsByIdAsync(request.OrderId)
+                ?? throw new Exception("Order not found");
+
+            // prevent double billing
+            if (order.Invoices.Any(i =>
+                    i.InvoiceType == InvoiceTypeEnum.Bnpl_Installment_Payment &&
+                    i.InvoiceStatus == InvoiceStatusEnum.Unpaid))
+                throw new InvalidOperationException("Existing unpaid installment invoice found");
+
+            var simulation =
+                await _bnpl_planSettlementSummaryService.SimulateBnplPlanSettlementAsync(request);
+
+            var invoice = new Invoice
+            {
+                OrderID = order.OrderID,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment,
+                InvoiceStatus = InvoiceStatusEnum.Unpaid,
+                InvoiceAmount = request.PaymentAmount,
+                InstallmentNo = simulation.InstallmentId,
+
+                // frozen snapshot
+                SettlementSnapshotJson = JsonSerializer.Serialize(simulation)
+            };
+
+            order.Invoices.Add(invoice);
+            await _unitOfWork.SaveChangesAsync();
+
+            await GenerateAndAttachInvoicePdfAsync(order, invoice);
+            return invoice;
+        }
+
+        public async Task RegenerateInvoicePdfAsync(int invoiceId)
+        {
+            var invoice = await _repository.GetByIdAsync(invoiceId)
+                ?? throw new Exception("Invoice not found");
+
+            var fileUrl =
+                await _documentGenerationService.GenerateInvoicePdfAsync(
+                    invoice.CustomerOrder!, invoice);
+
+            invoice.InvoiceFileUrl = fileUrl;
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

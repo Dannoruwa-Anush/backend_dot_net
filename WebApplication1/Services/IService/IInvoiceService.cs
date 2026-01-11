@@ -1,4 +1,5 @@
 using WebApplication1.DTOs.RequestDto;
+using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Utils.Project_Enums;
@@ -17,5 +18,9 @@ namespace WebApplication1.Services.IService
         
         //Shared Internal Operations Used by Multiple Repositories
         Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, InvoiceTypeEnum invoiceType);
+
+        //Create an invoice for installment pay
+        Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingSimulationRequestDto request);
+        Task RegenerateInvoicePdfAsync(int invoiceId);
     }
 }

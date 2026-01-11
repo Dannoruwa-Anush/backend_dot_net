@@ -21,13 +21,17 @@ namespace WebApplication1.Models
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(InvoiceStatusEnum))]
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
-        
+
         public DateTime? VoidedAt { get; set; }
         public DateTime? PaidAt { get; set; }
         public DateTime? RefundedAt { get; set; }
 
         // For bnpl installment payment
         public int? InstallmentNo { get; set; }
+
+        // IMMUTABLE snapshot for BNPL invoices
+        [Column(TypeName = "nvarchar(max)")]
+        public string? SettlementSnapshotJson { get; set; }
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]
@@ -38,8 +42,8 @@ namespace WebApplication1.Models
         public string? InvoiceFileUrl { get; set; }
 
         [ConcurrencyCheck]
-        public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
-        
+        public byte[] RowVersion { get; set; } = new byte[8]; // for optimistic concurrency.
+
         //******* [Start: CustomerOrder (1) — Invoice (M)] ****
         //FK
         public int OrderID { get; set; }

@@ -1,4 +1,6 @@
+using System.Text.Json;
 using WebApplication1.DTOs.RequestDto.Payment;
+using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.Models;
 using WebApplication1.Services.IService;
 using WebApplication1.Services.IService.Helper;
@@ -44,23 +46,22 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
         public async Task<bool> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
+            var invoice = await _invoiceService.GetInvoiceByIdAsync(paymentRequest.InvoiceId)
+                ?? throw new Exception("Invoice not found");
+
+            if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
+                throw new Exception("Invoice already paid");
+
             if (paymentRequest.PaymentAmount <= 0)
                 throw new Exception("Payment amount should be a positive number");
-            //------------- [ start - todo can simplify] ---------
-            var invoice = await _invoiceService.GetInvoiceByIdAsync(paymentRequest.InvoiceId)
-                              ?? throw new Exception("Invoice not found");
 
-            var existingOrder = await _customerOrderService
-                    .GetCustomerOrderWithFinancialDetailsByIdAsync(invoice.OrderID);
+            var order = await _customerOrderService.GetCustomerOrderWithFinancialDetailsByIdAsync(invoice.OrderID)
+                ?? throw new Exception("Order not found");
 
-            if (existingOrder == null)
-                throw new Exception("Order not found");
-            //------------- [ End - todo can simplify] ---------
+            if (paymentRequest.PaymentAmount != invoice.InvoiceAmount)
+                throw new Exception("Payment amount must equal invoice amount");
 
-            ValidateBeforePayment(existingOrder);
-
-            if (paymentRequest.PaymentAmount != existingOrder.TotalAmount)
-                throw new Exception("Full payment must match the total order amount");
+            ValidateBeforePayment(order);
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -68,21 +69,21 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 switch (invoice.InvoiceType)
                 {
                     case InvoiceTypeEnum.Full_Payment:
-                        await ProcessFullPaymentAsync(existingOrder, invoice, paymentRequest);
+                        await ProcessFullPaymentAsync(order, invoice, paymentRequest);
                         break;
 
                     case InvoiceTypeEnum.Bnpl_Initial_Payment:
-                        await ProcessInitialBnplPaymentAsync(existingOrder, invoice, paymentRequest);
+                        await ProcessInitialBnplPaymentAsync(order, invoice, paymentRequest);
                         break;
 
                     default:
-                        await ProcessBnplInstallmentPaymentAsync(existingOrder, invoice, paymentRequest);
+                        await ProcessBnplInstallmentPaymentAsync(order, invoice, paymentRequest);
                         break;
                 }
 
                 await _unitOfWork.CommitAsync();
 
-                _logger.LogInformation("Full payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", existingOrder.OrderID, paymentRequest.PaymentAmount);
+                _logger.LogInformation("Full payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", order.OrderID, paymentRequest.PaymentAmount);
                 return true;
             }
             catch (Exception ex)
@@ -136,11 +137,15 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         {
             ValidateBeforePayment(order);
 
+            // Deserialize frozen settlement snapshot
+            var frozenSettlement = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson!)
+                    ?? throw new Exception("Settlement snapshot missing");
+
             // Apply payment to snapshot
-            var latestSnapshotSettledResult = _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequest(order, paymentRequest.PaymentAmount);
+            _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequest(order, paymentRequest.PaymentAmount);
 
             // Update the installments according to the payment
-            var paymentResult = _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, latestSnapshotSettledResult);
+            _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, frozenSettlement);
 
             // Build cashflow
             var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
