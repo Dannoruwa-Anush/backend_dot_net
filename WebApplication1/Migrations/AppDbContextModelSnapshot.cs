@@ -774,6 +774,9 @@ namespace WebApplication1.Migrations
                     b.Property<decimal>("InvoiceAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("InvoiceFileUrl")
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("InvoiceStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(20)");
@@ -795,6 +798,9 @@ namespace WebApplication1.Migrations
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("BINARY(8)");
+
+                    b.Property<string>("SettlementSnapshotJson")
+                        .HasColumnType("LONGTEXT CHARACTER SET utf8mb4");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");

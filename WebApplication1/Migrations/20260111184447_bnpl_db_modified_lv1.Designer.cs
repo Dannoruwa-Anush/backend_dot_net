@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260107153057_modified_db_v2")]
-    partial class modified_db_v2
+    [Migration("20260111184447_bnpl_db_modified_lv1")]
+    partial class bnpl_db_modified_lv1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -777,6 +777,9 @@ namespace WebApplication1.Migrations
                     b.Property<decimal>("InvoiceAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("InvoiceFileUrl")
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("InvoiceStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(20)");
@@ -798,6 +801,9 @@ namespace WebApplication1.Migrations
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("BINARY(8)");
+
+                    b.Property<string>("SettlementSnapshotJson")
+                        .HasColumnType("LONGTEXT CHARACTER SET utf8mb4");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WebApplication1.Migrations
 {
     /// <inheritdoc />
-    public partial class modified_db_v1 : Migration
+    public partial class bnpl_db_modified_lv1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -303,6 +303,8 @@ namespace WebApplication1.Migrations
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     OrderSource = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    OrderPaymentMode = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    OrderStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     ShippedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeliveredDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CancelledDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -312,11 +314,9 @@ namespace WebApplication1.Migrations
                     CancellationApproved = table.Column<bool>(type: "tinyint(1)", nullable: true),
                     CancellationRejectionReason = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    OrderStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    OrderPaymentStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     PendingPaymentOrderAutoCancelledDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     PaymentCompletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    OrderPaymentStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
-                    IsBnplPlanExist = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     RowVersion = table.Column<byte[]>(type: "BINARY(8)", nullable: false),
                     PhysicalShopSessionId = table.Column<int>(type: "int", nullable: true),
                     CustomerID = table.Column<int>(type: "int", nullable: true),
@@ -365,9 +365,10 @@ namespace WebApplication1.Migrations
                     Bnpl_RemainingInstallmentCount = table.Column<int>(type: "int", nullable: false),
                     Bnpl_StartDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Bnpl_NextDueDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    Bnpl_Status = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     CompletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    Bnpl_Status = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    Defaulted = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "BINARY(8)", nullable: false),
                     Bnpl_PlanTypeID = table.Column<int>(type: "int", nullable: false),
                     OrderID = table.Column<int>(type: "int", nullable: false),
@@ -454,9 +455,15 @@ namespace WebApplication1.Migrations
                     InvoiceID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     InvoiceAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    InstallmentNo = table.Column<int>(type: "int", nullable: true),
-                    InvoiceType = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     InvoiceStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    VoidedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    RefundedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    InstallmentNo = table.Column<int>(type: "int", nullable: true),
+                    SettlementSnapshotJson = table.Column<string>(type: "LONGTEXT CHARACTER SET utf8mb4", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    InvoiceType = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    InvoiceFileUrl = table.Column<string>(type: "nvarchar(255)", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "BINARY(8)", nullable: false),
                     OrderID = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),

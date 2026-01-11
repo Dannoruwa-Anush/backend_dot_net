@@ -30,7 +30,7 @@ namespace WebApplication1.Models
         public int? InstallmentNo { get; set; }
 
         // IMMUTABLE snapshot for BNPL invoices
-        [Column(TypeName = "nvarchar(max)")]
+        [Column(TypeName = "LONGTEXT CHARACTER SET utf8mb4")]
         public string? SettlementSnapshotJson { get; set; }
 
         [Required]
