@@ -25,7 +25,7 @@ namespace WebApplication1.Controllers
         }
 
         //Custom Query Operations
-        [HttpGet("{orderId}")]
+        [HttpGet("order/{orderId}")]
         [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
         public async Task<IActionResult> GetByOrderId(int orderId)
         {
