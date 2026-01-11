@@ -581,5 +581,8 @@ namespace WebApplication1.Services.ServiceImpl
             foreach (var item in order.CustomerOrderElectronicItems)
                 item.ElectronicItem.QOH += item.Quantity;
         }
+
+        public async Task<CustomerOrder?> GetCustomerOrderWithActiveBnplByIdAsync(int id, int? customerId = null) =>
+            await _repository.GetActiveBnplByIdAsync(id, customerId);
     }
 }

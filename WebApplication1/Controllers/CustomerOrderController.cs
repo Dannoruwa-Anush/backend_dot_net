@@ -54,7 +54,7 @@ namespace WebApplication1.Controllers
         {
             var customerOrder = await _service.GetCustomerOrderByIdAsync(id);
             if (customerOrder == null)
-                return NotFound(new ApiResponseDto<string>(404, "Customer not found"));
+                return NotFound(new ApiResponseDto<string>(404, "Customer order not found"));
 
             // Model -> ResponseDto
             var responseDto = _mapper.Map<CustomerOrderResponseDto>(customerOrder);
@@ -167,6 +167,21 @@ namespace WebApplication1.Controllers
             {
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
+        }
+     
+        [HttpGet("bnpl")]
+        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        public async Task<IActionResult> GetActiveBnpOrderById([FromQuery] int id, [FromQuery] int? customerId)
+        {
+            var customerOrder = await _service.GetCustomerOrderWithActiveBnplByIdAsync(id, customerId);
+            if (customerOrder == null)
+                return NotFound(new ApiResponseDto<string>(404, "Customer order not found"));
+
+            // Model -> ResponseDto
+            var responseDto = _mapper.Map<CustomerOrderResponseDto>(customerOrder);
+            var response = new ApiResponseDto<CustomerOrderResponseDto>(200, "Customer order retrieved successfully", responseDto);
+
+            return Ok(response);
         }
 
         /*
