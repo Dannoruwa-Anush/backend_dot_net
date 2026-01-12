@@ -222,31 +222,27 @@ namespace WebApplication1.Services.ServiceImpl
         // =========================================================
         private void AddSettlementSummary(Document doc, Invoice invoice)
         {
-            var bold = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10);
-            var normal = FontFactory.GetFont(FontFactory.HELVETICA, 10);
-
-            var snapshot =
-                JsonSerializer.Deserialize<BnplSnapshotPayingSimulationResultDto>(
-                    invoice.SettlementSnapshotJson!)
+            var snapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(
+                invoice.SettlementSnapshotJson!)
                 ?? throw new InvalidOperationException("Settlement snapshot missing");
 
             PdfPTable table = new PdfPTable(2) { WidthPercentage = 60 };
 
-            void Row(string l, decimal v)
+            void Row(string label, decimal value)
             {
-                table.AddCell(new PdfPCell(new Phrase(l, bold)) { BackgroundColor = new BaseColor(230, 230, 230) });
-                table.AddCell(new PdfPCell(new Phrase(v.ToString("F2"), normal))
-                { HorizontalAlignment = Element.ALIGN_RIGHT });
+                table.AddCell(new PdfPCell(new Phrase(label)) { BackgroundColor = new BaseColor(230, 230, 230) });
+                table.AddCell(new PdfPCell(new Phrase(value.ToString("F2")))
+                {
+                    HorizontalAlignment = Element.ALIGN_RIGHT
+                });
             }
 
-            Row("Base Paid", snapshot.PaidToBase);
-            Row("Arrears Paid", snapshot.PaidToArrears);
-            Row("Interest Paid", snapshot.PaidToInterest);
-            Row("Overpayment", snapshot.OverPaymentCarried);
-            Row("Remaining Balance", snapshot.RemainingBalance);
+            Row("Base Paid", snapshot.TotalPaidCurrentInstallmentBase);
+            Row("Arrears Paid", snapshot.TotalPaidArrears);
+            Row("Interest Paid", snapshot.TotalPaidLateInterest);
+            Row("Overpayment", snapshot.OverPaymentCarriedToNextInstallment);
 
             doc.Add(table);
-            doc.Add(new Paragraph($"Status: {snapshot.ResultStatus}", normal));
         }
 
         // =========================================================

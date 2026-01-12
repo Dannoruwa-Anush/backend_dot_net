@@ -46,22 +46,23 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _logger = logger;
         }
 
-        public async Task<bool> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
+        public async Task<Invoice> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
             var invoice = await _invoiceService.GetInvoiceByIdAsync(paymentRequest.InvoiceId)
                 ?? throw new Exception("Invoice not found");
 
             if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
-                throw new Exception("Invoice already paid");
+                throw new InvalidOperationException("Invoice already paid");
 
             if (paymentRequest.PaymentAmount <= 0)
-                throw new Exception("Payment amount should be a positive number");
-
-            var order = await _customerOrderService.GetCustomerOrderWithFinancialDetailsByIdAsync(invoice.OrderID)
-                ?? throw new Exception("Order not found");
+                throw new InvalidOperationException("Payment amount must be positive");
 
             if (paymentRequest.PaymentAmount != invoice.InvoiceAmount)
-                throw new Exception("Payment amount must equal invoice amount");
+                throw new InvalidOperationException("Payment amount must equal invoice amount");
+
+            var order = await _customerOrderService
+                .GetCustomerOrderWithFinancialDetailsByIdAsync(invoice.OrderID)
+                ?? throw new Exception("Order not found");
 
             ValidateBeforePayment(order);
 
@@ -78,20 +79,25 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                         await ProcessInitialBnplPaymentAsync(order, invoice, paymentRequest);
                         break;
 
-                    default:
+                    case InvoiceTypeEnum.Bnpl_Installment_Payment:
                         await ProcessBnplInstallmentPaymentAsync(order, invoice, paymentRequest);
                         break;
+
+                    default:
+                        throw new InvalidOperationException("Unsupported invoice type");
                 }
 
                 await _unitOfWork.CommitAsync();
 
-                _logger.LogInformation("Full payment done for OrderId={OrderId}, PaymentAmount={PaymentAmount}", order.OrderID, paymentRequest.PaymentAmount);
-                return true;
+                _logger.LogInformation(
+                    "Payment processed successfully. OrderId={OrderId}, InvoiceId={InvoiceId}, Type={InvoiceType}, Amount={Amount}",
+                    order.OrderID, invoice.InvoiceID, invoice.InvoiceType, paymentRequest.PaymentAmount);
+
+                return invoice;
             }
-            catch (Exception ex)
+            catch
             {
                 await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, "Failed to process payment for InvoiceId={InvoiceId}", paymentRequest.InvoiceId);
                 throw;
             }
         }
@@ -99,37 +105,24 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Helper : ProcessFullPaymentAsync
         private async Task ProcessFullPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
-            ValidateBeforePayment(order);
-
-            if (paymentRequest.PaymentAmount != order.TotalAmount)
-                throw new Exception("Full payment must match order total");
-
             order.OrderStatus = OrderStatusEnum.Processing;
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
+
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
-                paymentRequest,
-                CashflowTypeEnum.FullPayment
-            );
-
-            invoice.Cashflow = cashflow;
+            invoice.Cashflow = await _cashflowService
+                .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
         }
 
         //Helper : ProcessInitialBnplPaymentAsync
         private async Task ProcessInitialBnplPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
-            ValidateBeforePayment(order);
-
-            var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
-                paymentRequest,
-                CashflowTypeEnum.BnplInitialPayment
-            );
-
-            invoice.Cashflow = cashflow;
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            invoice.Cashflow = await _cashflowService
+                .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
 
             order.BNPL_PLAN!.Bnpl_Status = BnplStatusEnum.Active;
             order.OrderStatus = OrderStatusEnum.Processing;
@@ -137,42 +130,43 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         }
 
         //Helper : ProcessBnplInstallmentPaymentAsync
-        private async Task ProcessBnplInstallmentPaymentAsync(CustomerOrder order,Invoice invoice, PaymentRequestDto paymentRequest)
+        private async Task ProcessBnplInstallmentPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
-            ValidateBeforePayment(order);
+            if (string.IsNullOrWhiteSpace(invoice.SettlementSnapshotJson) ||
+                string.IsNullOrWhiteSpace(invoice.SettlementSnapshotHash))
+                throw new SecurityException("Missing settlement snapshot or hash");
 
-            if (string.IsNullOrWhiteSpace(invoice.SettlementSnapshotJson) || string.IsNullOrWhiteSpace(invoice.SettlementSnapshotHash))
-            {
-                throw new InvalidOperationException(
-                    "Missing settlement snapshot or hash on invoice");
-            }
+            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(
+                invoice.SettlementSnapshotJson)
+                ?? throw new Exception("Invalid settlement snapshot");
 
-            // 1. Deserialize frozen snapshot
-            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson)
-                ?? throw new Exception("Settlement snapshot missing");
-
-            // 2. Verify hash
             var canonicalJson = SnapshotHashHelper.SerializeCanonical(frozenSnapshot);
-
             var computedHash = SnapshotHashHelper.BuildHash(canonicalJson);
 
             if (!string.Equals(computedHash, invoice.SettlementSnapshotHash, StringComparison.Ordinal))
-            {
-                throw new SecurityException("Settlement snapshot integrity violation detected");
-            }
+                throw new SecurityException("Settlement snapshot integrity violation");
 
-            // 3. APPLY SNAPSHOT
-            _bnpl_planSettlementSummaryService.ApplyFrozenSettlementSnapshot(order, frozenSnapshot);
+            _bnpl_planSettlementSummaryService
+                .ApplyFrozenSettlementSnapshot(order, frozenSnapshot);
 
-            // 4. Update installments
-            _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, frozenSnapshot);
+            _bNPL_InstallmentService
+                .BuildBnplInstallmentSettlement(order, frozenSnapshot);
 
-            // 5. Build cashflow
-            var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+            invoice.Cashflow = await _cashflowService
+                .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
 
-            invoice.Cashflow = cashflow;
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            if (order.BNPL_PLAN!.Bnpl_RemainingInstallmentCount == 0)
+            {
+                order.BNPL_PLAN.Bnpl_Status = BnplStatusEnum.Completed;
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
+            }
+            else
+            {
+                order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+            }
         }
 
         //Helper : to valiadate payment

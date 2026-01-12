@@ -56,10 +56,6 @@ namespace WebApplication1.Services.ServiceImpl
                 InvoiceTypeEnum.Bnpl_Initial_Payment =>
                     BuildBnplInitialInvoice(order),
 
-                /*
-                                InvoiceTypeEnum.Bnpl_Installment_Payment =>
-                                    BuildInstallmentInvoice(order),
-                */
                 _ => throw new InvalidOperationException("Unsupported invoice type")
             };
 
@@ -98,28 +94,6 @@ namespace WebApplication1.Services.ServiceImpl
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
             };
         }
-
-        // Helper method: invoice builder - bnpl installment payment
-        /*
-        private Invoice BuildInstallmentInvoice(CustomerOrder order)
-        {
-            var plan = order.BNPL_PLAN
-                ?? throw new InvalidOperationException("BNPL plan not found");
-
-            var latestSettlement = plan.BNPL_PlanSettlementSummaries
-                .SingleOrDefault(s => s.IsLatest)
-                ?? throw new InvalidOperationException("Latest settlement not found");
-
-            return new Invoice
-            {
-                OrderID = order.OrderID,
-                InvoiceAmount = latestSettlement.Total_PayableSettlement,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment,
-                InvoiceStatus = InvoiceStatusEnum.Unpaid,
-                InstallmentNo = latestSettlement.CurrentInstallmentNo
-            };
-        }
-        */
 
         // Helper method: attach invoice
         private async Task GenerateAndAttachInvoicePdfAsync(CustomerOrder order, Invoice invoice)
