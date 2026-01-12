@@ -292,11 +292,41 @@ namespace WebApplication1.Services.ServiceImpl
         }
         //-----------------[End: Settlement Generation]---------------
 
-        
+
         //Custom Query Operations
         public async Task<PaginationResultDto<BNPL_PlanSettlementSummary>> GetAllLatestSnapshotWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null)
         {
             return await _repository.GetAllLatestSnapshotWithPaginationAsync(pageNumber, pageSize, searchKey);
+        }
+
+        public void ApplyFrozenSettlementSnapshot(CustomerOrder order, BnplLatestSnapshotSettledResultDto frozenSnapshot)
+        {
+            var plan = order.BNPL_PLAN
+                ?? throw new Exception("BNPL plan not found");
+
+            var latestSnapshot = plan.BNPL_PlanSettlementSummaries
+                .FirstOrDefault(s => s.IsLatest)
+                ?? throw new Exception("Latest settlement snapshot not found");
+
+            // APPLY — NO CALCULATION
+            latestSnapshot.Paid_AgainstTotalArrears += frozenSnapshot.TotalPaidArrears;
+
+            latestSnapshot.Paid_AgainstTotalLateInterest += frozenSnapshot.TotalPaidLateInterest;
+
+            latestSnapshot.Paid_AgainstNotYetDueCurrentInstallmentBaseAmount += frozenSnapshot.TotalPaidCurrentInstallmentBase;
+
+            var totalApplied = frozenSnapshot.TotalPaidArrears + frozenSnapshot.TotalPaidLateInterest + frozenSnapshot.TotalPaidCurrentInstallmentBase;
+
+            latestSnapshot.Total_PayableSettlement = Math.Max(latestSnapshot.Total_PayableSettlement - totalApplied, 0m);
+
+            latestSnapshot.Total_OverpaymentCarriedToNext += frozenSnapshot.OverPaymentCarriedToNextInstallment;
+
+            if (latestSnapshot.Total_PayableSettlement == 0)
+            {
+                latestSnapshot.Bnpl_PlanSettlementSummary_PaymentStatus = Bnpl_PlanSettlementSummary_PaymentStatusEnum.Settled;
+            }
+
+            _logger.LogInformation("Applied frozen settlement snapshot to OrderId={OrderId}", order.OrderID);
         }
     }
 }

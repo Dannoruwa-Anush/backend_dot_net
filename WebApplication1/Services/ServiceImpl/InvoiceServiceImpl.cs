@@ -1,10 +1,12 @@
 using System.Text.Json;
 using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
+using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
@@ -139,22 +141,36 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId) =>
             await _repository.ExistsUnpaidInvoiceByCustomerAsync(customerId);
 
-        public async Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(
-            BnplSnapshotPayingSimulationRequestDto request)
+        public async Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingSimulationRequestDto request)
         {
-            var order =
-                await _customerOrderRepository.GetWithFinancialDetailsByIdAsync(request.OrderId)
+            var order = await _customerOrderRepository.GetWithFinancialDetailsByIdAsync(request.OrderId)
                 ?? throw new Exception("Order not found");
 
-            // prevent double billing
+            // Prevent double billing
             if (order.Invoices.Any(i =>
                     i.InvoiceType == InvoiceTypeEnum.Bnpl_Installment_Payment &&
                     i.InvoiceStatus == InvoiceStatusEnum.Unpaid))
                 throw new InvalidOperationException("Existing unpaid installment invoice found");
 
-            var simulation =
-                await _bnpl_planSettlementSummaryService.SimulateBnplPlanSettlementAsync(request);
+            // 1. Run simulation
+            var simulation = await _bnpl_planSettlementSummaryService.SimulateBnplPlanSettlementAsync(request);
 
+            // 2. Convert simulation -> settlement snapshot (IMPORTANT)
+            var frozenSnapshot = new BnplLatestSnapshotSettledResultDto
+            {
+                TotalPaidArrears = simulation.PaidToArrears,
+                TotalPaidLateInterest = simulation.PaidToInterest,
+                TotalPaidCurrentInstallmentBase = simulation.PaidToBase,
+                OverPaymentCarriedToNextInstallment = simulation.OverPaymentCarried
+            };
+
+            // 3. Canonical serialization
+            var snapshotJson = SnapshotHashHelper.SerializeCanonical(frozenSnapshot);
+
+            // 4. Hash (IMMUTABLE INTEGRITY SEAL)
+            var snapshotHash = SnapshotHashHelper.BuildHash(snapshotJson);
+
+            // 5. Create invoice with frozen snapshot
             var invoice = new Invoice
             {
                 OrderID = order.OrderID,
@@ -163,14 +179,15 @@ namespace WebApplication1.Services.ServiceImpl
                 InvoiceAmount = request.PaymentAmount,
                 InstallmentNo = simulation.InstallmentId,
 
-                // frozen snapshot
-                SettlementSnapshotJson = JsonSerializer.Serialize(simulation)
+                SettlementSnapshotJson = snapshotJson,
+                SettlementSnapshotHash = snapshotHash
             };
 
             order.Invoices.Add(invoice);
             await _unitOfWork.SaveChangesAsync();
 
             await GenerateAndAttachInvoicePdfAsync(order, invoice);
+
             return invoice;
         }
 

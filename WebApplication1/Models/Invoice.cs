@@ -26,12 +26,17 @@ namespace WebApplication1.Models
         public DateTime? PaidAt { get; set; }
         public DateTime? RefundedAt { get; set; }
 
-        // For bnpl installment payment
+        // ------[Start - For bnpl installment payment] ------
         public int? InstallmentNo { get; set; }
 
         // IMMUTABLE snapshot for BNPL invoices
         [Column(TypeName = "LONGTEXT CHARACTER SET utf8mb4")]
         public string? SettlementSnapshotJson { get; set; }
+
+        // Integrity hash
+        [MaxLength(64)]
+        public string? SettlementSnapshotHash { get; set; }
+        // ------[End - For bnpl installment payment] ------
 
         [Required]
         [Column(TypeName = "nvarchar(20)")]

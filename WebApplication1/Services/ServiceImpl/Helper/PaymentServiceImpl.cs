@@ -1,3 +1,4 @@
+using System.Security;
 using System.Text.Json;
 using WebApplication1.DTOs.RequestDto.Payment;
 using WebApplication1.DTOs.ResponseDto.BnplSnapshotPayingSimulation;
@@ -5,6 +6,7 @@ using WebApplication1.Models;
 using WebApplication1.Services.IService;
 using WebApplication1.Services.IService.Helper;
 using WebApplication1.UOW.IUOW;
+using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl.Helper
@@ -105,6 +107,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             order.OrderStatus = OrderStatusEnum.Processing;
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
+            invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(
                 paymentRequest,
@@ -126,6 +129,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
             invoice.Cashflow = cashflow;
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
+            invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             order.BNPL_PLAN!.Bnpl_Status = BnplStatusEnum.Active;
             order.OrderStatus = OrderStatusEnum.Processing;
@@ -133,24 +137,42 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         }
 
         //Helper : ProcessBnplInstallmentPaymentAsync
-        private async Task ProcessBnplInstallmentPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
+        private async Task ProcessBnplInstallmentPaymentAsync(CustomerOrder order,Invoice invoice, PaymentRequestDto paymentRequest)
         {
             ValidateBeforePayment(order);
 
-            // Deserialize frozen settlement snapshot
-            var frozenSettlement = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson!)
-                    ?? throw new Exception("Settlement snapshot missing");
+            if (string.IsNullOrWhiteSpace(invoice.SettlementSnapshotJson) || string.IsNullOrWhiteSpace(invoice.SettlementSnapshotHash))
+            {
+                throw new InvalidOperationException(
+                    "Missing settlement snapshot or hash on invoice");
+            }
 
-            // Apply payment to snapshot
-            _bnpl_planSettlementSummaryService.BuildBNPL_PlanLatestSettlementSummaryUpdateRequest(order, paymentRequest.PaymentAmount);
+            // 1. Deserialize frozen snapshot
+            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson)
+                ?? throw new Exception("Settlement snapshot missing");
 
-            // Update the installments according to the payment
-            _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, frozenSettlement);
+            // 2. Verify hash
+            var canonicalJson = SnapshotHashHelper.SerializeCanonical(frozenSnapshot);
 
-            // Build cashflow
+            var computedHash = SnapshotHashHelper.BuildHash(canonicalJson);
+
+            if (!string.Equals(computedHash, invoice.SettlementSnapshotHash, StringComparison.Ordinal))
+            {
+                throw new SecurityException("Settlement snapshot integrity violation detected");
+            }
+
+            // 3. APPLY SNAPSHOT
+            _bnpl_planSettlementSummaryService.ApplyFrozenSettlementSnapshot(order, frozenSnapshot);
+
+            // 4. Update installments
+            _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, frozenSnapshot);
+
+            // 5. Build cashflow
             var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+
             invoice.Cashflow = cashflow;
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
+            invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
         }
 
         //Helper : to valiadate payment

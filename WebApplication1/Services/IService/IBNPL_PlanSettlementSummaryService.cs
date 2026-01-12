@@ -20,5 +20,7 @@ namespace WebApplication1.Services.IService
 
         //Custom Query Operations
         Task<PaginationResultDto<BNPL_PlanSettlementSummary>> GetAllLatestSnapshotWithPaginationAsync(int pageNumber, int pageSize, string? searchKey = null);
+        
+        void ApplyFrozenSettlementSnapshot(CustomerOrder order, BnplLatestSnapshotSettledResultDto frozenSnapshot);    
     }
 }
