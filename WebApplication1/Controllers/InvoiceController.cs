@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Services.IService;
@@ -68,7 +69,7 @@ namespace WebApplication1.Controllers
 
         [HttpGet("customer/{customerId}")]
         [Authorize(Roles = "Admin, Employee, Customer")]
-        public async Task<IActionResult> ExistsUnpaidInvoiceByCustomerAsync(int customerId)
+        public async Task<IActionResult> ExistsUnpaidInvoiceByCustome(int customerId)
         {
             try
             {
@@ -90,6 +91,30 @@ namespace WebApplication1.Controllers
                         500,
                         "An internal server error occurred. Please try again later."
                     ));
+            }
+        }
+
+        [HttpPost("generate/settlement")]
+        [Authorize(Roles = "Admin, Employee, Customer")]
+        public async Task<IActionResult> GenerateInvoiceForSettlementSimulation(
+            [FromBody] BnplSnapshotPayingSimulationRequestDto request)
+        {
+            try
+            {
+                var invoice = await _service.GenerateInvoiceForSettlementSimulationAsync(request);
+
+                var dto = _mapper.Map<InvoiceResponseDto>(invoice);
+
+                return Ok(new ApiResponseDto<InvoiceResponseDto>(200, "Invoice generated successfully", dto));
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Business rule violations
+                return BadRequest(new ApiResponseDto<string>(400, ex.Message, null));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponseDto<string>(500, "An unexpected error occurred while generating invoice", null));
             }
         }
     }

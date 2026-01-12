@@ -183,34 +183,5 @@ namespace WebApplication1.Controllers
 
             return Ok(response);
         }
-
-        /*
-        [HttpGet("invoice/{id}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetOrderInvoiceByOrderId(int id)
-        {
-            var customerOrder = await _service.GetCustomerOrderByIdAsync(id);
-
-            if (customerOrder == null)
-                return NotFound(new ApiResponseDto<string>(404, "Customer order not found"));
-
-            var orderDto = _mapper.Map<CustomerOrderResponseDto>(customerOrder);
-
-            // Generate invoice PDF using service
-            var relativePath = await _documentGenerationService.GenerateInvoicePdfAsync(orderDto);
-            var fullPath = Path.Combine(_env.WebRootPath, relativePath);
-
-            if (!System.IO.File.Exists(fullPath))
-                return NotFound(new ApiResponseDto<string>(404, "Failed to generate invoice file"));
-
-            // Return file for download
-            //var fileBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
-            //var fileName = Path.GetFileName(fullPath);
-            //return File(fileBytes, "application/pdf", fileName);
-
-            var fileUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
-            return Ok(new ApiResponseDto<string>(200, "Invoice generated successfully", fileUrl));
-        }
-        */
     }
 }
