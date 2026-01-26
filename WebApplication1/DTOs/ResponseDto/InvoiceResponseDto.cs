@@ -14,5 +14,6 @@ namespace WebApplication1.DTOs.ResponseDto
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
 
         public string? InvoiceFileUrl { get; set; }
+        public string? ReceiptFileUrl { get; set; }
     }
 }
