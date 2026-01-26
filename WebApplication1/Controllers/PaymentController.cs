@@ -27,7 +27,7 @@ namespace WebApplication1.Controllers
 
         [HttpPost("process-payment")]
         [Authorize(Policy = AuthorizationPolicies.CustomerOrCashier)]  // JWT is required
-        public async Task<IActionResult> ProcessFullPaymentAsync(PaymentRequestDto paymentRequest)
+        public async Task<IActionResult> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
             try
             {
