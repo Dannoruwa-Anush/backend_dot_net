@@ -12,14 +12,17 @@ namespace WebApplication1.Services.ServiceImpl
     {
         private readonly ICashflowRepository _repository;
 
+        private readonly IInvoiceRepository _invoiceRepository;
+
         //logger: for auditing
         private readonly ILogger<CashflowServiceImpl> _logger;
 
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository, ILogger<CashflowServiceImpl> logger)
+        public CashflowServiceImpl(ICashflowRepository repository, IInvoiceRepository invoiceRepository, ILogger<CashflowServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _invoiceRepository = invoiceRepository;
             _logger = logger;
         }
 
@@ -45,6 +48,10 @@ namespace WebApplication1.Services.ServiceImpl
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));
 
+            var invoice = await _invoiceRepository.GetByIdAsync(paymentRequest.InvoiceId);
+            if (invoice == null)
+                throw new Exception("Invoice not found");
+
             // Determine status (default: Paid)
             var status = CashflowStatusEnum.Paid;
 
@@ -56,7 +63,7 @@ namespace WebApplication1.Services.ServiceImpl
             var newCashflow = new Cashflow
             {
                 InvoiceID = paymentRequest.InvoiceId,
-                AmountPaid = paymentRequest.PaymentAmount,
+                AmountPaid = invoice.InvoiceAmount,
                 CashflowDate = now,
                 CashflowStatus = status,
                 CashflowRef = cashflowRef

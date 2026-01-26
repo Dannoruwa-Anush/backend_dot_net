@@ -54,12 +54,6 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
                 throw new InvalidOperationException("Invoice already paid");
 
-            if (paymentRequest.PaymentAmount <= 0)
-                throw new InvalidOperationException("Payment amount must be positive");
-
-            if (paymentRequest.PaymentAmount != invoice.InvoiceAmount)
-                throw new InvalidOperationException("Payment amount must equal invoice amount");
-
             var order = await _customerOrderService
                 .GetCustomerOrderWithFinancialDetailsByIdAsync(invoice.OrderID)
                 ?? throw new Exception("Order not found");
@@ -91,7 +85,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
                 _logger.LogInformation(
                     "Payment processed successfully. OrderId={OrderId}, InvoiceId={InvoiceId}, Type={InvoiceType}, Amount={Amount}",
-                    order.OrderID, invoice.InvoiceID, invoice.InvoiceType, paymentRequest.PaymentAmount);
+                    order.OrderID, invoice.InvoiceID, invoice.InvoiceType, invoice.InvoiceAmount);
 
                 return invoice;
             }
