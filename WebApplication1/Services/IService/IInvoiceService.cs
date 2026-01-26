@@ -21,6 +21,6 @@ namespace WebApplication1.Services.IService
 
         //Create an invoice for installment pay
         Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingSimulationRequestDto request);
-        Task RegenerateInvoicePdfAsync(int invoiceId);
+        Task GenerateReceiptAsync(int invoiceId);
     }
 }

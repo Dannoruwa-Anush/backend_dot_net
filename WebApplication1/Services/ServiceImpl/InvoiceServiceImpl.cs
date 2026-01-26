@@ -165,17 +165,34 @@ namespace WebApplication1.Services.ServiceImpl
             return invoice;
         }
 
-        public async Task RegenerateInvoicePdfAsync(int invoiceId)
+        public async Task GenerateReceiptAsync(int invoiceId)
         {
             var invoice = await _repository.GetByIdAsync(invoiceId)
                 ?? throw new Exception("Invoice not found");
 
-            var fileUrl =
-                await _documentGenerationService.GenerateInvoicePdfAsync(
-                    invoice.CustomerOrder!, invoice);
+            if (invoice.InvoiceStatus != InvoiceStatusEnum.Paid)
+                throw new InvalidOperationException("Receipt can only be generated for PAID invoices");
 
-            invoice.InvoiceFileUrl = fileUrl;
-            await _unitOfWork.SaveChangesAsync();
+            if (!string.IsNullOrEmpty(invoice.ReceiptFileUrl))
+                return;
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                if (!string.IsNullOrEmpty(invoice.ReceiptFileUrl))
+                    return;
+
+                invoice.ReceiptFileUrl =
+                    await _documentGenerationService.GenerateReceiptPdfAsync(
+                        invoice.CustomerOrder!, invoice);
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
     }
 }

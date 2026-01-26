@@ -19,6 +19,7 @@ namespace WebApplication1.Services.ServiceImpl
             _env = env;
         }
 
+        // Invoice PDF generator
         public async Task<string> GenerateInvoicePdfAsync(CustomerOrder order, Invoice invoice)
         {
             string folderPath = Path.Combine(_env.WebRootPath, "invoices");
@@ -37,7 +38,7 @@ namespace WebApplication1.Services.ServiceImpl
                 PdfWriter writer = PdfWriter.GetInstance(doc, fs);
                 doc.Open();
 
-                AddWatermark(writer, invoice.InvoiceStatus.ToString());
+                AddWatermark(writer, "INVOICE: " + invoice.InvoiceStatus.ToString());
 
                 AddHeader(doc);
                 AddCustomerSection(doc, order);
@@ -258,6 +259,76 @@ namespace WebApplication1.Services.ServiceImpl
             canvas.SetColorFill(new BaseColor(200, 200, 200));
             canvas.ShowTextAligned(Element.ALIGN_CENTER, text.ToUpper(), 297, 421, 45);
             canvas.RestoreState();
+        }
+
+        // Receipt PDF generator
+        public async Task<string> GenerateReceiptPdfAsync(CustomerOrder order, Invoice invoice)
+        {
+            string folderPath = Path.Combine(_env.WebRootPath, "receipts");
+            Directory.CreateDirectory(folderPath);
+
+            string fileName =
+                $"receipt_{invoice.InvoiceID}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+
+            string filePath = Path.Combine(folderPath, fileName);
+
+            await Task.Run(() =>
+            {
+                using FileStream fs = new FileStream(filePath, FileMode.Create);
+                using Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
+
+                PdfWriter writer = PdfWriter.GetInstance(doc, fs);
+                doc.Open();
+
+                AddReceiptHeader(doc);
+                AddCustomerSection(doc, order);
+                AddReceiptSummary(doc, invoice);
+                AddPaymentDetails(doc, invoice);
+
+                doc.Close();
+            });
+
+            return $"receipts/{fileName}";
+        }
+
+        private void AddReceiptHeader(Document doc)
+        {
+            var title = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
+            doc.Add(new Paragraph("PAYMENT RECEIPT", title));
+            doc.Add(new Paragraph("\n"));
+        }
+
+        private void AddReceiptSummary(Document doc, Invoice invoice)
+        {
+            var bold = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10);
+            var normal = FontFactory.GetFont(FontFactory.HELVETICA, 10);
+
+            PdfPTable table = new PdfPTable(2) { WidthPercentage = 50 };
+
+            void Row(string l, string v)
+            {
+                table.AddCell(new PdfPCell(new Phrase(l, bold)) { Border = Rectangle.NO_BORDER });
+                table.AddCell(new PdfPCell(new Phrase(v, normal)) { Border = Rectangle.NO_BORDER });
+            }
+
+            Row("Receipt No", $"R-{invoice.InvoiceID}");
+            Row("Invoice No", invoice.InvoiceID.ToString());
+            Row("Order No", invoice.OrderID.ToString());
+            Row("Paid Amount", invoice.InvoiceAmount.ToString("F2"));
+            Row("Currency", "LKR");
+            Row("Payment Date", invoice.PaidAt!.Value.ToString("yyyy-MM-dd HH:mm"));
+            Row("Status", "PAID");
+
+            doc.Add(table);
+        }
+
+        private void AddPaymentDetails(Document doc, Invoice invoice)
+        {
+            var cashflow = invoice.Cashflow
+                ?? throw new InvalidOperationException("Cashflow missing");
+
+            doc.Add(new Paragraph($"Payment Amount: {cashflow.AmountPaid}"));
+            doc.Add(new Paragraph($"Transaction Ref: {cashflow.CashflowRef}"));
         }
     }
 }

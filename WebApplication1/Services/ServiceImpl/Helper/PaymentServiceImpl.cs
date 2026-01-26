@@ -86,14 +86,16 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 _logger.LogInformation(
                     "Payment processed successfully. OrderId={OrderId}, InvoiceId={InvoiceId}, Type={InvoiceType}, Amount={Amount}",
                     order.OrderID, invoice.InvoiceID, invoice.InvoiceType, invoice.InvoiceAmount);
-
-                return invoice;
             }
             catch
             {
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
+
+            // Receipt is OUTSIDE transaction
+            await _invoiceService.GenerateReceiptAsync(invoice.InvoiceID);
+            return invoice;
         }
 
         //Helper : ProcessFullPaymentAsync

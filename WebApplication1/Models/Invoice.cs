@@ -43,8 +43,13 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(InvoiceTypeEnum))]
         public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment;
 
+        // Invoice = billing document
         [Column(TypeName = "nvarchar(255)")]
         public string? InvoiceFileUrl { get; set; }
+
+        // Receipt = proof of payment (Generated after payment)
+        [Column(TypeName = "nvarchar(255)")]
+        public string? ReceiptFileUrl { get; set; }
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; } = new byte[8]; // for optimistic concurrency.
