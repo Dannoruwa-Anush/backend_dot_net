@@ -25,7 +25,7 @@ namespace WebApplication1.Controllers
             _mapper = mapper;
         }
 
-        [HttpPost("process-payment")]
+        [HttpPost]
         [Authorize(Policy = AuthorizationPolicies.CustomerOrCashier)]  // JWT is required
         public async Task<IActionResult> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
