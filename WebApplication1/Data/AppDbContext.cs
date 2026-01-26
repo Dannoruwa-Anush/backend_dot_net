@@ -214,6 +214,10 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<Invoice>(entity =>
             {
+                entity.HasIndex(i => new { i.InvoiceID, i.ReceiptFileUrl })
+                    .IsUnique()
+                    .HasFilter("[ReceiptFileUrl] IS NOT NULL");
+                
                 entity.Property(i => i.InvoiceAmount)
                       .HasColumnType("decimal(18,2)");
 
