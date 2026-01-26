@@ -8,6 +8,7 @@ namespace WebApplication1.Repositories.IRepository
         //CRUD operations
         Task<IEnumerable<Invoice>> GetAllAsync();
         Task<Invoice?> GetByIdAsync(int id);
+        Task<Invoice?> GetInvoiceWithOrderAsync(int invoiceId);
 
         //Custom Query Operations
         Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null);

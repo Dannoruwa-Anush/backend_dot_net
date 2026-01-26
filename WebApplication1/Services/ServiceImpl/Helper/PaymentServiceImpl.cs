@@ -48,15 +48,14 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
         public async Task<Invoice> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
-            var invoice = await _invoiceService.GetInvoiceByIdAsync(paymentRequest.InvoiceId)
+            var invoice = await _invoiceService.GetInvoiceWithOrderAsync(paymentRequest.InvoiceId)
                 ?? throw new Exception("Invoice not found");
 
             if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
                 throw new InvalidOperationException("Invoice already paid");
 
-            var order = await _customerOrderService
-                .GetCustomerOrderWithFinancialDetailsByIdAsync(invoice.OrderID)
-                ?? throw new Exception("Order not found");
+            var order = invoice.CustomerOrder
+                ?? throw new Exception("Order not loaded");
 
             ValidateBeforePayment(order);
 
@@ -81,11 +80,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                         throw new InvalidOperationException("Unsupported invoice type");
                 }
 
+                await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitAsync();
-
-                _logger.LogInformation(
-                    "Payment processed successfully. OrderId={OrderId}, InvoiceId={InvoiceId}, Type={InvoiceType}, Amount={Amount}",
-                    order.OrderID, invoice.InvoiceID, invoice.InvoiceType, invoice.InvoiceAmount);
             }
             catch
             {
@@ -93,8 +89,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 throw;
             }
 
-            // Receipt is OUTSIDE transaction
+            // Side-effect AFTER payment commit
             await _invoiceService.GenerateReceiptAsync(invoice.InvoiceID);
+
             return invoice;
         }
 

@@ -26,6 +26,15 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Invoice?> GetByIdAsync(int id) =>
             await _context.Invoices.FindAsync(id);
 
+        public async Task<Invoice?> GetInvoiceWithOrderAsync(int invoiceId)
+        {
+            return await _context.Invoices
+                .Include(i => i.CustomerOrder)
+                    .ThenInclude(o => o!.Customer)
+                .Include(i => i.Cashflow)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId);
+        }
+
         //Custom Query Operations
         public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null)
         {
