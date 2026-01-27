@@ -120,7 +120,7 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingSimulationRequestDto request)
         {
-            var order = await _customerOrderRepository.GetWithFinancialDetailsByIdAsync(request.OrderId)
+            var order = await _customerOrderRepository.GetWithCustomerFinancialDetailsByIdAsync(request.OrderId)
                 ?? throw new Exception("Order not found");
 
             // Prevent double billing

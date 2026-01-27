@@ -11,6 +11,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<CustomerOrder?> GetByIdAsync(int id);
         Task<CustomerOrder?> GetWithCustomerOrderDetailsByIdAsync(int id);
         Task<CustomerOrder?> GetWithFinancialDetailsByIdAsync(int id);
+        Task<CustomerOrder?> GetWithCustomerFinancialDetailsByIdAsync(int id);
         Task AddAsync(CustomerOrder customerOrder);
         Task<CustomerOrder?> UpdateAsync(int id, CustomerOrder customerOrder);
 

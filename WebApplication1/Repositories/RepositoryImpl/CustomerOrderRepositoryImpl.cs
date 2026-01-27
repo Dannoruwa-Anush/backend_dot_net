@@ -50,7 +50,20 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(p => p.BNPL_Installments)
                 .Include(o => o.BNPL_PLAN!)
                     .ThenInclude(p => p.BNPL_PlanSettlementSummaries)
-                //.Include(o => o.Cashflows)
+                .FirstOrDefaultAsync(o => o.OrderID == id);
+        }
+
+        public async Task<CustomerOrder?> GetWithCustomerFinancialDetailsByIdAsync(int id)
+        {
+            return await _context.CustomerOrders
+                .Include(o => o.Customer)
+                    .ThenInclude(ou => ou!.User)
+                .Include(o => o.CustomerOrderElectronicItems)
+                    .ThenInclude(oi => oi.ElectronicItem)
+                .Include(o => o.BNPL_PLAN!)
+                    .ThenInclude(p => p.BNPL_Installments)
+                .Include(o => o.BNPL_PLAN!)
+                    .ThenInclude(p => p.BNPL_PlanSettlementSummaries)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
         }
 
