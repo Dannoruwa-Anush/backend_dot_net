@@ -31,6 +31,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.Invoices
                 .Include(i => i.CustomerOrder)
                     .ThenInclude(o => o!.Customer)
+                .Include(i => i.CustomerOrder)
+                    .ThenInclude(b => b!.BNPL_PLAN)
                 .Include(i => i.Cashflow)
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId);
         }
