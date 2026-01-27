@@ -45,6 +45,9 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<Invoice?> GetInvoiceWithOrderAsync(int id) =>
             await _repository.GetInvoiceWithOrderAsync(id);    
 
+        public async Task<Invoice?> GetInvoiceWithOrderFinancialDetailsAsync(int id) =>
+            await _repository.GetInvoiceWithOrderFinancialDetailsAsync(id);     
+
         // ----------- [Start : Invoice Generation] -------------
         public async Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, InvoiceTypeEnum invoiceType)
         {

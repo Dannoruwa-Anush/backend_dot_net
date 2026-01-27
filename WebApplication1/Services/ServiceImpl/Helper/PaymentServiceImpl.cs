@@ -48,7 +48,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
         public async Task<Invoice> ProcessPaymentAsync(PaymentRequestDto paymentRequest)
         {
-            var invoice = await _invoiceService.GetInvoiceWithOrderAsync(paymentRequest.InvoiceId)
+            var invoice = await _invoiceService.GetInvoiceWithOrderFinancialDetailsAsync(paymentRequest.InvoiceId)
                 ?? throw new Exception("Invoice not found");
 
             if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
@@ -125,35 +125,46 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         //Helper : ProcessBnplInstallmentPaymentAsync
         private async Task ProcessBnplInstallmentPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
-            if (string.IsNullOrWhiteSpace(invoice.SettlementSnapshotJson) ||
-                string.IsNullOrWhiteSpace(invoice.SettlementSnapshotHash))
+            if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
+                throw new InvalidOperationException("Invoice already settled");
+
+            if (string.IsNullOrWhiteSpace(invoice.SettlementSnapshotJson) || string.IsNullOrWhiteSpace(invoice.SettlementSnapshotHash))
                 throw new SecurityException("Missing settlement snapshot or hash");
 
-            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(
-                invoice.SettlementSnapshotJson)
-                ?? throw new Exception("Invalid settlement snapshot");
+            var plan = order.BNPL_PLAN
+                ?? throw new InvalidOperationException("BNPL plan not loaded");
 
-            var canonicalJson = SnapshotHashHelper.SerializeCanonical(frozenSnapshot);
+            if (!plan.BNPL_PlanSettlementSummaries.Any())
+                throw new InvalidOperationException("Settlement summaries not loaded");
+
+            if (!plan.BNPL_Installments.Any())
+                throw new InvalidOperationException("Installments not loaded");
+
+            // Deserialize frozen snapshot
+            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
+                    ?? throw new Exception("Invalid settlement snapshot");
+
+            // Integrity verification (IMMUTABLE)
+            var canonicalJson = SnapshotHashHelper.SerializeCanonical(JsonDocument.Parse(invoice.SettlementSnapshotJson).RootElement);
+
             var computedHash = SnapshotHashHelper.BuildHash(canonicalJson);
 
             if (!string.Equals(computedHash, invoice.SettlementSnapshotHash, StringComparison.Ordinal))
                 throw new SecurityException("Settlement snapshot integrity violation");
 
-            _bnpl_planSettlementSummaryService
-                .ApplyFrozenSettlementSnapshot(order, frozenSnapshot);
+            _bnpl_planSettlementSummaryService.ApplyFrozenSettlementSnapshot(order, frozenSnapshot);
+            _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, frozenSnapshot);
 
-            _bNPL_InstallmentService
-                .BuildBnplInstallmentSettlement(order, frozenSnapshot);
-
-            invoice.Cashflow = await _cashflowService
-                .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+            invoice.Cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
 
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            if (order.BNPL_PLAN!.Bnpl_RemainingInstallmentCount == 0)
+            if (plan.Bnpl_RemainingInstallmentCount == 0)
             {
-                order.BNPL_PLAN.Bnpl_Status = BnplStatusEnum.Completed;
+                plan.Bnpl_Status = BnplStatusEnum.Completed;
+                plan.CompletedAt = invoice.PaidAt;
+
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
             }
             else
