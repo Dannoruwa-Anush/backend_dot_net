@@ -110,9 +110,9 @@ namespace WebApplication1.Services.ServiceImpl
         // ----------- [End : Invoice Generation] -------------
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null)
+        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, int? orderSourceId = null, string? searchKey = null)
         {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, customerId, searchKey);
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, invoiceTypeId, invoiceStatusId, customerId, orderSourceId, searchKey);
         }
 
         public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId) =>

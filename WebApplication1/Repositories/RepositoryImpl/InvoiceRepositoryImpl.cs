@@ -38,7 +38,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
         }
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, string? searchKey = null)
+        public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, int? orderSourceId = null, string? searchKey = null)
         {
             // Start query with necessary includes
             var query = _context.Invoices
@@ -55,6 +55,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             query = ApplyInvoiceTypeFilter(query, invoiceTypeId);
             query = ApplyInvoiceStatusFilter(query, invoiceStatusId);
             query = ApplyCustomerFilter(query, customerId);
+            query = ApplyOrderSourceFilter(query, orderSourceId);
             query = ApplySearch(query, searchKey);
 
             // Order by creation date (descending)
@@ -110,6 +111,23 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     i.CustomerOrder.CustomerID == customerId.Value
                 );
             }
+            return query;
+        }
+
+        // Helper method: Order Source Filter
+        private IQueryable<Invoice> ApplyOrderSourceFilter(IQueryable<Invoice> query, int? orderSourceId)
+        {
+            if (orderSourceId.HasValue &&
+                Enum.IsDefined(typeof(OrderSourceEnum), orderSourceId.Value))
+            {
+                var source = (OrderSourceEnum)orderSourceId.Value;
+
+                query = query.Where(i =>
+                    i.CustomerOrder != null &&
+                    i.CustomerOrder.OrderSource == source
+                );
+            }
+
             return query;
         }
 
