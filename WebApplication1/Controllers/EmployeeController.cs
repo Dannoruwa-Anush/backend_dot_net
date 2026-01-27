@@ -172,7 +172,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("user/{userId}")]
-        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
+        [Authorize(Policy = AuthorizationPolicies.AllEmployeesOnly)]  // JWT is required
         public async Task<IActionResult> GetByUserId(int userId)
         {
             var employee = await _service.GetEmployeeByUserIdAsync(userId);
