@@ -141,7 +141,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 throw new InvalidOperationException("Installments not loaded");
 
             // Deserialize frozen snapshot
-            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
+            var frozenSnapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(invoice.SettlementSnapshotJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                     ?? throw new Exception("Invalid settlement snapshot");
 
             // Integrity verification (IMMUTABLE)
@@ -180,37 +180,39 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             {
                 // These states allow payments
                 case OrderStatusEnum.Pending:
+                case OrderStatusEnum.Processing:
                 case OrderStatusEnum.Shipped:
                 case OrderStatusEnum.Delivered:
                 case OrderStatusEnum.DeliveredAfterCancellationRejected:
                     break;
 
                 case OrderStatusEnum.Cancel_Pending:
-                    throw new InvalidOperationException("Payment cannot be processed while a cancellation request is pending.");
+                    throw new InvalidOperationException(
+                        "Payment cannot be processed while a cancellation request is pending.");
 
                 case OrderStatusEnum.Cancelled:
-                    throw new InvalidOperationException("Payment cannot be processed for cancelled orders.");
+                    throw new InvalidOperationException(
+                        "Payment cannot be processed for cancelled orders.");
 
                 default:
                     throw new InvalidOperationException("Invalid order status.");
             }
 
-            // 2. BNPL Plan Validation
+            // -------------------------
+            // BNPL Plan Validation
+            // -------------------------
             var bnplPlan = order.BNPL_PLAN;
-            if (bnplPlan == null)
-            {
-                //full_payment
-                return;
-            }
-            else
-            {
-                //Bnpl_payment
-                if (bnplPlan.Bnpl_Status == BnplStatusEnum.Completed)
-                    throw new InvalidOperationException("BNPL plan is already completed. No additional payments are allowed.");
 
-                if (bnplPlan.Bnpl_RemainingInstallmentCount <= 0)
-                    throw new InvalidOperationException("No remaining installments exist for this BNPL plan.");
-            }
+            // Full payment (no BNPL plan)
+            if (bnplPlan == null)
+                return;
+
+            // BNPL payments
+            if (bnplPlan.Bnpl_Status == BnplStatusEnum.Completed)
+                throw new InvalidOperationException("BNPL plan is already completed. No additional payments are allowed.");
+
+            if (bnplPlan.Bnpl_RemainingInstallmentCount <= 0)
+                throw new InvalidOperationException("No remaining installments exist for this BNPL plan.");
         }
     }
 }
