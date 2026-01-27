@@ -280,6 +280,8 @@ namespace WebApplication1.Services.ServiceImpl
                 PdfWriter writer = PdfWriter.GetInstance(doc, fs);
                 doc.Open();
 
+                AddWatermark(writer, "RECEIPT: " + invoice.InvoiceStatus.ToString());
+
                 AddReceiptHeader(doc);
                 AddCustomerSection(doc, order);
                 AddReceiptSummary(doc, invoice);
