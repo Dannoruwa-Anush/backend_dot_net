@@ -41,7 +41,7 @@ namespace WebApplication1.Models
         [Required]
         [Column(TypeName = "nvarchar(20)")]
         [EnumDataType(typeof(InvoiceTypeEnum))]
-        public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Payment;
+        public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Pay;
 
         // Invoice = billing document
         [Column(TypeName = "nvarchar(255)")]

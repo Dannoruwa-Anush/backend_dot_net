@@ -179,12 +179,12 @@ namespace WebApplication1.Services.ServiceImpl
                 // =====================================================
                 if (customerOrder.OrderPaymentMode == OrderPaymentModeEnum.Pay_now_full)
                 {
-                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Full_Payment);
+                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Full_Pay);
                     customerOrder.Invoices.Add(invoice);
                 }
                 else
                 {
-                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Bnpl_Initial_Payment);
+                    var invoice = await _invoiceService.BuildInvoiceAddRequestAsync(customerOrder, InvoiceTypeEnum.Bnpl_Initial_Pay);
                     customerOrder.Invoices.Add(invoice);
                 }
 

@@ -53,10 +53,10 @@ namespace WebApplication1.Services.ServiceImpl
 
             var invoice = invoiceType switch
             {
-                InvoiceTypeEnum.Full_Payment =>
+                InvoiceTypeEnum.Full_Pay =>
                     BuildFullPaymentInvoice(order),
 
-                InvoiceTypeEnum.Bnpl_Initial_Payment =>
+                InvoiceTypeEnum.Bnpl_Initial_Pay =>
                     BuildBnplInitialInvoice(order),
 
                 _ => throw new InvalidOperationException("Unsupported invoice type")
@@ -78,7 +78,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 OrderID = order.OrderID,
                 InvoiceAmount = order.TotalAmount,
-                InvoiceType = InvoiceTypeEnum.Full_Payment,
+                InvoiceType = InvoiceTypeEnum.Full_Pay,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid
             };
         }
@@ -93,7 +93,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 OrderID = order.OrderID,
                 InvoiceAmount = plan.Bnpl_InitialPayment,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Payment,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Pay,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
             };
         }
@@ -125,7 +125,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             // Prevent double billing
             if (order.Invoices.Any(i =>
-                    i.InvoiceType == InvoiceTypeEnum.Bnpl_Installment_Payment &&
+                    i.InvoiceType == InvoiceTypeEnum.Bnpl_Installment_Pay &&
                     i.InvoiceStatus == InvoiceStatusEnum.Unpaid))
                 throw new InvalidOperationException("Existing unpaid installment invoice found");
 
@@ -151,7 +151,7 @@ namespace WebApplication1.Services.ServiceImpl
             var invoice = new Invoice
             {
                 OrderID = order.OrderID,
-                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Payment,
+                InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Pay,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
                 InvoiceAmount = request.PaymentAmount,
                 InstallmentNo = simulation.InstallmentId,

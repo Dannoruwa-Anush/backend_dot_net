@@ -144,15 +144,15 @@ namespace WebApplication1.Services.ServiceImpl
         {
             switch (invoice.InvoiceType)
             {
-                case InvoiceTypeEnum.Full_Payment:
+                case InvoiceTypeEnum.Full_Pay:
                     AddOrderItemsTable(doc, order);
                     break;
 
-                case InvoiceTypeEnum.Bnpl_Initial_Payment:
+                case InvoiceTypeEnum.Bnpl_Initial_Pay:
                     AddBnplInitialDetails(doc, order);
                     break;
 
-                case InvoiceTypeEnum.Bnpl_Installment_Payment:
+                case InvoiceTypeEnum.Bnpl_Installment_Pay:
                     AddSettlementSummary(doc, invoice);
                     break;
             }

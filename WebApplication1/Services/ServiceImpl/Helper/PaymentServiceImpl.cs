@@ -64,15 +64,15 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             {
                 switch (invoice.InvoiceType)
                 {
-                    case InvoiceTypeEnum.Full_Payment:
+                    case InvoiceTypeEnum.Full_Pay:
                         await ProcessFullPaymentAsync(order, invoice, paymentRequest);
                         break;
 
-                    case InvoiceTypeEnum.Bnpl_Initial_Payment:
+                    case InvoiceTypeEnum.Bnpl_Initial_Pay:
                         await ProcessInitialBnplPaymentAsync(order, invoice, paymentRequest);
                         break;
 
-                    case InvoiceTypeEnum.Bnpl_Installment_Payment:
+                    case InvoiceTypeEnum.Bnpl_Installment_Pay:
                         await ProcessBnplInstallmentPaymentAsync(order, invoice, paymentRequest);
                         break;
 
