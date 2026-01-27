@@ -71,7 +71,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             var duplicate = await _repository.ExistsByCashflowRefAsync(newCashflow.CashflowRef);
             if (duplicate)
-                throw new Exception($"Cash flow with red '{newCashflow.CashflowRef}' already exists.");
+                throw new Exception($"Cash flow with ref '{newCashflow.CashflowRef}' already exists.");
 
             _logger.LogInformation("Generated Cashflow record: {CashflowRef}", newCashflow.CashflowRef);
             return newCashflow;
