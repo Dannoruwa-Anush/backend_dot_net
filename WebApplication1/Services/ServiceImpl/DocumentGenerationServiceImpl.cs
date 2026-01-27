@@ -224,7 +224,7 @@ namespace WebApplication1.Services.ServiceImpl
         private void AddSettlementSummary(Document doc, Invoice invoice)
         {
             var snapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(
-                invoice.SettlementSnapshotJson!)
+                invoice.SettlementSnapshotJson!, new JsonSerializerOptions{ PropertyNameCaseInsensitive = true })
                 ?? throw new InvalidOperationException("Settlement snapshot missing");
 
             PdfPTable table = new PdfPTable(2) { WidthPercentage = 60 };
