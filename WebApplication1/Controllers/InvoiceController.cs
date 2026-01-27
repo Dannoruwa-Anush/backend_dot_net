@@ -95,9 +95,8 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost("generate/settlement")]
-        [Authorize(Roles = "Admin, Employee, Customer")]
-        public async Task<IActionResult> GenerateInvoiceForSettlementSimulation(
-            [FromBody] BnplSnapshotPayingSimulationRequestDto request)
+        [Authorize(Roles = "Admin, Employee")]
+        public async Task<IActionResult> GenerateInvoiceForSettlementSimulation([FromBody] BnplSnapshotPayingSimulationRequestDto request)
         {
             try
             {
