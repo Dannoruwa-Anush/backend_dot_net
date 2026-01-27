@@ -584,5 +584,8 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<CustomerOrder?> GetCustomerOrderWithActiveBnplByIdAsync(int id, int? customerId = null) =>
             await _repository.GetActiveBnplByIdAsync(id, customerId);
+
+        public async Task<IEnumerable<CustomerOrder>> GetAllActiveBnplCustomerOrdersByCustomerIdAsync(int customerId) =>
+            await _repository.GetAllActiveBnplByCustomerIdAsync(customerId);
     }
 }

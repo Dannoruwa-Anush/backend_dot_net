@@ -20,6 +20,6 @@ namespace WebApplication1.Services.IService
         Task<PaginationResultDto<CustomerOrder>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentStatusId = null, int? orderStatusId = null, string? searchKey = null);
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
         Task<CustomerOrder?> GetCustomerOrderWithActiveBnplByIdAsync(int id, int? customerId = null);
-        //getAllPendingOrdersForActiveSession
+        Task<IEnumerable<CustomerOrder>> GetAllActiveBnplCustomerOrdersByCustomerIdAsync(int customerId);
     }
 }

@@ -21,5 +21,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
         Task<IEnumerable<CustomerOrder>> GetAllPaymentPendingByPhysicalShopSessionIdAsync(int PhysicalShopSessionId);
         Task<CustomerOrder?> GetActiveBnplByIdAsync(int id, int? customerId = null);
+        Task<IEnumerable<CustomerOrder>> GetAllActiveBnplByCustomerIdAsync(int customerId);
     }
 }

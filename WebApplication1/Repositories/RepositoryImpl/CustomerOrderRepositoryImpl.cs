@@ -230,5 +230,21 @@ namespace WebApplication1.Repositories.RepositoryImpl
 
             return await query.FirstOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<CustomerOrder>> GetAllActiveBnplByCustomerIdAsync(int customerId)
+        {
+            return await _context.CustomerOrders
+                .AsNoTracking()
+                .Include(o => o.CustomerOrderElectronicItems)
+                    .ThenInclude(oi => oi.ElectronicItem)
+                .Include(o => o.Customer)
+                .Include(o => o.BNPL_PLAN)
+                .Where(o =>
+                    o.CustomerID == customerId &&
+                    o.OrderPaymentMode == OrderPaymentModeEnum.Pay_Bnpl &&
+                    o.BNPL_PLAN != null &&
+                    o.BNPL_PLAN.Bnpl_Status == BnplStatusEnum.Active)
+                .ToListAsync();
+        }
     }
 }

@@ -183,5 +183,24 @@ namespace WebApplication1.Controllers
 
             return Ok(response);
         }
+
+        //CRUD operations
+        [HttpGet("bnpl/customer/{customerId}")]
+        [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
+        public async Task<IActionResult> GetAllActiveBnplCustomerOrdersByCustomerIdAsync(int customerId)
+        {
+            var orders = await _service.GetAllActiveBnplCustomerOrdersByCustomerIdAsync(customerId);
+            if (orders == null || !orders.Any())
+                return NotFound(new ApiResponseDto<string>(404, "Active bnpl order not found"));
+
+            // Model -> ResponseDto
+            var responseDto = _mapper.Map<IEnumerable<CustomerOrderResponseDto>>(orders);
+            var response = new ApiResponseDto<IEnumerable<CustomerOrderResponseDto>>(
+                200,
+                "All customer active bnpl orders retrieved successfully",
+                responseDto
+            );
+            return Ok(response);
+        }
     }
 }
