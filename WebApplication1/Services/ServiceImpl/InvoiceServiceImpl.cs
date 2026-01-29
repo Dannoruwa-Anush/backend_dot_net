@@ -62,7 +62,9 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception("Invoice not found");
 
             if(existing.InvoiceType != InvoiceTypeEnum.Bnpl_Installment_Pay)
-                throw new Exception("Only installment payment invoices can be cancelled.");    
+                throw new Exception("Only installment payment invoices can be cancelled."); 
+
+            existing.InvoiceStatus = InvoiceStatusEnum.Voided;       
 
             var updatedInvoice= await _repository.UpdateAsync(id, existing);
             await _unitOfWork.SaveChangesAsync();
