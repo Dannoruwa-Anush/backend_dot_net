@@ -31,7 +31,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             // Start query
             var query = _context.Cashflows
-                //.Include(cf => cf.CustomerOrder) // include for OrderID search
+                .Include(cf => cf.Invoice) 
+                    .ThenInclude(cfo => cfo!.CustomerOrder)// include for OrderID search
                 .AsQueryable();
 
             // Apply filters
