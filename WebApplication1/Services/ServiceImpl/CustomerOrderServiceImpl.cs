@@ -28,6 +28,7 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
         private readonly IBNPL_PlanService _bNPL_PlanService;
         private readonly IInvoiceService _invoiceService;
+        private readonly ICashflowService _cashflowService;
 
         //logger: for auditing
         private readonly ILogger<CustomerOrderServiceImpl> _logger;
@@ -47,6 +48,7 @@ namespace WebApplication1.Services.ServiceImpl
             IBNPL_PlanService bNPL_PlanService,
             ILogger<CustomerOrderServiceImpl> logger,
             IInvoiceService invoiceService,
+            ICashflowService cashflowService,
             IMapper mapper)
         {
             // Dependency injection
@@ -61,6 +63,7 @@ namespace WebApplication1.Services.ServiceImpl
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
             _invoiceService = invoiceService;
+            _cashflowService = cashflowService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -381,6 +384,8 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
+            Cashflow[] refundCashflows = Array.Empty<Cashflow>();
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -395,8 +400,20 @@ namespace WebApplication1.Services.ServiceImpl
 
                 ApplyOrderStatusChangesAsync(order, request, now);
 
+                // collect refund cashflows BEFORE commit
+                if (request.NewOrderStatus == OrderStatusEnum.Cancelled)
+                {
+                    refundCashflows = GetRefundCashflows(order).ToArray();
+                }
+
                 await _repository.UpdateAsync(order.OrderID, order);
                 await _unitOfWork.CommitAsync();
+
+                // AFTER COMMIT -> generate refund receipts
+                foreach (var cashflow in refundCashflows)
+                {
+                    await _cashflowService.GenerateCashflowReceiptAsync(cashflow.CashflowID);
+                }
 
                 _logger.LogInformation("Customer order status updated: Id={Id}, Status={Status}", order.OrderID, order.OrderStatus);
                 return order;
@@ -607,6 +624,14 @@ namespace WebApplication1.Services.ServiceImpl
         {
             foreach (var item in order.CustomerOrderElectronicItems)
                 item.ElectronicItem.QOH += item.Quantity;
+        }
+
+        //Helper method: Get Refund Cashflows
+        private static IEnumerable<Cashflow> GetRefundCashflows(CustomerOrder order)
+        {
+            return order.Invoices
+                .SelectMany(i => i.Cashflows)
+                .Where(c => c.CashflowPaymentNature == CashflowPaymentNatureEnum.Refund);
         }
 
         public async Task<CustomerOrder?> GetCustomerOrderWithActiveBnplByIdAsync(int id, int? customerId = null) =>
