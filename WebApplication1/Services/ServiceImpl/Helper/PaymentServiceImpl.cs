@@ -103,9 +103,11 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            invoice.Cashflow = await _cashflowService
+            
+            var cashflow = await _cashflowService
                 .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
+            
+            invoice.Cashflows.Add(cashflow);   
         }
 
         //Helper : ProcessInitialBnplPaymentAsync
@@ -113,9 +115,11 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         {
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            invoice.Cashflow = await _cashflowService
+            
+            var cashflow =await _cashflowService
                 .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
+            
+            invoice.Cashflows.Add(cashflow);
 
             order.BNPL_PLAN!.Bnpl_Status = BnplStatusEnum.Active;
             order.OrderStatus = OrderStatusEnum.Processing;
@@ -155,7 +159,9 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _bnpl_planSettlementSummaryService.ApplyFrozenSettlementSnapshot(order, frozenSnapshot);
             _bNPL_InstallmentService.BuildBnplInstallmentSettlement(order, frozenSnapshot);
 
-            invoice.Cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+            var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
+
+            invoice.Cashflows.Add(cashflow);   
 
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);

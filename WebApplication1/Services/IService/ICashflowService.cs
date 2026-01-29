@@ -12,7 +12,7 @@ namespace WebApplication1.Services.IService
         Task<Cashflow?> GetCashflowByIdAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null);
+        Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentNatureId = null, string? searchKey = null);
         Task<decimal> SumCashflowsByOrderAsync(int orderId);
 
         //Shared Internal Operations Used by Multiple Repositories

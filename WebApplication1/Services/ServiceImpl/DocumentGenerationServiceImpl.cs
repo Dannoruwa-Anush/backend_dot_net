@@ -224,7 +224,7 @@ namespace WebApplication1.Services.ServiceImpl
         private void AddSettlementSummary(Document doc, Invoice invoice)
         {
             var snapshot = JsonSerializer.Deserialize<BnplLatestSnapshotSettledResultDto>(
-                invoice.SettlementSnapshotJson!, new JsonSerializerOptions{ PropertyNameCaseInsensitive = true })
+                invoice.SettlementSnapshotJson!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                 ?? throw new InvalidOperationException("Settlement snapshot missing");
 
             PdfPTable table = new PdfPTable(2) { WidthPercentage = 60 };
@@ -326,10 +326,13 @@ namespace WebApplication1.Services.ServiceImpl
 
         private void AddPaymentDetails(Document doc, Invoice invoice)
         {
-            var cashflow = invoice.Cashflow
-                ?? throw new InvalidOperationException("Cashflow missing");
+            var cashflow = invoice.Cashflows
+                .Where(cf => cf.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment)
+                .OrderByDescending(cf => cf.CreatedAt)
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException("Payment cashflow missing");
 
-            doc.Add(new Paragraph($"Payment Amount: {cashflow.AmountPaid}"));
+            doc.Add(new Paragraph($"Payment Amount: {cashflow.AmountPaid:F2}"));
             doc.Add(new Paragraph($"Transaction Ref: {cashflow.CashflowRef}"));
         }
     }

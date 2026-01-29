@@ -206,7 +206,7 @@ namespace WebApplication1.Data
                     .IsUnique()
                     .HasFilter("[IsActive] = 1");
 
-                // (0..1) — (M) CustomerOrder handled in CustomerOrder entity
+                // (0..1) — (M) CustomerOrder: handled in CustomerOrder entity
             });
 
             // -------------------------------------------------------------
@@ -226,10 +226,10 @@ namespace WebApplication1.Data
                     .IsRequired()
                     .IsConcurrencyToken();
 
-                // (1) — (0..1) Cashflow
-                entity.HasOne(i => i.Cashflow)
+                // (1) — (M) Cashflow
+                entity.HasMany(i => i.Cashflows)
                       .WithOne(ic => ic.Invoice)
-                      .HasForeignKey<Cashflow>(c => c.InvoiceID)
+                      .HasForeignKey(c => c.InvoiceID)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related Cashflow exist   
             });

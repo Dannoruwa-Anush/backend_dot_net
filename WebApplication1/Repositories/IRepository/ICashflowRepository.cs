@@ -10,7 +10,7 @@ namespace WebApplication1.Repositories.IRepository
         Task<Cashflow?> GetByIdAsync(int id);
 
         //Custom Query Operations
-        Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null);
+        Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentNatureId = null, string? searchKey = null);
         Task<bool> ExistsByCashflowRefAsync(string cashflowRef);
         Task<decimal> SumCashflowsByOrderAsync(int orderId);
     }

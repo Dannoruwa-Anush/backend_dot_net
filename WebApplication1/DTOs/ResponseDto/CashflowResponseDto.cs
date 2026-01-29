@@ -11,10 +11,8 @@ namespace WebApplication1.DTOs.ResponseDto
         public string CashflowRef { get; set; } = string.Empty;
 
         public DateTime CashflowDate { get; set; }
-
-        public DateTime? RefundDate { get; set; }
         
-        public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
+        public CashflowPaymentNatureEnum CashflowPaymentNature { get; set; } = CashflowPaymentNatureEnum.Payment;
         
         // Include simplified info about FK: Order 
         public required CustomerOrderResponseDto CustomerOrderResponseDto{ get; set; }

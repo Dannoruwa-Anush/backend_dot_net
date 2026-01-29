@@ -33,7 +33,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     .ThenInclude(o => o!.Customer)
                 .Include(i => i.CustomerOrder)
                     .ThenInclude(b => b!.BNPL_PLAN)
-                .Include(i => i.Cashflow)
+                .Include(i => i.Cashflows)
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId);
         }
 
@@ -48,7 +48,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Include(i => i.CustomerOrder)
                     .ThenInclude(o => o!.BNPL_PLAN)
                         .ThenInclude(p => p!.BNPL_Installments)
-                .Include(i => i.Cashflow)
+                .Include(i => i.Cashflows)
 
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId);

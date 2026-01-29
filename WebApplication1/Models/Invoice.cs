@@ -65,11 +65,10 @@ namespace WebApplication1.Models
         //******* [End: CustomerOrder (1) — Invoice (M)] ******
 
 
-        //******* [Start: Invoice (1) — Cashflow (0..1)] ****
+        //******* [Start: Invoice (1) — Cashflow (M)] ****
         // One Side: Navigation property
         [InverseProperty(nameof(Cashflow.Invoice))]
-        public Cashflow? Cashflow { get; set; }
-        //Nullable (?) : Only paid Invoice will be create a cashflow
-        //******* [End: Invoice (1) — Cashflow (0..1)] ******
+        public ICollection<Cashflow> Cashflows { get; set; } = new List<Cashflow>();
+        //******* [End: Invoice (1) — Cashflow (M)] ******
     }
 }

@@ -27,7 +27,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             await _context.Cashflows.FindAsync(id);   
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
+        public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentNatureId = null, string? searchKey = null)
         {
             // Start query
             var query = _context.Cashflows
@@ -36,7 +36,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .AsQueryable();
 
             // Apply filters
-            query = ApplyCashflowStatusFilter(query, cashflowStatusId);
+            query = ApplyCashflowStatusFilter(query, paymentNatureId);
             query = ApplyCashflowSearch(query, searchKey);
 
             query = query.OrderByDescending(cf => cf.CashflowDate);
@@ -59,13 +59,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
             };
         }
 
-        // Helper: filter by cashflow status
-        private IQueryable<Cashflow> ApplyCashflowStatusFilter(IQueryable<Cashflow> query, int? cashflowStatusId)
+        // Helper: filter by payment Nature
+        private IQueryable<Cashflow> ApplyCashflowStatusFilter(IQueryable<Cashflow> query, int? paymentNatureId)
         {
-            if (cashflowStatusId.HasValue)
+            if (paymentNatureId.HasValue)
             {
-                var status = (CashflowStatusEnum)cashflowStatusId.Value;
-                query = query.Where(cf => cf.CashflowStatus == status);
+                var status = (CashflowPaymentNatureEnum)paymentNatureId.Value;
+                query = query.Where(cf => cf.CashflowPaymentNature == status);
             }
             return query;
         }

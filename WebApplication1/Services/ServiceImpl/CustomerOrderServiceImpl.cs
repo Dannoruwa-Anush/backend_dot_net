@@ -517,16 +517,34 @@ namespace WebApplication1.Services.ServiceImpl
         {
             HandleRestock(order);
 
-            /*
-            // Refund all cashflows
-            foreach (var cf in order.Cashflows)
-            {
-                cf.CashflowStatus = CashflowStatusEnum.Refunded;
-                cf.RefundDate = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            }
-            */
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Update order payment status to refunded
+            foreach (var invoice in order.Invoices
+                         .Where(i => i.InvoiceStatus == InvoiceStatusEnum.Paid))
+            {
+                // Calculate total paid for this invoice
+                var paidAmount = invoice.Cashflows
+                    .Where(c => c.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment)
+                    .Sum(c => c.AmountPaid);
+
+                if (paidAmount <= 0)
+                    continue;
+
+                // Add REFUND cashflow (append-only)
+                invoice.Cashflows.Add(new Cashflow
+                {
+                    AmountPaid = -paidAmount,
+                    CashflowRef = $"CF-{invoice.InvoiceID}-{CashflowPaymentNatureEnum.Refund}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}",
+                    CashflowDate = now,
+                    CashflowPaymentNature = CashflowPaymentNatureEnum.Refund,
+                });
+
+                // Update invoice status
+                invoice.InvoiceStatus = InvoiceStatusEnum.Refunded;
+                invoice.RefundedAt = now;
+            }
+
+            // Update order payment status
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Refunded;
         }
 
@@ -537,17 +555,28 @@ namespace WebApplication1.Services.ServiceImpl
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
-            // Refund cashflows
-            /*
-            foreach (var cf in order.Cashflows)
+            // Refund all PAID invoices (BNPL installments + initial)
+            foreach (var invoice in order.Invoices
+                         .Where(i => i.InvoiceStatus == InvoiceStatusEnum.Paid))
             {
-                if (cf.CashflowStatus != CashflowStatusEnum.Refunded)
+                var paidAmount = invoice.Cashflows
+                    .Where(c => c.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment)
+                    .Sum(c => c.AmountPaid);
+
+                if (paidAmount <= 0)
+                    continue;
+
+                invoice.Cashflows.Add(new Cashflow
                 {
-                    cf.CashflowStatus = CashflowStatusEnum.Refunded;
-                    cf.RefundDate = now;
-                }
+                    AmountPaid = -paidAmount,
+                    CashflowRef = $"CF-{invoice.InvoiceID}-{CashflowPaymentNatureEnum.Refund}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}",
+                    CashflowDate = now,
+                    CashflowPaymentNature = CashflowPaymentNatureEnum.Refund,
+                });
+
+                invoice.InvoiceStatus = InvoiceStatusEnum.Refunded;
+                invoice.RefundedAt = now;
             }
-            */
 
             // Cancel BNPL plan
             if (order.BNPL_PLAN != null)

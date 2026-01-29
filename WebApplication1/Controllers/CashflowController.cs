@@ -43,11 +43,11 @@ namespace WebApplication1.Controllers
         //Custom Query Operations
         [HttpGet("paged")]
         [Authorize(Roles = "Admin, Employee")] // JWT is required
-        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? cashflowStatusId = null, [FromQuery] string? searchKey = null)
+        public async Task<IActionResult> GetAllWithPagination([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] int? paymentNatureId = null, [FromQuery] string? searchKey = null)
         {
             try
             {
-                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
+                var pageResultDto = await _service.GetAllWithPaginationAsync(pageNumber, pageSize, paymentNatureId, searchKey);
 
                 // Model -> ResponseDto   
                 var paginationResponse = _mapper.Map<PaginationResultDto<CashflowResponseDto>>(pageResultDto);

@@ -34,9 +34,9 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.GetByIdAsync(id);
 
         //Custom Query Operations
-        public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? cashflowStatusId = null, string? searchKey = null)
+        public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentNatureId = null, string? searchKey = null)
         {
-            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, cashflowStatusId, searchKey);
+            return await _repository.GetAllWithPaginationAsync(pageNumber, pageSize, paymentNatureId, searchKey);
         }
 
         public async Task<decimal> SumCashflowsByOrderAsync(int orderId) =>
@@ -53,7 +53,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new Exception("Invoice not found");
 
             // Determine status (default: Paid)
-            var status = CashflowStatusEnum.Paid;
+            var status = CashflowPaymentNatureEnum.Payment;
 
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
@@ -65,7 +65,7 @@ namespace WebApplication1.Services.ServiceImpl
                 InvoiceID = paymentRequest.InvoiceId,
                 AmountPaid = invoice.InvoiceAmount,
                 CashflowDate = now,
-                CashflowStatus = status,
+                CashflowPaymentNature = status,
                 CashflowRef = cashflowRef
             };
 

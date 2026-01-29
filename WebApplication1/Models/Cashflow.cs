@@ -10,6 +10,7 @@ namespace WebApplication1.Models
         [Key]
         public int CashflowID { get; set; }
 
+        // + = money in, - = money out
         [Required(ErrorMessage = "Amount paid is required")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal AmountPaid { get; set; }
@@ -20,26 +21,22 @@ namespace WebApplication1.Models
 
         [Required(ErrorMessage = "Cashflow date time is required")]
         public DateTime CashflowDate { get; set; }
-
-        public DateTime? RefundDate { get; set; }
         
         [Required]
         [Column(TypeName = "nvarchar(20)")]
-        [EnumDataType(typeof(CashflowStatusEnum))]
-        public CashflowStatusEnum CashflowStatus { get; set; } = CashflowStatusEnum.Paid;
+        [EnumDataType(typeof(CashflowPaymentNatureEnum))]
+        public CashflowPaymentNatureEnum CashflowPaymentNature { get; set; } = CashflowPaymentNatureEnum.Payment;
         
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 
-        //******* [Start: Invoice (1) — Cashflow (0..1)] ****
+        //******* [Start: Invoice (1) — Cashflow (M: payment, refund)] ****
         //FK
         public int InvoiceID { get; set; }
 
-        // One Side: Navigation property
+        // Many Side: Navigation property
         [ForeignKey(nameof(InvoiceID))]
-        [InverseProperty(nameof(Invoice.Cashflow))]
-        //public required Invoice Invoice { get; set; }
-        public Invoice? Invoice { get; set; } ///testing
-        //******* [Start: Invoice (1) — Cashflow (0..1)] ****
+        public Invoice? Invoice { get; set; }
+        //******* [Start: Invoice (1) — Cashflow (M)] ****
     }
 }
