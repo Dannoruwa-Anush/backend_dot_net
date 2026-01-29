@@ -120,6 +120,7 @@ builder.Services.AddHttpContextAccessor(); // Needed for CurrentUserService
 builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<ICurrentUserService, CurrentUserServiceImpl>()
                 .AddScoped<IAuditLogService, AuditLogServiceImpl>()
+                .AddScoped<IRequestContextService, RequestContextServiceImpl>()
 
                 .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IDocumentGenerationService, DocumentGenerationServiceImpl>()

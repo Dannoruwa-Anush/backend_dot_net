@@ -14,6 +14,7 @@ namespace WebApplication1.Services.ServiceImpl.Hangfire
         // Constructor
         public OrderAutoCancellationHangfireJobServiceImpl(ICustomerOrderService service, ILogger<OrderAutoCancellationHangfireJobServiceImpl> logger)
         {
+            // Dependency injection
             _service = service;
             _logger = logger;
         }

@@ -13,6 +13,7 @@ namespace WebApplication1.Services.ServiceImpl.Hangfire
         // Constructor
         public DueDateAdjustmentHangfireJobServiceImpl(IDueDateAdjustmentService service, ILogger<DueDateAdjustmentHangfireJobServiceImpl> logger)
         {
+            // Dependency injection
             _service = service;
             _logger = logger;
         }

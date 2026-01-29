@@ -1,7 +1,11 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using WebApplication1.Models;
+using WebApplication1.Models.Audit;
 using WebApplication1.Models.Base;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.Services.IService.Auth;
 using WebApplication1.Utils.Helpers;
 
@@ -10,15 +14,21 @@ namespace WebApplication1.Data
     public class AppDbContext : DbContext
     {
         private readonly ICurrentUserService _currentUserService;
+        private readonly IRequestContextService _requestContextService;
 
         // Constructor
-        public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUserService) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUserService, IRequestContextService requestContextService) : base(options)
         {
             // Dependency injection
             _currentUserService = currentUserService;
+            _requestContextService = requestContextService;
         }
 
         //Tables in DB.
+        // AuditLog
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
+        //Entities
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<ElectronicItem> ElectronicItems { get; set; }
@@ -213,7 +223,7 @@ namespace WebApplication1.Data
             // Invoice
             // -------------------------------------------------------------
             modelBuilder.Entity<Invoice>(entity =>
-            {                
+            {
                 entity.Property(i => i.InvoiceAmount)
                       .HasColumnType("decimal(18,2)");
 
@@ -241,7 +251,7 @@ namespace WebApplication1.Data
 
                 entity.HasIndex(i => new { i.InvoiceID, i.RefundReceiptFileUrl })
                     .IsUnique()
-                    .HasFilter("[RefundReceiptFileUrl] IS NOT NULL");    
+                    .HasFilter("[RefundReceiptFileUrl] IS NOT NULL");
 
                 entity.HasIndex(c => c.CashflowRef).IsUnique();
 
@@ -395,6 +405,9 @@ namespace WebApplication1.Data
             ApplySriLankaTimeZone();
             ApplyTimestamps();
             ApplyRowVersion();
+            //Audit
+            ApplyAuditInformation();
+            AddAuditTrail();
             return base.SaveChanges();
         }
 
@@ -403,7 +416,9 @@ namespace WebApplication1.Data
             ApplySriLankaTimeZone();
             ApplyTimestamps();
             ApplyRowVersion();
+            //Audit
             ApplyAuditInformation();
+            AddAuditTrail();
             return await base.SaveChangesAsync(cancellationToken);
         }
 
@@ -490,5 +505,107 @@ namespace WebApplication1.Data
             }
         }
         //-------- [End: ApplyAuditInformation] ---------------
+
+        //-------- [Start: captures all entity changes and saves them in AuditLogs] ------
+        private void AddAuditTrail()
+        {
+            var user = _currentUserService.UserProfile;
+            var utcNow = DateTime.UtcNow;
+
+            var ip = _requestContextService.IpAddress;
+            var userAgent = _requestContextService.UserAgent;
+
+            var entries = ChangeTracker.Entries()
+                .Where(e =>
+                    e.Entity is BaseModel &&
+                    !(e.Entity is AuditLog) &&
+                    (e.State == EntityState.Added ||
+                     e.State == EntityState.Modified ||
+                     e.State == EntityState.Deleted))
+                .ToList();
+
+            foreach (var entry in entries)
+            {
+                AuditLogs.Add(new AuditLog
+                {
+                    Action = entry.State.ToString(),
+                    EntityName = entry.Entity.GetType().Name,
+                    EntityId = GetPrimaryKey(entry),
+
+                    UserId = user.UserID ?? throw new InvalidOperationException("UserID is null"),
+                    Email = user.Email!,
+                    Role = user.Role!,
+                    Position = user.EmployeePosition!,
+
+                    IpAddress = ip,
+                    UserAgent = userAgent,
+
+                    Changes = GetChangedProperties(entry),
+                    CreatedAt = utcNow
+                });
+            }
+        }
+
+        //Helper method: Get Primary Key
+        private static int GetPrimaryKey(EntityEntry entry)
+        {
+            var key = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
+            return key?.CurrentValue is int id ? id : 0;
+        }
+
+        //Helper method: Get Changed Properties
+        private static string GetChangedProperties(EntityEntry entry)
+        {
+            var changes = new Dictionary<string, object?>();
+
+            foreach (var prop in entry.Properties)
+            {
+                var propName = prop.Metadata.Name;
+
+                // REDACT sensitive fields
+                if (SensitiveFields.Contains(propName, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (entry.State == EntityState.Modified)
+                    {
+                        changes[propName] = new { Old = "REDACTED", New = "REDACTED" };
+                    }
+                    else
+                    {
+                        changes[propName] = "REDACTED";
+                    }
+                    continue;
+                }
+
+                if (entry.State == EntityState.Added)
+                {
+                    changes[propName] = prop.CurrentValue;
+                }
+                else if (entry.State == EntityState.Modified && prop.IsModified)
+                {
+                    changes[propName] = new
+                    {
+                        Old = prop.OriginalValue,
+                        New = prop.CurrentValue
+                    };
+                }
+                else if (entry.State == EntityState.Deleted)
+                {
+                    changes[propName] = prop.OriginalValue;
+                }
+            }
+
+            return JsonSerializer.Serialize(changes);
+        }
+
+        // Define sensitive fields
+        private static readonly string[] SensitiveFields = new[]
+        {
+            "Password",
+            "PasswordHash",
+            "Token",
+            "RefreshToken",
+            "SecretKey"
+        };
+        //-------- [End: captures all entity changes and saves them in AuditLogs] ------
     }
 }
