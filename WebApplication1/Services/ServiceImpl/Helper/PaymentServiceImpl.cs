@@ -60,25 +60,16 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             ValidateBeforePayment(order);
 
             await _unitOfWork.BeginTransactionAsync();
+            Cashflow newCashflow;
             try
             {
-                switch (invoice.InvoiceType)
+                newCashflow = invoice.InvoiceType switch
                 {
-                    case InvoiceTypeEnum.Full_Pay:
-                        await ProcessFullPaymentAsync(order, invoice, paymentRequest);
-                        break;
-
-                    case InvoiceTypeEnum.Bnpl_Initial_Pay:
-                        await ProcessInitialBnplPaymentAsync(order, invoice, paymentRequest);
-                        break;
-
-                    case InvoiceTypeEnum.Bnpl_Installment_Pay:
-                        await ProcessBnplInstallmentPaymentAsync(order, invoice, paymentRequest);
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Unsupported invoice type");
-                }
+                    InvoiceTypeEnum.Full_Pay => await ProcessFullPaymentAsync(order, invoice, paymentRequest),
+                    InvoiceTypeEnum.Bnpl_Initial_Pay => await ProcessInitialBnplPaymentAsync(order, invoice, paymentRequest),
+                    InvoiceTypeEnum.Bnpl_Installment_Pay => await ProcessBnplInstallmentPaymentAsync(order, invoice, paymentRequest),
+                    _ => throw new InvalidOperationException("Unsupported invoice type")
+                };
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitAsync();
@@ -90,44 +81,48 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             }
 
             // Side-effect AFTER payment commit
-            await _invoiceService.GenerateReceiptAsync(invoice.InvoiceID);
+            await _cashflowService.GenerateCashflowReceiptAsync(newCashflow.CashflowID);
 
             return invoice;
         }
 
         //Helper : ProcessFullPaymentAsync
-        private async Task ProcessFullPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
+        private async Task<Cashflow> ProcessFullPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
             order.OrderStatus = OrderStatusEnum.Processing;
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Fully_Paid;
 
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            
+
             var cashflow = await _cashflowService
                 .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.FullPayment);
-            
-            invoice.Cashflows.Add(cashflow);   
+
+            invoice.Cashflows.Add(cashflow);
+
+            return cashflow;
         }
 
         //Helper : ProcessInitialBnplPaymentAsync
-        private async Task ProcessInitialBnplPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
+        private async Task<Cashflow> ProcessInitialBnplPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-            
-            var cashflow =await _cashflowService
+
+            var cashflow = await _cashflowService
                 .BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInitialPayment);
-            
+
             invoice.Cashflows.Add(cashflow);
 
             order.BNPL_PLAN!.Bnpl_Status = BnplStatusEnum.Active;
             order.OrderStatus = OrderStatusEnum.Processing;
             order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
+
+            return cashflow;
         }
 
         //Helper : ProcessBnplInstallmentPaymentAsync
-        private async Task ProcessBnplInstallmentPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
+        private async Task<Cashflow> ProcessBnplInstallmentPaymentAsync(CustomerOrder order, Invoice invoice, PaymentRequestDto paymentRequest)
         {
             if (invoice.InvoiceStatus == InvoiceStatusEnum.Paid)
                 throw new InvalidOperationException("Invoice already settled");
@@ -161,7 +156,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
 
             var cashflow = await _cashflowService.BuildCashflowAddRequestAsync(paymentRequest, CashflowTypeEnum.BnplInstallmentPayment);
 
-            invoice.Cashflows.Add(cashflow);   
+            invoice.Cashflows.Add(cashflow);
 
             invoice.InvoiceStatus = InvoiceStatusEnum.Paid;
             invoice.PaidAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
@@ -177,6 +172,8 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             {
                 order.OrderPaymentStatus = OrderPaymentStatusEnum.Partially_Paid;
             }
+
+            return cashflow;
         }
 
         //Helper : to valiadate payment

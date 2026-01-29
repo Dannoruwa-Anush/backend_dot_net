@@ -27,6 +27,13 @@ namespace WebApplication1.Models
         [EnumDataType(typeof(CashflowPaymentNatureEnum))]
         public CashflowPaymentNatureEnum CashflowPaymentNature { get; set; } = CashflowPaymentNatureEnum.Payment;
         
+        // Receipt = proof of payment (Generated after payment)
+        [Column(TypeName = "nvarchar(255)")]
+        public string? PaymentReceiptFileUrl { get; set; }   // Payment receipt
+
+        // RefundReceiptFil = proof of refund payment (Generated after order cancel)
+        public string? RefundReceiptFileUrl { get; set; } // Refund receipt
+
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; }  = new byte[8]; // for optimistic concurrency.
 

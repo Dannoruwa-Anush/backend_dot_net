@@ -213,11 +213,7 @@ namespace WebApplication1.Data
             // Invoice
             // -------------------------------------------------------------
             modelBuilder.Entity<Invoice>(entity =>
-            {
-                entity.HasIndex(i => new { i.InvoiceID, i.ReceiptFileUrl })
-                    .IsUnique()
-                    .HasFilter("[ReceiptFileUrl] IS NOT NULL");
-                
+            {                
                 entity.Property(i => i.InvoiceAmount)
                       .HasColumnType("decimal(18,2)");
 
@@ -239,6 +235,14 @@ namespace WebApplication1.Data
             // -------------------------------------------------------------
             modelBuilder.Entity<Cashflow>(entity =>
             {
+                entity.HasIndex(i => new { i.InvoiceID, i.PaymentReceiptFileUrl })
+                    .IsUnique()
+                    .HasFilter("[PaymentReceiptFileUrl] IS NOT NULL");
+
+                entity.HasIndex(i => new { i.InvoiceID, i.RefundReceiptFileUrl })
+                    .IsUnique()
+                    .HasFilter("[RefundReceiptFileUrl] IS NOT NULL");    
+
                 entity.HasIndex(c => c.CashflowRef).IsUnique();
 
                 entity.Property(c => c.AmountPaid)

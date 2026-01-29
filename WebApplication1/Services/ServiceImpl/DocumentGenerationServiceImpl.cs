@@ -261,15 +261,16 @@ namespace WebApplication1.Services.ServiceImpl
             canvas.RestoreState();
         }
 
-        // Receipt PDF generator
-        public async Task<string> GenerateReceiptPdfAsync(CustomerOrder order, Invoice invoice)
+        // Payment Receipt PDF generator
+        public async Task<string> GeneratePaymentReceiptPdfAsync(CustomerOrder order, Cashflow cashflow)
         {
-            string folderPath = Path.Combine(_env.WebRootPath, "receipts");
+            if (cashflow.CashflowPaymentNature != CashflowPaymentNatureEnum.Payment)
+                throw new InvalidOperationException("Cashflow is not a payment");
+
+            string folderPath = Path.Combine(_env.WebRootPath, "receipts/payments");
             Directory.CreateDirectory(folderPath);
 
-            string fileName =
-                $"receipt_{invoice.InvoiceID}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
-
+            string fileName = $"receipt_pay_{cashflow.CashflowID}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
             string filePath = Path.Combine(folderPath, fileName);
 
             await Task.Run(() =>
@@ -280,60 +281,87 @@ namespace WebApplication1.Services.ServiceImpl
                 PdfWriter writer = PdfWriter.GetInstance(doc, fs);
                 doc.Open();
 
-                AddWatermark(writer, "RECEIPT: " + invoice.InvoiceStatus.ToString());
+                AddWatermark(writer, "PAYMENT RECEIPT");
 
-                AddReceiptHeader(doc);
+                AddReceiptHeader(doc, "PAYMENT RECEIPT");
                 AddCustomerSection(doc, order);
-                AddReceiptSummary(doc, invoice);
-                AddPaymentDetails(doc, invoice);
+                AddReceiptSummary(doc, order, cashflow, isRefund: false);
+                AddPaymentDetails(doc, cashflow);
 
                 doc.Close();
             });
 
-            return $"receipts/{fileName}";
+            return $"receipts/payments/{fileName}";
         }
 
-        private void AddReceiptHeader(Document doc)
+        private void AddReceiptHeader(Document doc, string titleText)
         {
             var title = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
-            doc.Add(new Paragraph("PAYMENT RECEIPT", title));
+            doc.Add(new Paragraph(titleText, title));
             doc.Add(new Paragraph("\n"));
         }
 
-        private void AddReceiptSummary(Document doc, Invoice invoice)
+        private void AddReceiptSummary(Document doc, CustomerOrder order, Cashflow cashflow, bool isRefund)
         {
             var bold = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10);
             var normal = FontFactory.GetFont(FontFactory.HELVETICA, 10);
 
             PdfPTable table = new PdfPTable(2) { WidthPercentage = 50 };
 
-            void Row(string l, string v)
+            void Row(string label, string value)
             {
-                table.AddCell(new PdfPCell(new Phrase(l, bold)) { Border = Rectangle.NO_BORDER });
-                table.AddCell(new PdfPCell(new Phrase(v, normal)) { Border = Rectangle.NO_BORDER });
+                table.AddCell(new PdfPCell(new Phrase(label, bold)) { Border = Rectangle.NO_BORDER });
+                table.AddCell(new PdfPCell(new Phrase(value, normal)) { Border = Rectangle.NO_BORDER });
             }
 
-            Row("Receipt No", $"R-{invoice.InvoiceID}");
-            Row("Invoice No", invoice.InvoiceID.ToString());
-            Row("Order No", invoice.OrderID.ToString());
-            Row("Paid Amount", invoice.InvoiceAmount.ToString("F2"));
+            Row("Receipt No", $"R-{cashflow.CashflowID}");
+            Row("Invoice No", cashflow.Invoice?.InvoiceID.ToString() ?? "N/A");
+            Row("Order No", order.OrderID.ToString());
+            Row(isRefund ? "Refund Amount" : "Paid Amount", cashflow.AmountPaid.ToString("F2"));
             Row("Currency", "LKR");
-            Row("Payment Date", invoice.PaidAt!.Value.ToString("yyyy-MM-dd HH:mm"));
-            Row("Status", "PAID");
+            Row(isRefund ? "Refund Date" : "Payment Date", cashflow.CreatedAt.ToString("yyyy-MM-dd HH:mm") ?? "-");
+            Row("Status", isRefund ? "REFUNDED" : "PAID");
 
             doc.Add(table);
         }
 
-        private void AddPaymentDetails(Document doc, Invoice invoice)
+        private void AddPaymentDetails(Document doc, Cashflow cashflow)
         {
-            var cashflow = invoice.Cashflows
-                .Where(cf => cf.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment)
-                .OrderByDescending(cf => cf.CreatedAt)
-                .FirstOrDefault()
-                ?? throw new InvalidOperationException("Payment cashflow missing");
-
             doc.Add(new Paragraph($"Payment Amount: {cashflow.AmountPaid:F2}"));
             doc.Add(new Paragraph($"Transaction Ref: {cashflow.CashflowRef}"));
+        }
+
+        // Refund Receipt PDF generator
+        public async Task<string> GenerateRefundReceiptPdfAsync(CustomerOrder order, Cashflow cashflow)
+        {
+            if (cashflow.CashflowPaymentNature != CashflowPaymentNatureEnum.Refund)
+                throw new InvalidOperationException("Cashflow is not a refund");
+
+            string folderPath = Path.Combine(_env.WebRootPath, "receipts/refunds");
+            Directory.CreateDirectory(folderPath);
+
+            string fileName = $"receipt_ref_{cashflow.CashflowID}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            string filePath = Path.Combine(folderPath, fileName);
+
+            await Task.Run(() =>
+            {
+                using FileStream fs = new FileStream(filePath, FileMode.Create);
+                using Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
+
+                PdfWriter writer = PdfWriter.GetInstance(doc, fs);
+                doc.Open();
+
+                AddWatermark(writer, "REFUND RECEIPT");
+
+                AddReceiptHeader(doc, "REFUND RECEIPT");
+                AddCustomerSection(doc, order);
+                AddReceiptSummary(doc, order, cashflow, isRefund: true);
+                AddPaymentDetails(doc, cashflow);
+
+                doc.Close();
+            });
+
+            return $"receipts/refunds/{fileName}";
         }
     }
 }

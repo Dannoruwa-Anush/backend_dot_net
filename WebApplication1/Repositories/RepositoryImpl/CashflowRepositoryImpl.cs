@@ -18,20 +18,29 @@ namespace WebApplication1.Repositories.RepositoryImpl
             _context = context;
         }
         // Note : SaveChangesAsync() of Add, Update, Delete will be handled by UOW
-        
+
         //CRUD operations
         public async Task<IEnumerable<Cashflow>> GetAllAsync() =>
             await _context.Cashflows.ToListAsync();
 
         public async Task<Cashflow?> GetByIdAsync(int id) =>
-            await _context.Cashflows.FindAsync(id);   
+            await _context.Cashflows.FindAsync(id);
+
+        public async Task<Cashflow?> GetCashflowWithInvoiceAsync(int id)
+        {
+            return await _context.Cashflows
+                    .Include(c => c.Invoice)
+                        .ThenInclude(i => i!.CustomerOrder)
+                            .ThenInclude(o => o!.Customer)
+                    .FirstOrDefaultAsync(c => c.CashflowID == id);
+        }
 
         //Custom Query Operations
         public async Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentNatureId = null, string? searchKey = null)
         {
             // Start query
             var query = _context.Cashflows
-                .Include(cf => cf.Invoice) 
+                .Include(cf => cf.Invoice)
                     .ThenInclude(cfo => cfo!.CustomerOrder)// include for OrderID search
                 .AsQueryable();
 
@@ -85,7 +94,7 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return query;
         }
 
-       public async Task<bool> ExistsByCashflowRefAsync(string cashflowRef)
+        public async Task<bool> ExistsByCashflowRefAsync(string cashflowRef)
         {
             return await _context.Cashflows
                 .AnyAsync(cf => cf.CashflowRef.ToLower() == cashflowRef.ToLower());

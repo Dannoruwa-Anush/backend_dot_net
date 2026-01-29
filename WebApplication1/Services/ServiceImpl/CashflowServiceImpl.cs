@@ -3,6 +3,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
 
@@ -11,18 +12,23 @@ namespace WebApplication1.Services.ServiceImpl
     public class CashflowServiceImpl : ICashflowService
     {
         private readonly ICashflowRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly IInvoiceRepository _invoiceRepository;
+        
+        private IDocumentGenerationService _documentGenerationService;
 
         //logger: for auditing
         private readonly ILogger<CashflowServiceImpl> _logger;
 
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository, IInvoiceRepository invoiceRepository, ILogger<CashflowServiceImpl> logger)
+        public CashflowServiceImpl(ICashflowRepository repository, IAppUnitOfWork unitOfWork, IInvoiceRepository invoiceRepository, IDocumentGenerationService documentGenerationService, ILogger<CashflowServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _invoiceRepository = invoiceRepository;
+            _documentGenerationService = documentGenerationService;
             _logger = logger;
         }
 
@@ -75,6 +81,50 @@ namespace WebApplication1.Services.ServiceImpl
 
             _logger.LogInformation("Generated Cashflow record: {CashflowRef}", newCashflow.CashflowRef);
             return newCashflow;
+        }
+
+        public async Task GenerateCashflowReceiptAsync(int cashflowId)
+        {
+            var cashflow = await _repository.GetCashflowWithInvoiceAsync(cashflowId)
+                ?? throw new Exception("Cashflow not found");
+
+            // Idempotency guard (per cashflow)
+            if (cashflow.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment &&
+                !string.IsNullOrEmpty(cashflow.PaymentReceiptFileUrl))
+                return;
+
+            if (cashflow.CashflowPaymentNature == CashflowPaymentNatureEnum.Refund &&
+                !string.IsNullOrEmpty(cashflow.RefundReceiptFileUrl))
+                return;
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                string receiptUrl;
+
+                if (cashflow.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment)
+                {
+                    receiptUrl = await _documentGenerationService.GeneratePaymentReceiptPdfAsync(
+                        cashflow.Invoice!.CustomerOrder!, cashflow);
+
+                    cashflow.PaymentReceiptFileUrl = receiptUrl;
+                }
+                else // Refund
+                {
+                    receiptUrl = await _documentGenerationService.GenerateRefundReceiptPdfAsync(
+                        cashflow.Invoice!.CustomerOrder!, cashflow);
+
+                    cashflow.RefundReceiptFileUrl = receiptUrl;
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
     }
 }

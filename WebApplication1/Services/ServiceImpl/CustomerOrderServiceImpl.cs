@@ -541,7 +541,6 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Update invoice status
                 invoice.InvoiceStatus = InvoiceStatusEnum.Refunded;
-                invoice.RefundedAt = now;
             }
 
             // Update order payment status
@@ -575,7 +574,6 @@ namespace WebApplication1.Services.ServiceImpl
                 });
 
                 invoice.InvoiceStatus = InvoiceStatusEnum.Refunded;
-                invoice.RefundedAt = now;
             }
 
             // Cancel BNPL plan

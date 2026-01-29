@@ -24,7 +24,6 @@ namespace WebApplication1.Models
 
         public DateTime? VoidedAt { get; set; }
         public DateTime? PaidAt { get; set; }
-        public DateTime? RefundedAt { get; set; }
 
         // ------[Start - For bnpl installment payment] ------
         public int? InstallmentNo { get; set; }
@@ -46,10 +45,6 @@ namespace WebApplication1.Models
         // Invoice = billing document
         [Column(TypeName = "nvarchar(255)")]
         public string? InvoiceFileUrl { get; set; }
-
-        // Receipt = proof of payment (Generated after payment)
-        [Column(TypeName = "nvarchar(255)")]
-        public string? ReceiptFileUrl { get; set; }
 
         [ConcurrencyCheck]
         public byte[] RowVersion { get; set; } = new byte[8]; // for optimistic concurrency.

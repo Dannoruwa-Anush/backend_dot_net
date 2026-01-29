@@ -17,5 +17,6 @@ namespace WebApplication1.Services.IService
 
         //Shared Internal Operations Used by Multiple Repositories
         Task<Cashflow> BuildCashflowAddRequestAsync(PaymentRequestDto paymentRequest, CashflowTypeEnum cashflowType);
+        Task GenerateCashflowReceiptAsync(int cashflowId);
     }
 }

@@ -8,6 +8,7 @@ namespace WebApplication1.Repositories.IRepository
         //CRUD operations
         Task<IEnumerable<Cashflow>> GetAllAsync();
         Task<Cashflow?> GetByIdAsync(int id);
+        Task<Cashflow?> GetCashflowWithInvoiceAsync(int id);
 
         //Custom Query Operations
         Task<PaginationResultDto<Cashflow>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? paymentNatureId = null, string? searchKey = null);

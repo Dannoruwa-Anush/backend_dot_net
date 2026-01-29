@@ -6,6 +6,7 @@ namespace WebApplication1.Services.IService
     {
         Task<string> GenerateInvoicePdfAsync(CustomerOrder order, Invoice invoice);
 
-        Task<string> GenerateReceiptPdfAsync(CustomerOrder order, Invoice invoice);
+        Task<string> GeneratePaymentReceiptPdfAsync(CustomerOrder order, Cashflow cashflow);
+        Task<string> GenerateRefundReceiptPdfAsync(CustomerOrder order, Cashflow cashflow);
     }
 }
