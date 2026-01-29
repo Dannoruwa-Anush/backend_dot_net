@@ -13,6 +13,9 @@ namespace WebApplication1.Services.IService
         Task<Invoice?> GetInvoiceByIdAsync(int id);
         Task<Invoice?> GetInvoiceWithOrderAsync(int id);
         Task<Invoice?> GetInvoiceWithOrderFinancialDetailsAsync(int id);
+        
+        //Single Repository Operations (save immediately)
+        Task<Invoice> UpdateInvoiceWithSaveAsync(int id);
 
         //Custom Query Operations
         Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, int? orderSourceId = null, string? searchKey = null);

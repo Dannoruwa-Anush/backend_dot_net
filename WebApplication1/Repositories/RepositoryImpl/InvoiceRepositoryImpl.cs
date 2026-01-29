@@ -54,6 +54,17 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId);
         }
 
+        public async Task<Invoice?> UpdateAsync(int id, Invoice invoice)
+        {
+            var existing = await _context.Invoices.FindAsync(id);
+            if (existing == null)
+                return null;
+
+            existing.InvoiceStatus = invoice.InvoiceStatus;
+            _context.Invoices.Update(existing);
+            return existing;
+        }
+
         //Custom Query Operations
         public async Task<PaginationResultDto<Invoice>> GetAllWithPaginationAsync(int pageNumber, int pageSize, int? invoiceTypeId = null, int? invoiceStatusId = null, int? customerId = null, int? orderSourceId = null, string? searchKey = null)
         {

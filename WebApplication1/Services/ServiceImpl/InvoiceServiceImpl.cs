@@ -5,6 +5,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
+using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
 using WebApplication1.Utils.Helpers;
 using WebApplication1.Utils.Project_Enums;
@@ -21,10 +22,12 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
 
         //logger: for auditing
+        // Audit Logging
+        private readonly IAuditLogService _auditLogService;
         private readonly ILogger<InvoiceServiceImpl> _logger;
 
         // Constructor
-        public InvoiceServiceImpl(IInvoiceRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IDocumentGenerationService documentGenerationService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, ILogger<InvoiceServiceImpl> logger)
+        public InvoiceServiceImpl(IInvoiceRepository repository, IAppUnitOfWork unitOfWork, ICustomerOrderRepository customerOrderRepository, IDocumentGenerationService documentGenerationService, IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService, IAuditLogService auditLogService, ILogger<InvoiceServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
@@ -32,6 +35,7 @@ namespace WebApplication1.Services.ServiceImpl
             _customerOrderRepository = customerOrderRepository;
             _documentGenerationService = documentGenerationService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
+            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -47,6 +51,28 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<Invoice?> GetInvoiceWithOrderFinancialDetailsAsync(int id) =>
             await _repository.GetInvoiceWithOrderFinancialDetailsAsync(id);     
+
+        public async Task<Invoice> UpdateInvoiceWithSaveAsync(int id)
+        {
+            // Note : invoice cancellation only for installmet payment (authorized: admin/manager)
+            // Note : other invoice cancellation will be handled in order cancellation
+            
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                throw new Exception("Invoice not found");
+
+            if(existing.InvoiceType != InvoiceTypeEnum.Bnpl_Installment_Pay)
+                throw new Exception("Only installment payment invoices can be cancelled.");    
+
+            var updatedInvoice= await _repository.UpdateAsync(id, existing);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (updatedInvoice == null)
+                throw new Exception("Invoice status update failed.");
+
+            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Invoice", updatedInvoice.InvoiceID, updatedInvoice.InvoiceStatus.ToString());
+            return updatedInvoice;
+        }
 
         // ----------- [Start : Invoice Generation] -------------
         public async Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, InvoiceTypeEnum invoiceType)

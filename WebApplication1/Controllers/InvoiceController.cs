@@ -5,6 +5,7 @@ using WebApplication1.DTOs.RequestDto.BnplSnapshotPayingSimulation;
 using WebApplication1.DTOs.ResponseDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Services.IService;
+using WebApplication1.Utils.Settings;
 
 namespace WebApplication1.Controllers
 {
@@ -39,6 +40,30 @@ namespace WebApplication1.Controllers
             var response = new ApiResponseDto<InvoiceResponseDto>(200, "invoice retrieved successfully", dto);
 
             return Ok(response);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.AdminOrManager)]  // JWT is required
+        public async Task<IActionResult> UpdateInvoiceStatusToCancel(int id)
+        {
+            try
+            {
+                var updated = await _service.UpdateInvoiceWithSaveAsync(id);
+
+                // Model -> ResponseDto
+                var responseDto = _mapper.Map<InvoiceResponseDto>(updated);
+                var response = new ApiResponseDto<InvoiceResponseDto>(200, "Invoice status updated to cancel successfully", responseDto);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message;
+
+                if (message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(new ApiResponseDto<string>(404, "Invoice not found"));
+
+                return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
+            }
         }
 
         //Custom Query Operations
