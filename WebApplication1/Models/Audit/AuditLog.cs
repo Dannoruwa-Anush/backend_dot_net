@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApplication1.Models.Audit
 {
+    //Note : This Captures all entity changes (Added, Modified, Deleted) automatically
     public class AuditLog
     {
         [Key]
