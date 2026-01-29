@@ -2,9 +2,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
-using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -14,19 +12,15 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
-        // Audit Logging
-        private readonly IAuditLogService _auditLogService;
-
         // Service-Level (Technical) Logging
         private readonly ILogger<ElectronicItemServiceImpl> _logger;
 
         // Constructor
-        public ElectronicItemServiceImpl(IElectronicItemRepository repository, IAppUnitOfWork unitOfWork, IAuditLogService auditLogService, ILogger<ElectronicItemServiceImpl> logger)
+        public ElectronicItemServiceImpl(IElectronicItemRepository repository, IAppUnitOfWork unitOfWork, ILogger<ElectronicItemServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
-            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -47,7 +41,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(electronicItem);
             await _unitOfWork.SaveChangesAsync();
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Electronic item", electronicItem.ElectronicItemID, electronicItem.ElectronicItemName);
+           _logger.LogInformation("Electronic item created: Id={Id}, Electronic Item Name={Name}", electronicItem.ElectronicItemID, electronicItem.ElectronicItemName);
             return electronicItem;
         }
 
@@ -67,7 +61,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (updatedElectronicItem == null)
                 throw new Exception("Electronic item update failed.");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Electronic item", updatedElectronicItem.ElectronicItemID, updatedElectronicItem.ElectronicItemName);
+            _logger.LogInformation("Electronic item updated: Id={Id}, Electronic Item Name={Name}", updatedElectronicItem.ElectronicItemID, updatedElectronicItem.ElectronicItemName);
             return updatedElectronicItem;
         }
 
@@ -79,7 +73,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (!deleted)
                 throw new Exception("Electronic item not found");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "Electronic item", id, $"ElectronicItemId={id}");
+            _logger.LogInformation("Electronic item deleted successfully: Id={Id}", id);
         }
 
         //Custom Query Operations

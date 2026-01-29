@@ -2,9 +2,7 @@ using WebApplication1.DTOs.ResponseDto.Common;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
 using WebApplication1.Services.IService;
-using WebApplication1.Services.IService.Audit;
 using WebApplication1.UOW.IUOW;
-using WebApplication1.Utils.Project_Enums;
 
 namespace WebApplication1.Services.ServiceImpl
 {
@@ -16,20 +14,16 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IElectronicItemRepository _electronicItemRepository;
 
         // logger: for auditing
-        // Audit Logging
-        private readonly IAuditLogService _auditLogService;
-        
         // Service-Level (Technical) Logging
         private readonly ILogger<BrandServiceImpl> _logger;
 
         // Constructor
-        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, IAuditLogService auditLogService, ILogger<BrandServiceImpl> logger)
+        public BrandServiceImpl(IBrandRepository repository, IAppUnitOfWork unitOfWork, IElectronicItemRepository electronicItemRepository, ILogger<BrandServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _electronicItemRepository = electronicItemRepository;
-            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -49,7 +43,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(brand);
             await _unitOfWork.SaveChangesAsync();
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Brand", brand.BrandID, brand.BrandName);
+            _logger.LogInformation("Brand created: Id={Id}, BrandName={Name}", brand.BrandID, brand.BrandName);
             return brand;
         }
 
@@ -69,7 +63,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (updatedBrand == null)
                 throw new Exception("Category update failed.");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Brand", updatedBrand.BrandID, updatedBrand.BrandName);
+            _logger.LogInformation("Brand updated: Id={Id}, Name={Name}", updatedBrand.BrandID, updatedBrand.BrandName);
             return updatedBrand;
         }
 
@@ -90,7 +84,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (!deleted)
                 throw new KeyNotFoundException("Brand not found.");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "Brand", id, $"BrandId={id}");
+            _logger.LogInformation("Brand deleted successfully: Id={Id}", id);
         }
 
         //Custom Query Operations
