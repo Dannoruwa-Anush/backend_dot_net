@@ -22,12 +22,14 @@ using WebApplication1.Services.ServiceImpl.Helper;
 using WebApplication1.AutoMapperProfiles.BnplCal;
 using WebApplication1.Services.ServiceImpl.Audit;
 using WebApplication1.Services.IService.Audit;
+/*
 using Hangfire;
 using Hangfire.MySql;
 using TimeZoneConverter;
 using WebApplication1.Services.IService.Hangfire;
 using WebApplication1.Services.ServiceImpl.Hangfire;
 using System.Transactions;
+*/
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,6 +75,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ));
 
 //--------------------[Hangfire - MySQL]--------------------
+/*
 builder.Services.AddHangfire(config =>
 {
     config.UseStorage(new MySqlStorage(
@@ -87,9 +90,9 @@ builder.Services.AddHangfire(config =>
             TransactionIsolationLevel = IsolationLevel.ReadCommitted
         }));
 });
+*/
 
-
-builder.Services.AddHangfireServer();
+//builder.Services.AddHangfireServer();
 
 //--------------------[Repositories DI]-------------
 builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
@@ -135,11 +138,11 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<IPaymentService, PaymentServiceImpl>()
                 .AddScoped<IDueDateAdjustmentService, DueDateAdjustmentServiceImpl>()
                 .AddScoped<IPhysicalShopSessionService, PhysicalShopSessionServiceImpl>()
-                .AddScoped<IInvoiceService, InvoiceServiceImpl>()
+                .AddScoped<IInvoiceService, InvoiceServiceImpl>();
 
                 //Hangfire
-                .AddScoped<IDueDateAdjustmentHangfireJobService, DueDateAdjustmentHangfireJobServiceImpl>()
-                .AddScoped<IOrderAutoCancellationHangfireJobService, OrderAutoCancellationHangfireJobServiceImpl>();
+                //.AddScoped<IDueDateAdjustmentHangfireJobService, DueDateAdjustmentHangfireJobServiceImpl>()
+                //.AddScoped<IOrderAutoCancellationHangfireJobService, OrderAutoCancellationHangfireJobServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
@@ -253,12 +256,15 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 //------------------[Hangfire Dashboard]------------------
+/*
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[] { new HangfireAuthorizationFilter() }
 });
+*/
 
 //------------------[Hangfire Recurring Jobs]------------------
+/*
 using (var scope = app.Services.CreateScope())
 {
     var sriLankaTimeZone = TZConvert.GetTimeZoneInfo("Asia/Colombo");
@@ -285,6 +291,7 @@ using (var scope = app.Services.CreateScope())
         }
     );
 }
+*/
 
 // -------------------- Ensure wwwroot & uploads/images exist --------------------
 var webRootPath = builder.Environment.WebRootPath;
