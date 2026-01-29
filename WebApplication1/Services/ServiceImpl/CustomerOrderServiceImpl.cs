@@ -639,5 +639,43 @@ namespace WebApplication1.Services.ServiceImpl
 
         public async Task<IEnumerable<CustomerOrder>> GetAllActiveBnplCustomerOrdersByCustomerIdAsync(int customerId) =>
             await _repository.GetAllActiveBnplByCustomerIdAsync(customerId);
+
+        public async Task AutoCancelExpiredOnlineOrdersAsync()
+        {
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var orders =
+                    await _repository.GetExpiredPendingOnlineOrdersAsync(now);
+
+                if (!orders.Any())
+                    return;
+
+                foreach (var order in orders)
+                {
+                    order.OrderStatus = OrderStatusEnum.Cancelled;
+                    order.CancelledDate = now;
+                    order.CancellationReason = "Auto-cancelled due to payment timeout";
+                    order.CancellationApproved = true;
+
+                    // restore stock
+                    foreach (var item in order.CustomerOrderElectronicItems)
+                    {
+                        item.ElectronicItem.QOH += item.Quantity;
+                    }
+
+                    _logger.LogInformation("Order auto-cancelled: OrderId={OrderId}", order.OrderID);
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+        }
     }
 }

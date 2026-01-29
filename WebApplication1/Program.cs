@@ -22,6 +22,12 @@ using WebApplication1.Services.ServiceImpl.Helper;
 using WebApplication1.AutoMapperProfiles.BnplCal;
 using WebApplication1.Services.ServiceImpl.Audit;
 using WebApplication1.Services.IService.Audit;
+using Hangfire;
+using Hangfire.MySql;
+using TimeZoneConverter;
+using WebApplication1.Services.IService.Hangfire;
+using WebApplication1.Services.ServiceImpl.Hangfire;
+using System.Transactions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,7 +52,7 @@ builder.Services.AddAutoMapper(
     typeof(ElectronicItemAutoMapperProfiles),
     typeof(CustomerOrderAutoMapperProfiles),
     typeof(CustomerOrderElectronicItemAutoMapperProfiles),
-    
+
     typeof(CashflowAutoMapperProfiles),
     typeof(BNPL_PlanTypeAutoMapperProfiles),
     typeof(BNPL_PlanAutoMapperProfiles),
@@ -65,6 +71,25 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
     ));
+
+//--------------------[Hangfire - MySQL]--------------------
+builder.Services.AddHangfire(config =>
+{
+    config.UseStorage(new MySqlStorage(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlStorageOptions
+        {
+            QueuePollInterval = TimeSpan.FromSeconds(10),
+            JobExpirationCheckInterval = TimeSpan.FromHours(1),
+            CountersAggregateInterval = TimeSpan.FromMinutes(5),
+            PrepareSchemaIfNecessary = true, // auto-create Hangfire tables
+            TablesPrefix = "hangfire_",
+            TransactionIsolationLevel = IsolationLevel.ReadCommitted
+        }));
+});
+
+
+builder.Services.AddHangfireServer();
 
 //--------------------[Repositories DI]-------------
 builder.Services.AddScoped<IBrandRepository, BrandRepositoryImpl>()
@@ -110,7 +135,11 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<IPaymentService, PaymentServiceImpl>()
                 .AddScoped<IDueDateAdjustmentService, DueDateAdjustmentServiceImpl>()
                 .AddScoped<IPhysicalShopSessionService, PhysicalShopSessionServiceImpl>()
-                .AddScoped<IInvoiceService, InvoiceServiceImpl>();
+                .AddScoped<IInvoiceService, InvoiceServiceImpl>()
+
+                //Hangfire
+                .AddScoped<IDueDateAdjustmentHangfireJobService, DueDateAdjustmentHangfireJobServiceImpl>()
+                .AddScoped<IOrderAutoCancellationHangfireJobService, OrderAutoCancellationHangfireJobServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
@@ -223,20 +252,39 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-//------------------[Set default time zone globally]-----------------------
-TimeZoneInfo sriLankaZone;
-try
+//------------------[Hangfire Dashboard]------------------
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    // Works on Windows
-    sriLankaZone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
-}
-catch
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
+
+//------------------[Hangfire Recurring Jobs]------------------
+using (var scope = app.Services.CreateScope())
 {
-    // Works on Linux/macOS
-    sriLankaZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Colombo");
+    var sriLankaTimeZone = TZConvert.GetTimeZoneInfo("Asia/Colombo");
+
+    // TASK 1: BNPL Due Date Adjustment (Daily at 00:00)
+    RecurringJob.AddOrUpdate<IDueDateAdjustmentHangfireJobService>(
+        "bnpl-due-date-adjustment",
+        job => job.RunAsync(),
+        Cron.Daily(0, 0),
+        new RecurringJobOptions
+        {
+            TimeZone = sriLankaTimeZone
+        }
+    );
+
+    // TASK 2: Online Order Auto Cancellation (Every minute)
+    RecurringJob.AddOrUpdate<IOrderAutoCancellationHangfireJobService>(
+        "order-auto-cancellation",
+        job => job.RunAsync(),
+        Cron.Minutely(),
+        new RecurringJobOptions
+        {
+            TimeZone = sriLankaTimeZone
+        }
+    );
 }
-TimeZoneInfo.ClearCachedData();
-TimeZoneInfo.Local.Equals(sriLankaZone);
 
 // -------------------- Ensure wwwroot & uploads/images exist --------------------
 var webRootPath = builder.Environment.WebRootPath;

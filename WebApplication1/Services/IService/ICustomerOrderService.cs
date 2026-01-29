@@ -21,5 +21,6 @@ namespace WebApplication1.Services.IService
         Task<PaginationResultDto<CustomerOrder>> GetAllByCustomerWithPaginationAsync(int customerId, int pageNumber, int pageSize, int? orderStatusId = null, string? searchKey = null);       
         Task<CustomerOrder?> GetCustomerOrderWithActiveBnplByIdAsync(int id, int? customerId = null);
         Task<IEnumerable<CustomerOrder>> GetAllActiveBnplCustomerOrdersByCustomerIdAsync(int customerId);
+        Task AutoCancelExpiredOnlineOrdersAsync();
     }
 }

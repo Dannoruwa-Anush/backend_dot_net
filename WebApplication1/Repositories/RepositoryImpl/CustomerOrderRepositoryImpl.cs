@@ -259,5 +259,18 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     o.BNPL_PLAN.Bnpl_Status == BnplStatusEnum.Active)
                 .ToListAsync();
         }
+
+        public async Task<List<CustomerOrder>> GetExpiredPendingOnlineOrdersAsync(DateTime now)
+        {
+            return await _context.CustomerOrders
+                .Where(o =>
+                    o.OrderSource == OrderSourceEnum.OnlineShop &&
+                    o.OrderStatus == OrderStatusEnum.Pending &&
+                    o.OrderPaymentStatus == OrderPaymentStatusEnum.Awaiting_Payment &&
+                    o.PendingPaymentOrderAutoCancelledDate != null &&
+                    o.PendingPaymentOrderAutoCancelledDate <= now)
+                .Include(o => o.CustomerOrderElectronicItems)
+                .ToListAsync();
+        }
     }
 }
