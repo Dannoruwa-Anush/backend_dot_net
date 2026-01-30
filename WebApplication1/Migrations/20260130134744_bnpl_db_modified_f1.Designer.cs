@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260130090839_bnpl_db_modified_fv1")]
-    partial class bnpl_db_modified_fv1
+    [Migration("20260130134744_bnpl_db_modified_f1")]
+    partial class bnpl_db_modified_f1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
