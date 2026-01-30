@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260112113135_bnpl_db_modified_lv2")]
-    partial class bnpl_db_modified_lv2
+    [Migration("20260130052014_bnpl_db_modified_lfv1")]
+    partial class bnpl_db_modified_lfv1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,58 @@ namespace WebApplication1.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+
+            modelBuilder.Entity("WebApplication1.Models.Audit.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("LONGTEXT CHARACTER SET utf8mb4");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
 
             modelBuilder.Entity("WebApplication1.Models.BNPL_Installment", b =>
                 {
@@ -374,14 +426,14 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("CashflowDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("CashflowPaymentNature")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("CashflowRef")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
-
-                    b.Property<string>("CashflowStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -392,8 +444,11 @@ namespace WebApplication1.Migrations
                     b.Property<int>("InvoiceID")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("RefundDate")
-                        .HasColumnType("datetime(6)");
+                    b.Property<string>("PaymentReceiptFileUrl")
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("RefundReceiptFileUrl")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -413,10 +468,15 @@ namespace WebApplication1.Migrations
 
                     b.HasIndex("CreatedByUserID");
 
-                    b.HasIndex("InvoiceID")
-                        .IsUnique();
-
                     b.HasIndex("UpdatedByUserID");
+
+                    b.HasIndex("InvoiceID", "PaymentReceiptFileUrl")
+                        .IsUnique()
+                        .HasFilter("[PaymentReceiptFileUrl] IS NOT NULL");
+
+                    b.HasIndex("InvoiceID", "RefundReceiptFileUrl")
+                        .IsUnique()
+                        .HasFilter("[RefundReceiptFileUrl] IS NOT NULL");
 
                     b.ToTable("Cashflows");
                 });
@@ -794,9 +854,6 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime?>("RefundedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1030,8 +1087,8 @@ namespace WebApplication1.Migrations
                         .HasForeignKey("CreatedByUserID");
 
                     b.HasOne("WebApplication1.Models.Invoice", "Invoice")
-                        .WithOne("Cashflow")
-                        .HasForeignKey("WebApplication1.Models.Cashflow", "InvoiceID")
+                        .WithMany("Cashflows")
+                        .HasForeignKey("InvoiceID")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("WebApplication1.Models.User", "UpdatedBy")
@@ -1291,7 +1348,7 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Models.Invoice", b =>
                 {
-                    b.Navigation("Cashflow");
+                    b.Navigation("Cashflows");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.PhysicalShopSession", b =>

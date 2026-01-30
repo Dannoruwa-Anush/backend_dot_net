@@ -7,12 +7,44 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WebApplication1.Migrations
 {
     /// <inheritdoc />
-    public partial class bnpl_db_modified_lv1 : Migration
+    public partial class bnpl_db_modified_lfv1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "AuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Action = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EntityName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EntityId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    Email = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Role = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Position = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Changes = table.Column<string>(type: "LONGTEXT CHARACTER SET utf8mb4", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IpAddress = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserAgent = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
@@ -458,9 +490,10 @@ namespace WebApplication1.Migrations
                     InvoiceStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     VoidedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     PaidAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    RefundedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     InstallmentNo = table.Column<int>(type: "int", nullable: true),
                     SettlementSnapshotJson = table.Column<string>(type: "LONGTEXT CHARACTER SET utf8mb4", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SettlementSnapshotHash = table.Column<string>(type: "varchar(64)", maxLength: 64, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     InvoiceType = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     InvoiceFileUrl = table.Column<string>(type: "nvarchar(255)", nullable: true),
@@ -601,8 +634,10 @@ namespace WebApplication1.Migrations
                     CashflowRef = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CashflowDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    RefundDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    CashflowStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    CashflowPaymentNature = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    PaymentReceiptFileUrl = table.Column<string>(type: "nvarchar(255)", nullable: true),
+                    RefundReceiptFileUrl = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     RowVersion = table.Column<byte[]>(type: "BINARY(8)", nullable: false),
                     InvoiceID = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -734,10 +769,18 @@ namespace WebApplication1.Migrations
                 column: "CreatedByUserID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Cashflows_InvoiceID",
+                name: "IX_Cashflows_InvoiceID_PaymentReceiptFileUrl",
                 table: "Cashflows",
-                column: "InvoiceID",
-                unique: true);
+                columns: new[] { "InvoiceID", "PaymentReceiptFileUrl" },
+                unique: true,
+                filter: "[PaymentReceiptFileUrl] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Cashflows_InvoiceID_RefundReceiptFileUrl",
+                table: "Cashflows",
+                columns: new[] { "InvoiceID", "RefundReceiptFileUrl" },
+                unique: true,
+                filter: "[RefundReceiptFileUrl] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Cashflows_UpdatedByUserID",
@@ -911,6 +954,9 @@ namespace WebApplication1.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AuditLogs");
+
             migrationBuilder.DropTable(
                 name: "BNPL_Installments");
 
