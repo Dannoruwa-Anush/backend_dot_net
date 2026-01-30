@@ -60,12 +60,11 @@ namespace WebApplication1.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin, Employee")] // JWT is required
-        public async Task<IActionResult> Create([FromBody] PhysicalShopSessionRequestDto sessionCreateDto)
+        public async Task<IActionResult> Open()
         {
             try
-            {   // RequestDto -> Model
-                var session = _mapper.Map<PhysicalShopSession>(sessionCreateDto);
-                var created = await _service.AddPhysicalShopSessionWithSaveAsync(session);
+            { 
+                var created = await _service.AddPhysicalShopSessionWithSaveAsync();
 
                 var response = new ApiResponseDto<BrandResponseDto>(201, "Physical shop session created successfully");
                 return CreatedAtAction(nameof(GetById), response);
@@ -84,13 +83,11 @@ namespace WebApplication1.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = AuthorizationPolicies.ManagerOnly)]  // JWT is required
-        public async Task<IActionResult> Update(int id, [FromBody] PhysicalShopSessionRequestDto sessionUpdateDto)
+        public async Task<IActionResult> Close(int id)
         {
             try
             {
-                // RequestDto -> Model
-                var session = _mapper.Map<PhysicalShopSession>(sessionUpdateDto);
-                var updated = await _service.ModifyPhysicalShopSessionWithTransactionAsync(id, session);
+                var updated = await _service.ModifyPhysicalShopSessionWithTransactionAsync(id);
 
                 var response = new ApiResponseDto<BrandResponseDto>(200, "Physical shop session updated successfully");
                 return Ok(response);

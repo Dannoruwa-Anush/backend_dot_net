@@ -34,8 +34,15 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<PhysicalShopSession?> GetPhysicalShopSessionByIdAsync(int id) =>
             await _repository.GetByIdAsync(id);
 
-        public async Task<PhysicalShopSession> AddPhysicalShopSessionWithSaveAsync(PhysicalShopSession session)
+        public async Task<PhysicalShopSession> AddPhysicalShopSessionWithSaveAsync()
         {
+            var session = new PhysicalShopSession
+            {
+                OpenedAt = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow),
+                IsActive = true,
+                ClosedAt = null
+            };
+
             // Business rule: Only one active session allowed
             if (session.IsActive)
             {
@@ -54,13 +61,16 @@ namespace WebApplication1.Services.ServiceImpl
             return session;
         }
 
-        public async Task<PhysicalShopSession> ModifyPhysicalShopSessionWithTransactionAsync(int id, PhysicalShopSession session)
+        public async Task<PhysicalShopSession> ModifyPhysicalShopSessionWithTransactionAsync(int id)
         {
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+                var session = await _repository.GetByIdAsync(id)
+                    ?? throw new KeyNotFoundException();
+                    
                 // If closing the session, cancel unsettled orders
                 if (!session.IsActive)
                 {
@@ -89,7 +99,7 @@ namespace WebApplication1.Services.ServiceImpl
                             foreach (var installment in bnpl.BNPL_Installments)
                             {
                                 installment.CancelledAt = now;
-                                installment.Bnpl_Installment_Status  = BNPL_Installment_StatusEnum.Cancelled;
+                                installment.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Cancelled;
                             }
 
                             // Cancel ALL settlement summaries

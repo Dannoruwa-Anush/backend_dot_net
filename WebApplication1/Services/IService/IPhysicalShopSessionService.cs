@@ -9,10 +9,10 @@ namespace WebApplication1.Services.IService
         Task<PhysicalShopSession?> GetPhysicalShopSessionByIdAsync(int id);
 
         //Single Repository Operations (save immediately)
-        Task<PhysicalShopSession> AddPhysicalShopSessionWithSaveAsync(PhysicalShopSession session);
+        Task<PhysicalShopSession> AddPhysicalShopSessionWithSaveAsync();
         
         //Multiple Repository Operations (transactional)
-        Task<PhysicalShopSession> ModifyPhysicalShopSessionWithTransactionAsync(int id, PhysicalShopSession session);
+        Task<PhysicalShopSession> ModifyPhysicalShopSessionWithTransactionAsync(int id);
 
         //Custom Query Operations
     }
