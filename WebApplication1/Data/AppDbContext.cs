@@ -604,21 +604,33 @@ namespace WebApplication1.Data
             {
                 var propName = prop.Metadata.Name;
 
+                // ignore sensitive fields
                 if (SensitiveFields.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (entry.State == EntityState.Modified)
-                        changes[propName] = new { Old = "REDACTED", New = "REDACTED" };
-                    else
-                        changes[propName] = "REDACTED";
+                    changes[propName] = "REDACTED";
                     continue;
                 }
 
+                // skip PK for Added entities (temp negative ID)
+                if (entry.State == EntityState.Added && prop.Metadata.IsPrimaryKey())
+                    continue;
+
                 if (entry.State == EntityState.Added)
+                {
                     changes[propName] = prop.CurrentValue;
+                }
                 else if (entry.State == EntityState.Modified && prop.IsModified)
-                    changes[propName] = new { Old = prop.OriginalValue, New = prop.CurrentValue };
+                {
+                    changes[propName] = new
+                    {
+                        Old = prop.OriginalValue,
+                        New = prop.CurrentValue
+                    };
+                }
                 else if (entry.State == EntityState.Deleted)
+                {
                     changes[propName] = prop.OriginalValue;
+                }
             }
 
             return JsonSerializer.Serialize(changes);
