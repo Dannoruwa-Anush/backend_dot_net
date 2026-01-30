@@ -16,20 +16,16 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanRepository _bnpl_planRepository;
 
         //logger: for auditing
-        // Audit Logging
-        private readonly IAuditLogService _auditLogService;
-
         // Service-Level (Technical) Logging
         private readonly ILogger<BNPL_PlanTypeServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IAppUnitOfWork unitOfWork, IBNPL_PlanRepository bnpl_planRepository, IAuditLogService auditLogService, ILogger<BNPL_PlanTypeServiceImpl> logger)
+        public BNPL_PlanTypeServiceImpl(IBNPL_PlanTypeRepository repository, IAppUnitOfWork unitOfWork, IBNPL_PlanRepository bnpl_planRepository, ILogger<BNPL_PlanTypeServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _bnpl_planRepository = bnpl_planRepository;
-            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -49,7 +45,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.AddAsync(bNPL_PlanType);
             await _unitOfWork.SaveChangesAsync();
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "BNPL Plan Type", bNPL_PlanType.Bnpl_PlanTypeID, bNPL_PlanType.Bnpl_PlanTypeName);
+            _logger.LogInformation("BNPL Plan Type created: Id={Id}, BNPL Plan Type Name={Name}", bNPL_PlanType.Bnpl_PlanTypeID, bNPL_PlanType.Bnpl_PlanTypeName);
             return bNPL_PlanType;
         }
 
@@ -69,7 +65,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (updatedBNPL_PlanType == null)
                 throw new Exception("BNPL plan type update failed.");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "BNPL Plan Type", updatedBNPL_PlanType.Bnpl_PlanTypeID, updatedBNPL_PlanType.Bnpl_PlanTypeName);
+            _logger.LogInformation("BNPL Plan Type updated: Id={Id}, BNPL Plan Type Name={Name}", updatedBNPL_PlanType.Bnpl_PlanTypeID, updatedBNPL_PlanType.Bnpl_PlanTypeName);
             return updatedBNPL_PlanType;
         }
 
@@ -90,7 +86,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (!deleted)
                 throw new Exception("BNPL plan type not found");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Delete, "BNPL plan type", id, $"BNPLPlanTypeId={id}");
+            _logger.LogInformation("BNPL plan type deleted successfully: Id={Id}", id); 
         }
 
         //Custom Query Operations

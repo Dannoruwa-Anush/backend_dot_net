@@ -14,19 +14,15 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
-        // Audit Logging
-        private readonly IAuditLogService _auditLogService;
-
         // Service-Level (Technical) Logging
         private readonly ILogger<CustomerServiceImpl> _logger;
 
         // Constructor
-        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, IAuditLogService auditLogService, ILogger<CustomerServiceImpl> logger)
+        public CustomerServiceImpl(ICustomerRepository repository, IAppUnitOfWork unitOfWork, ILogger<CustomerServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
-            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -60,7 +56,8 @@ namespace WebApplication1.Services.ServiceImpl
                 await _repository.AddAsync(customer);
                 await _unitOfWork.CommitAsync();
 
-                _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Customer", customer.CustomerID, customer.PhoneNo);
+                _logger.LogInformation("Customer created: Id={Id}, PhoneNo={PhoneNo}", customer.CustomerID, customer.PhoneNo);
+                
                 return customer;
             }
             catch (Exception ex)
@@ -87,7 +84,8 @@ namespace WebApplication1.Services.ServiceImpl
             if (updatedCustomer == null)
                 throw new Exception("Customer profile update failed.");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Customer", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
+            _logger.LogInformation("Customer updated: Id={Id}, PhoneNo={PhoneNo}", updatedCustomer.CustomerID, updatedCustomer.PhoneNo);
+            
             return updatedCustomer;
         }
 

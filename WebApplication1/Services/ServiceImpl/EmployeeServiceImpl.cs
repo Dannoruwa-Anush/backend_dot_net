@@ -15,20 +15,16 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         //logger: for auditing
-        // Audit Logging
-        private readonly IAuditLogService _auditLogService;
-
         // Service-Level (Technical) Logging
         private readonly ILogger<EmployeeServiceImpl> _logger;
 
         // Constructor
-        public EmployeeServiceImpl(IEmployeeRepository repository, IUserRepository userRepository, IAppUnitOfWork unitOfWork, IAuditLogService auditLogService, ILogger<EmployeeServiceImpl> logger)
+        public EmployeeServiceImpl(IEmployeeRepository repository, IUserRepository userRepository, IAppUnitOfWork unitOfWork, ILogger<EmployeeServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
-            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -60,7 +56,7 @@ namespace WebApplication1.Services.ServiceImpl
                 await _repository.AddAsync(employee);
                 await _unitOfWork.CommitAsync();
 
-                _auditLogService.LogEntityAction(AuditActionTypeEnum.Create, "Employee", employee.EmployeeID, employee.EmployeeName);
+                _logger.LogInformation("Employee created: Id={Id}, PhoneNo={PhoneNo}", employee.EmployeeID, employee.EmployeeName);
                 return employee;
             }
             catch (Exception ex)
@@ -83,7 +79,7 @@ namespace WebApplication1.Services.ServiceImpl
             if (updatedEmployee == null)
                 throw new Exception("Employee update failed.");
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Update, "Employee", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
+            _logger.LogInformation("Employee updated: Id={Id}, PhoneNo={PhoneNo}", updatedEmployee.EmployeeID, updatedEmployee.EmployeeName);
             return updatedEmployee;
         }
 
