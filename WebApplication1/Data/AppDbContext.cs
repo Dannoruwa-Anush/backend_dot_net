@@ -11,10 +11,10 @@ namespace WebApplication1.Data
 {
     public class AppDbContext : DbContext
     {
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserService? _currentUserService;
 
         // Constructor
-        public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUserService) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService? currentUserService) : base(options)
         {
             // Dependency injection
             _currentUserService = currentUserService;
@@ -482,7 +482,7 @@ namespace WebApplication1.Data
         //-------- [Start: ApplyAuditInformation] ---------------
         private void ApplyAuditInformation()
         {
-            var userId = _currentUserService.UserID;
+            var userId = _currentUserService!.UserID;
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             foreach (var entry in ChangeTracker.Entries<BaseModel>())
