@@ -57,7 +57,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             await _repository.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
 
-            _auditLogService.LogEntityAction(AuditActionTypeEnum.Register, "User", user.UserID, user.Email);
+            _logger.LogInformation("Customer registered: Id={Id}, Email={email}", user.UserID, user.Email);
             return user;
         }
 
