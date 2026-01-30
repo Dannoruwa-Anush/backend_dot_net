@@ -68,30 +68,12 @@ builder.Services.AddAutoMapper(
 );
 
 //--------------------[EF Core - MySQL]-------------
-// Interceptor
-builder.Services.AddSingleton<AuditSaveChangesInterceptorServiceImpl>();
-
-// DbContextFactory
-builder.Services.AddDbContextFactory<AppDbContext>(options =>
-{
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    );
-});
+    ));
 
-// DbContext
-builder.Services.AddDbContext<AppDbContext>((sp, options) =>
-{
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    );
-
-    options.AddInterceptors(
-        sp.GetRequiredService<AuditSaveChangesInterceptorServiceImpl>()
-    );
-});
 
 //--------------------[Hangfire - MySQL]--------------------
 /*
