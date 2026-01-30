@@ -11,7 +11,7 @@ namespace WebApplication1.AutoMapperProfiles
             CreateMap<BNPL_PlanSettlementSummary, BNPL_PlanSettlementSummaryResponseDto>()
                 .ForMember(dest => dest.BNPL_PlanResponseDto, opt => opt.MapFrom(src => src.BNPL_PLAN));
 
-            //No Request : because creation willbe handled by backend
+            //No Request : because creation will be handled by backend
         }
     }
 }

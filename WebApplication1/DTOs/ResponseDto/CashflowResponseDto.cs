@@ -14,6 +14,10 @@ namespace WebApplication1.DTOs.ResponseDto
         
         public CashflowPaymentNatureEnum CashflowPaymentNature { get; set; } = CashflowPaymentNatureEnum.Payment;
         
+        public string? PaymentReceiptFileUrl { get; set; }   // Payment receipt
+
+        public string? RefundReceiptFileUrl { get; set; } // Refund receipt
+        
         // Include simplified info about FK: Order 
         public required CustomerOrderResponseDto CustomerOrderResponseDto{ get; set; }
     }
