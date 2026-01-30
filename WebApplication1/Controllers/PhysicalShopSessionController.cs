@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
-using WebApplication1.Models;
 using WebApplication1.Services.IService;
 using WebApplication1.DTOs.ResponseDto;
-using WebApplication1.DTOs.RequestDto;
 using WebApplication1.DTOs.ResponseDto.Common;
 using Microsoft.AspNetCore.Authorization;
 using WebApplication1.Utils.Settings;
@@ -35,8 +33,8 @@ namespace WebApplication1.Controllers
                 return NotFound(new ApiResponseDto<string>(404, "Physical Shop Sessions not found"));
             
             // Model -> ResponseDto
-            var responseDtos = _mapper.Map<IEnumerable<BrandResponseDto>>(sessions);
-            var response = new ApiResponseDto<IEnumerable<BrandResponseDto>>(
+            var responseDtos = _mapper.Map<IEnumerable<PhysicalShopSessionResponseDto>>(sessions);
+            var response = new ApiResponseDto<IEnumerable<PhysicalShopSessionResponseDto>>(
                 200,
                 "All physical Shop Sessions retrieved successfully",
                 responseDtos
@@ -53,8 +51,8 @@ namespace WebApplication1.Controllers
                 return NotFound(new ApiResponseDto<string>(404, "Physical shop session not found"));
 
             // Model -> ResponseDto
-            var responseDto = _mapper.Map<BrandResponseDto>(session);
-            var response = new ApiResponseDto<BrandResponseDto>(200, "Physical shop session retrieved successfully", responseDto);
+            var responseDto = _mapper.Map<PhysicalShopSessionResponseDto>(session);
+            var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(200, "Physical shop session retrieved successfully", responseDto);
             return Ok(response);
         }
 
@@ -66,7 +64,7 @@ namespace WebApplication1.Controllers
             { 
                 var created = await _service.AddPhysicalShopSessionWithSaveAsync();
 
-                var response = new ApiResponseDto<BrandResponseDto>(201, "Physical shop session created successfully");
+                var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(201, "Physical shop session created successfully");
                 return CreatedAtAction(nameof(GetById), response);
             }
             catch (Exception ex)
@@ -89,7 +87,7 @@ namespace WebApplication1.Controllers
             {
                 var updated = await _service.ModifyPhysicalShopSessionWithTransactionAsync(id);
 
-                var response = new ApiResponseDto<BrandResponseDto>(200, "Physical shop session updated successfully");
+                var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(200, "Physical shop session updated successfully");
                 return Ok(response);
             }
             catch (Exception ex)
