@@ -196,6 +196,7 @@ namespace WebApplication1.Services.ServiceImpl
 
             await GenerateAndAttachInvoicePdfAsync(order, invoice);
 
+            _logger.LogInformation("Invoice created: InvoiceId={Id}, OrderId={Name}", invoice.InvoiceID, order.OrderID);
             return invoice;
         }
     }

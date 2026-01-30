@@ -15,18 +15,16 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IBNPL_PlanRepository _repository;
 
         private readonly IBNPL_PlanTypeRepository _bnpl_PlanTypeRepository;
-        private readonly ICustomerOrderRepository _customerOrderRepository;
 
         //logger: for auditing
         private readonly ILogger<BNPL_PlanServiceImpl> _logger;
 
         // Constructor
-        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, ICustomerOrderRepository customerOrderRepository, ILogger<BNPL_PlanServiceImpl> logger)
+        public BNPL_PlanServiceImpl(IBNPL_PlanRepository repository, IBNPL_PlanTypeRepository bnpl_PlanTypeRepository, ILogger<BNPL_PlanServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _bnpl_PlanTypeRepository = bnpl_PlanTypeRepository;
-            _customerOrderRepository = customerOrderRepository;
             _logger = logger;
         }
 
