@@ -38,7 +38,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             _logger = logger;
         }
 
-        //Register
+        //Register: only for super user, others handled in respective services (customer, employee)
         public async Task<User> RegisterUserWithSaveAsync(User user)
         {
             // Trim
@@ -57,7 +57,7 @@ namespace WebApplication1.Services.ServiceImpl.Auth
             await _repository.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Customer registered: Id={Id}, Email={email}", user.UserID, user.Email);
+            _logger.LogInformation("Super user registered: Id={Id}, Email={email}", user.UserID, user.Email);
             return user;
         }
 
