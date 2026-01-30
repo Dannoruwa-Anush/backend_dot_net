@@ -68,11 +68,28 @@ builder.Services.AddAutoMapper(
 );
 
 //--------------------[EF Core - MySQL]-------------
-builder.Services.AddDbContext<AppDbContext>(options =>
+// Add Audit Interceptor as Singleton
+builder.Services.AddSingleton<AuditSaveChangesInterceptorServiceImpl>();
+
+// Add DbContextFactory (required for interceptor writes)
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+{
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    ));
+    );
+});
+
+// Add AppDbContext with interceptor
+builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+{
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    );
+
+    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptorServiceImpl>());
+});
 
 //--------------------[Hangfire - MySQL]--------------------
 /*
@@ -121,6 +138,7 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<ICurrentUserService, CurrentUserServiceImpl>()
                 .AddScoped<IAuditLogService, AuditLogServiceImpl>()
                 .AddScoped<IRequestContextService, RequestContextServiceImpl>()
+                .AddScoped<AuditSaveChangesInterceptorServiceImpl>()
 
                 .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IDocumentGenerationService, DocumentGenerationServiceImpl>()

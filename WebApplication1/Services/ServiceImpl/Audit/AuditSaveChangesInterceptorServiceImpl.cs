@@ -10,28 +10,25 @@ using WebApplication1.Utils.SystemConstants;
 
 namespace WebApplication1.Services.ServiceImpl.Audit
 {
-    //Note: captures all entity changes and saves them in AuditLog
+    // Note:
+    // Captures all entity changes and writes them to AuditLog.
+    // Uses DbContextFactory to safely create DbContext inside a singleton interceptor.
     public sealed class AuditSaveChangesInterceptorServiceImpl : SaveChangesInterceptor
     {
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IRequestContextService _requestContextService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
-
         private readonly List<AuditEntrySnapshot> _pendingAudits = new();
 
-        // Constructor
-        public AuditSaveChangesInterceptorServiceImpl(ICurrentUserService currentUserService, IRequestContextService requestContextService, IDbContextFactory<AppDbContext> dbContextFactory)
+        public AuditSaveChangesInterceptorServiceImpl(
+            IServiceProvider serviceProvider,
+            IDbContextFactory<AppDbContext> dbContextFactory)
         {
-            // Dependency injection
-            _currentUserService = currentUserService;
-            _requestContextService = requestContextService;
+            _serviceProvider = serviceProvider;
             _dbContextFactory = dbContextFactory;
         }
 
-        // BEFORE SAVE
-        public override InterceptionResult<int> SavingChanges(
-            DbContextEventData eventData,
-            InterceptionResult<int> result)
+        // ===== Capture BEFORE SAVE =====
+        public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
         {
             var context = eventData.Context;
             if (context == null) return result;
@@ -52,13 +49,10 @@ namespace WebApplication1.Services.ServiceImpl.Audit
             return result;
         }
 
-        // AFTER SAVE (SYNC)
-        public override int SavedChanges(
-            SaveChangesCompletedEventData eventData,
-            int result)
+        // ===== AFTER SAVE SYNC =====
+        public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
         {
-            if (_pendingAudits.Count == 0)
-                return result;
+            if (_pendingAudits.Count == 0) return result;
 
             WriteAuditLogs();
             _pendingAudits.Clear();
@@ -66,11 +60,10 @@ namespace WebApplication1.Services.ServiceImpl.Audit
             return result;
         }
 
-        // AFTER SAVE (ASYNC)
+        // ===== AFTER SAVE ASYNC =====
         public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
         {
-            if (_pendingAudits.Count == 0)
-                return result;
+            if (_pendingAudits.Count == 0) return result;
 
             await WriteAuditLogsAsync(cancellationToken);
             _pendingAudits.Clear();
@@ -78,8 +71,7 @@ namespace WebApplication1.Services.ServiceImpl.Audit
             return result;
         }
 
-
-        // WRITE AUDIT LOGS (SYNC)
+        // ===== SYNC WRITE =====
         private void WriteAuditLogs()
         {
             using var context = _dbContextFactory.CreateDbContext();
@@ -87,7 +79,7 @@ namespace WebApplication1.Services.ServiceImpl.Audit
             context.SaveChanges();
         }
 
-        // WRITE AUDIT LOGS (ASYNC)
+        // ===== ASYNC WRITE =====
         private async Task WriteAuditLogsAsync(CancellationToken ct)
         {
             using var context = _dbContextFactory.CreateDbContext();
@@ -95,9 +87,14 @@ namespace WebApplication1.Services.ServiceImpl.Audit
             await context.SaveChangesAsync(ct);
         }
 
+        // ===== CORE WRITE LOGIC =====
         private void Write(AppDbContext context)
         {
-            var user = _currentUserService.UserProfile;
+            using var scope = _serviceProvider.CreateScope();
+
+            var currentUserService = scope.ServiceProvider.GetRequiredService<ICurrentUserService>();
+            var requestContextService = scope.ServiceProvider.GetRequiredService<IRequestContextService>();
+            var user = currentUserService.UserProfile;
             var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             foreach (var audit in _pendingAudits)
@@ -115,8 +112,8 @@ namespace WebApplication1.Services.ServiceImpl.Audit
                     Role = user?.Role ?? AuditTrailSystemConstants.AnonymousRole,
                     Position = user?.EmployeePosition ?? AuditTrailSystemConstants.PublicPosition,
 
-                    IpAddress = _requestContextService.IpAddress,
-                    UserAgent = _requestContextService.UserAgent,
+                    IpAddress = requestContextService.IpAddress,
+                    UserAgent = requestContextService.UserAgent,
 
                     Changes = audit.Changes,
                     CreatedAt = now
