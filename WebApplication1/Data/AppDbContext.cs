@@ -407,8 +407,20 @@ namespace WebApplication1.Data
             ApplyTimestamps();
             ApplyRowVersion();
             ApplyAuditInformation(); // only CreatedBy / UpdatedBy
-            AddAuditTrail();
-            return base.SaveChanges();
+
+            // Prepare audit logs (temporary ID, no Changes yet)
+            var auditEntries = PrepareAuditEntries();
+
+            // Save changes so DB assigns IDs
+            var result = base.SaveChanges();
+
+            // Update audit logs with proper ID and real Changes
+            UpdateAuditEntriesWithIdsAndChanges(auditEntries);
+
+            // Save the updated audit logs
+            base.SaveChanges();
+
+            return result;
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -417,8 +429,16 @@ namespace WebApplication1.Data
             ApplyTimestamps();
             ApplyRowVersion();
             ApplyAuditInformation(); // only CreatedBy / UpdatedBy
-            AddAuditTrail();
-            return await base.SaveChangesAsync(cancellationToken);
+
+            var auditEntries = PrepareAuditEntries();
+
+            var result = await base.SaveChangesAsync(cancellationToken);
+
+            UpdateAuditEntriesWithIdsAndChanges(auditEntries);
+
+            await base.SaveChangesAsync(cancellationToken);
+
+            return result;
         }
 
         //Helper method : Time Zone
@@ -507,7 +527,7 @@ namespace WebApplication1.Data
         //-------- [End: ApplyAuditInformation] ---------------
 
         //-------- [Start: captures all entity changes and saves them in AuditLogs] ------
-        private void AddAuditTrail()
+        private List<AuditLog> PrepareAuditEntries()
         {
             var user = _currentUserService.UserProfile;
             var utcNow = DateTime.UtcNow;
@@ -524,25 +544,47 @@ namespace WebApplication1.Data
                      e.State == EntityState.Deleted))
                 .ToList();
 
+            var auditEntries = new List<AuditLog>();
+
             foreach (var entry in entries)
             {
-                AuditLogs.Add(new AuditLog
+                var changes = GetChangedProperties(entry); // Capture BEFORE SaveChanges()
+
+                var audit = new AuditLog
                 {
                     Action = entry.State.ToString(),
                     EntityName = entry.Entity.GetType().Name,
-                    EntityId = GetPrimaryKey(entry),
-
+                    EntityId = 0, // Temporary, will update after DB assigns ID
                     UserId = user?.UserID,
                     Email = user?.Email ?? AuditTrailSystemConstants.SystemEmail,
                     Role = user?.Role ?? AuditTrailSystemConstants.AnonymousRole,
                     Position = user?.EmployeePosition ?? AuditTrailSystemConstants.PublicPosition,
-
                     IpAddress = ip,
                     UserAgent = userAgent,
-
-                    Changes = GetChangedProperties(entry),
+                    Changes = changes, // captured BEFORE SaveChanges()
                     CreatedAt = utcNow
-                });
+                };
+
+                auditEntries.Add(audit);
+                AuditLogs.Add(audit);
+            }
+
+            return auditEntries;
+        }
+
+        private void UpdateAuditEntriesWithIdsAndChanges(List<AuditLog> auditEntries)
+        {
+            foreach (var audit in auditEntries)
+            {
+                var entry = ChangeTracker.Entries()
+                    .FirstOrDefault(e => e.Entity.GetType().Name == audit.EntityName &&
+                                         e.State != EntityState.Detached);
+
+                if (entry != null)
+                {
+                    audit.EntityId = GetPrimaryKey(entry); // update to correct DB ID
+                                                           // No need to recalc Changes; we already captured it
+                }
             }
         }
 
@@ -562,36 +604,21 @@ namespace WebApplication1.Data
             {
                 var propName = prop.Metadata.Name;
 
-                // REDACT sensitive fields
                 if (SensitiveFields.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
                     if (entry.State == EntityState.Modified)
-                    {
                         changes[propName] = new { Old = "REDACTED", New = "REDACTED" };
-                    }
                     else
-                    {
                         changes[propName] = "REDACTED";
-                    }
                     continue;
                 }
 
                 if (entry.State == EntityState.Added)
-                {
                     changes[propName] = prop.CurrentValue;
-                }
                 else if (entry.State == EntityState.Modified && prop.IsModified)
-                {
-                    changes[propName] = new
-                    {
-                        Old = prop.OriginalValue,
-                        New = prop.CurrentValue
-                    };
-                }
+                    changes[propName] = new { Old = prop.OriginalValue, New = prop.CurrentValue };
                 else if (entry.State == EntityState.Deleted)
-                {
                     changes[propName] = prop.OriginalValue;
-                }
             }
 
             return JsonSerializer.Serialize(changes);
