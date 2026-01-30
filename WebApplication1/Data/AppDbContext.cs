@@ -8,6 +8,7 @@ using WebApplication1.Models.Base;
 using WebApplication1.Services.IService.Audit;
 using WebApplication1.Services.IService.Auth;
 using WebApplication1.Utils.Helpers;
+using WebApplication1.Utils.SystemConstants;
 
 namespace WebApplication1.Data
 {
@@ -489,28 +490,34 @@ namespace WebApplication1.Data
         private void ApplyAuditInformation()
         {
             var userId = _currentUserService.UserID;
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             foreach (var entry in ChangeTracker.Entries<BaseModel>())
             {
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedByUserID = userId;
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    entry.Entity.CreatedAt = now;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedByUserID = userId;
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.UpdatedAt = now;
                 }
             }
         }
         //-------- [End: ApplyAuditInformation] ---------------
 
         //-------- [Start: captures all entity changes and saves them in AuditLogs] ------
+        private const string SystemEmail = "SYSTEM";
+        private const string AnonymousRole = "Anonymous";
+        private const string PublicPosition = "Public";
+
         private void AddAuditTrail()
         {
             var user = _currentUserService.UserProfile;
-            var utcNow = DateTime.UtcNow;
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
 
             var ip = _requestContextService.IpAddress;
             var userAgent = _requestContextService.UserAgent;
@@ -532,25 +539,29 @@ namespace WebApplication1.Data
                     EntityName = entry.Entity.GetType().Name,
                     EntityId = GetPrimaryKey(entry),
 
-                    UserId = user.UserID ?? throw new InvalidOperationException("UserID is null"),
-                    Email = user.Email!,
-                    Role = user.Role!,
-                    Position = user.EmployeePosition!,
+                    UserId = user?.UserID,
+                    Email = user?.Email ?? AuditTrailSystemConstants.SystemEmail,
+                    Role = user?.Role ?? AuditTrailSystemConstants.AnonymousRole,
+                    Position = user?.EmployeePosition ?? AuditTrailSystemConstants.PublicPosition,
 
                     IpAddress = ip,
                     UserAgent = userAgent,
 
                     Changes = GetChangedProperties(entry),
-                    CreatedAt = utcNow
+                    CreatedAt = now
                 });
             }
         }
 
         //Helper method: Get Primary Key
-        private static int GetPrimaryKey(EntityEntry entry)
+        private static int? GetPrimaryKey(EntityEntry entry)
         {
             var key = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
-            return key?.CurrentValue is int id ? id : 0;
+
+            if (key == null || key.IsTemporary)
+                return null;
+
+            return key.CurrentValue as int?;
         }
 
         //Helper method: Get Changed Properties
@@ -565,14 +576,9 @@ namespace WebApplication1.Data
                 // REDACT sensitive fields
                 if (SensitiveFields.Contains(propName, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (entry.State == EntityState.Modified)
-                    {
-                        changes[propName] = new { Old = "REDACTED", New = "REDACTED" };
-                    }
-                    else
-                    {
-                        changes[propName] = "REDACTED";
-                    }
+                    changes[propName] = entry.State == EntityState.Modified
+                        ? new { Old = "REDACTED", New = "REDACTED" }
+                        : "REDACTED";
                     continue;
                 }
 

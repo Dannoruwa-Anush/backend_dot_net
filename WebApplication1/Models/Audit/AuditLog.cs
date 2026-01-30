@@ -11,9 +11,11 @@ namespace WebApplication1.Models.Audit
 
         public string Action { get; set; } = null!; // Added / Modified / Deleted
         public string EntityName { get; set; } = null!;
-        public int EntityId { get; set; } // Primary key of entity
+        
+        // Primary key of entity
+        public int? EntityId { get; set; } // Nullable because Added entities don't have real IDs yet
 
-        public int UserId { get; set; }
+        public int? UserId { get; set; }  // Nullable for public/system actions
         public string Email { get; set; } = null!;
         public string Role { get; set; } = null!;
         public string Position { get; set; } = null!;
