@@ -58,7 +58,7 @@ namespace WebApplication1.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin, Employee")] // JWT is required
-        public async Task<IActionResult> Open()
+        public async Task<IActionResult> Create()
         {
             try
             { 
@@ -81,7 +81,7 @@ namespace WebApplication1.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = AuthorizationPolicies.ManagerOnly)]  // JWT is required
-        public async Task<IActionResult> Close(int id)
+        public async Task<IActionResult> Update(int id)
         {
             try
             {
