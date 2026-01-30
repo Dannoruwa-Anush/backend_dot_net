@@ -146,5 +146,8 @@ namespace WebApplication1.Services.ServiceImpl
                 throw;
             }
         }
+
+        public async Task<PhysicalShopSession?> GetActivePhysicalShopSessionForTodayAsync()=>
+            await _repository.GetActiveSessionForTodayAsync();
     }
 }

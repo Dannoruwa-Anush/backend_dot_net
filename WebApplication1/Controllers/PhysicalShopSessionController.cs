@@ -56,6 +56,20 @@ namespace WebApplication1.Controllers
             return Ok(response);
         }
 
+        [HttpGet("active")]
+        [AllowAnonymous] // JWT is not required
+        public async Task<IActionResult> GeActiveForToday()
+        {
+            var session = await _service.GetActivePhysicalShopSessionForTodayAsync();
+            if (session == null)
+                return NotFound(new ApiResponseDto<string>(404, "Physical shop session not found for today"));
+
+            // Model -> ResponseDto
+            var responseDto = _mapper.Map<PhysicalShopSessionResponseDto>(session);
+            var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(200, "Physical shop session for today retrieved successfully", responseDto);
+            return Ok(response);
+        }
+
         [HttpPost]
         [Authorize(Roles = "Admin, Employee")] // JWT is required
         public async Task<IActionResult> Create()

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Repositories.IRepository;
+using WebApplication1.Utils.Helpers;
 
 namespace WebApplication1.Repositories.RepositoryImpl
 {
@@ -51,6 +52,21 @@ namespace WebApplication1.Repositories.RepositoryImpl
         {
             return await _context.PhysicalShopSessions
                 .AnyAsync(s => s.IsActive && s.ClosedAt == null);
+        }
+
+        public async Task<PhysicalShopSession?> GetActiveSessionForTodayAsync()
+        {
+            var todayStart = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow).Date;
+            var tomorrowStart = todayStart.AddDays(1);
+
+            return await _context.PhysicalShopSessions
+                .Where(s =>
+                    s.IsActive &&
+                    s.ClosedAt == null &&
+                    s.OpenedAt >= todayStart &&
+                    s.OpenedAt < tomorrowStart
+                )
+                .FirstOrDefaultAsync();
         }
     }
 }

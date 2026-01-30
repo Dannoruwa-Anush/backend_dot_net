@@ -13,5 +13,6 @@ namespace WebApplication1.Repositories.IRepository
         //Custom Query Operations
         Task<PhysicalShopSession?> GetActiveSessionAsync();
         Task<bool> HasActiveSessionAsync();
+        Task<PhysicalShopSession?> GetActiveSessionForTodayAsync();
     }
 }

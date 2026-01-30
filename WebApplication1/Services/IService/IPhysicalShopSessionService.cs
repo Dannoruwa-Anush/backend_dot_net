@@ -15,5 +15,6 @@ namespace WebApplication1.Services.IService
         Task<PhysicalShopSession> ModifyPhysicalShopSessionWithTransactionAsync(int id);
 
         //Custom Query Operations
+        Task<PhysicalShopSession?> GetActivePhysicalShopSessionForTodayAsync();
     }
 }
