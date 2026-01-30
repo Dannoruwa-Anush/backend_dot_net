@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260130052014_bnpl_db_modified_lfv1")]
-    partial class bnpl_db_modified_lfv1
+    [Migration("20260130090839_bnpl_db_modified_fv1")]
+    partial class bnpl_db_modified_fv1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -48,7 +48,7 @@ namespace WebApplication1.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("EntityId")
+                    b.Property<int?>("EntityId")
                         .HasColumnType("int");
 
                     b.Property<string>("EntityName")
@@ -69,7 +69,7 @@ namespace WebApplication1.Migrations
                     b.Property<string>("UserAgent")
                         .HasColumnType("longtext");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

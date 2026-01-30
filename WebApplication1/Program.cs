@@ -68,10 +68,10 @@ builder.Services.AddAutoMapper(
 );
 
 //--------------------[EF Core - MySQL]-------------
-// Add Audit Interceptor as Singleton
+// Interceptor
 builder.Services.AddSingleton<AuditSaveChangesInterceptorServiceImpl>();
 
-// Add DbContextFactory (required for interceptor writes)
+// DbContextFactory
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
 {
     options.UseMySql(
@@ -80,7 +80,7 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
     );
 });
 
-// Add AppDbContext with interceptor
+// DbContext
 builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 {
     options.UseMySql(
@@ -88,7 +88,9 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
     );
 
-    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptorServiceImpl>());
+    options.AddInterceptors(
+        sp.GetRequiredService<AuditSaveChangesInterceptorServiceImpl>()
+    );
 });
 
 //--------------------[Hangfire - MySQL]--------------------
@@ -138,7 +140,6 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<ICurrentUserService, CurrentUserServiceImpl>()
                 .AddScoped<IAuditLogService, AuditLogServiceImpl>()
                 .AddScoped<IRequestContextService, RequestContextServiceImpl>()
-                .AddScoped<AuditSaveChangesInterceptorServiceImpl>()
 
                 .AddScoped<IFileService, FileServiceImpl>()
                 .AddScoped<IDocumentGenerationService, DocumentGenerationServiceImpl>()
@@ -159,9 +160,9 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
                 .AddScoped<IPhysicalShopSessionService, PhysicalShopSessionServiceImpl>()
                 .AddScoped<IInvoiceService, InvoiceServiceImpl>();
 
-                //Hangfire
-                //.AddScoped<IDueDateAdjustmentHangfireJobService, DueDateAdjustmentHangfireJobServiceImpl>()
-                //.AddScoped<IOrderAutoCancellationHangfireJobService, OrderAutoCancellationHangfireJobServiceImpl>();
+//Hangfire
+//.AddScoped<IDueDateAdjustmentHangfireJobService, DueDateAdjustmentHangfireJobServiceImpl>()
+//.AddScoped<IOrderAutoCancellationHangfireJobService, OrderAutoCancellationHangfireJobServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
