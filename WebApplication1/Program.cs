@@ -145,6 +145,7 @@ builder.Services.AddScoped<IAuthService, AuthServiceImpl>()
 //Hangfire
 //.AddScoped<IDueDateAdjustmentHangfireJobService, DueDateAdjustmentHangfireJobServiceImpl>()
 //.AddScoped<IOrderAutoCancellationHangfireJobService, OrderAutoCancellationHangfireJobServiceImpl>();
+//.AddScoped<ILatestActivePhysicalShopSessionAutoCloseHangfireJobService, LatestActivePhysicalShopSessionAutoCloseHangfireJobServiceImpl>();
 
 //--------------------[Configure JWT authentication]-----------------------
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
