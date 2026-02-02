@@ -17,5 +17,6 @@ namespace WebApplication1.Services.IService
         //Custom Query Operations
         Task<PhysicalShopSession?> GetActivePhysicalShopSessionForTodayAsync();
         Task<PhysicalShopSession?> GetLatestActivePhysicalShopSessionAsync();
+        Task AutoCloseLatestActiveSessionAsync();
     }
 }

@@ -292,6 +292,17 @@ using (var scope = app.Services.CreateScope())
             TimeZone = sriLankaTimeZone
         }
     );
+
+    // TASK 3: Latest Active Physical ShopSession Auto Clos (At 22.00 h)
+    RecurringJob.AddOrUpdate<ILatestActivePhysicalShopSessionAutoCloseHangfireJobService>(
+        "Order auto-cancellation",
+        job => job.RunAsync(),
+        Cron.Daily(22, 0), // runs every day at 22:00
+        new RecurringJobOptions
+        {
+            TimeZone = sriLankaTimeZone
+        }
+    );
 }
 */
 

@@ -198,5 +198,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
                     i.CustomerOrder.CustomerID == customerId
                 );
         }
+
+        public async Task<Invoice?> GetLatestUnpaidInstallmentInvoiceByOrderIdAsync(int orderId)
+        {
+            return await _context.Invoices
+                .Where(i =>
+                    i.OrderID == orderId &&
+                    i.InvoiceStatus == InvoiceStatusEnum.Unpaid &&
+                    i.InvoiceType == InvoiceTypeEnum.Bnpl_Installment_Pay)
+                .OrderByDescending(i => i.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
     }
 }
