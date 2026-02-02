@@ -85,7 +85,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin, Employee")] // JWT is required
+        [Authorize(Roles = "Admin")] // JWT is required
         public async Task<IActionResult> Create()
         {
             try
