@@ -77,6 +77,12 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 .Include(i => i.CustomerOrder)
                     .ThenInclude(co => co!.Customer)
                         .ThenInclude(c => c!.User)
+                
+                // Only Paid / Refund cashflows
+                .Include(i => i.Cashflows
+                    .Where(c =>
+                        c.CashflowPaymentNature == CashflowPaymentNatureEnum.Payment ||
+                        c.CashflowPaymentNature == CashflowPaymentNatureEnum.Refund))    
                 .AsQueryable();
 
             // Apply filters

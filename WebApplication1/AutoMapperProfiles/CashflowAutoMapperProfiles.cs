@@ -8,8 +8,7 @@ namespace WebApplication1.AutoMapperProfiles
     {
         public CashflowAutoMapperProfiles()
         {
-            CreateMap<Cashflow, CashflowResponseDto>()
-              .ForMember(dest => dest.CustomerOrderResponseDto, opt => opt.MapFrom(src => src.Invoice!.CustomerOrder));
+            CreateMap<Cashflow, CashflowResponseDto>();
         }   
     }
 }
