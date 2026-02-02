@@ -16,6 +16,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly ICustomerOrderService _customerOrderService;
+        private readonly IPhysicalShopSessionService _physicalShopSessionService;
         private readonly ICashflowService _cashflowService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
@@ -29,6 +30,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         IAppUnitOfWork unitOfWork,
 
         ICustomerOrderService customerOrderService,
+        IPhysicalShopSessionService physicalShopSessionService,
         ICashflowService cashflowService,
         IBNPL_InstallmentService bNPL_InstallmentService,
         IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
@@ -39,6 +41,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             _unitOfWork = unitOfWork;
 
             _customerOrderService = customerOrderService;
+            _physicalShopSessionService = physicalShopSessionService;
             _cashflowService = cashflowService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
@@ -57,7 +60,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             var order = invoice.CustomerOrder
                 ?? throw new Exception("Order not loaded");
 
-            ValidateBeforePayment(order);
+            await ValidateBeforePaymentAsync(order);
 
             await _unitOfWork.BeginTransactionAsync();
             Cashflow newCashflow;
@@ -177,8 +180,11 @@ namespace WebApplication1.Services.ServiceImpl.Helper
         }
 
         //Helper : to valiadate payment
-        private void ValidateBeforePayment(CustomerOrder order)
+        private async Task ValidateBeforePaymentAsync(CustomerOrder order)
         {
+            // =====================================================
+            // Order Status Validation
+            // =====================================================
             switch (order.OrderStatus)
             {
                 // These states allow payments
@@ -201,21 +207,43 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                     throw new InvalidOperationException("Invalid order status.");
             }
 
-            // -------------------------
+            // =====================================================
+            // Physical Shop Session Validation (NEW)
+            // =====================================================
+            if (order.OrderSource == OrderSourceEnum.PhysicalShop)
+            {
+                if (!order.PhysicalShopSessionId.HasValue)
+                    throw new InvalidOperationException(
+                        "Physical shop orders must be associated with a shop session.");
+
+                var activeSession =
+                    await _physicalShopSessionService
+                        .GetLatestActivePhysicalShopSessionAsync();
+
+                if (activeSession == null ||
+                    activeSession.PhysicalShopSessionID != order.PhysicalShopSessionId)
+                {
+                    throw new InvalidOperationException(
+                        "Physical shop session is closed. Payment is not allowed.");
+                }
+            }
+
+            // =====================================================
             // BNPL Plan Validation
-            // -------------------------
+            // =====================================================
             var bnplPlan = order.BNPL_PLAN;
 
             // Full payment (no BNPL plan)
             if (bnplPlan == null)
                 return;
 
-            // BNPL payments
             if (bnplPlan.Bnpl_Status == BnplStatusEnum.Completed)
-                throw new InvalidOperationException("BNPL plan is already completed. No additional payments are allowed.");
+                throw new InvalidOperationException(
+                    "BNPL plan is already completed. No additional payments are allowed.");
 
             if (bnplPlan.Bnpl_RemainingInstallmentCount <= 0)
-                throw new InvalidOperationException("No remaining installments exist for this BNPL plan.");
+                throw new InvalidOperationException(
+                    "No remaining installments exist for this BNPL plan.");
         }
     }
 }
