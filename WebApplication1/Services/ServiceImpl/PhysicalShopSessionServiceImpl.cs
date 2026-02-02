@@ -70,7 +70,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 var session = await _repository.GetByIdAsync(id)
                     ?? throw new KeyNotFoundException();
-                    
+
                 // If closing the session, cancel unsettled orders
                 if (!session.IsActive)
                 {
@@ -147,7 +147,10 @@ namespace WebApplication1.Services.ServiceImpl
             }
         }
 
-        public async Task<PhysicalShopSession?> GetActivePhysicalShopSessionForTodayAsync()=>
+        public async Task<PhysicalShopSession?> GetActivePhysicalShopSessionForTodayAsync() =>
             await _repository.GetActiveSessionForTodayAsync();
+
+        public async Task<PhysicalShopSession?> GetLatestActivePhysicalShopSessionAsync() =>
+            await _repository.GetLatestActiveSessionAsync();
     }
 }

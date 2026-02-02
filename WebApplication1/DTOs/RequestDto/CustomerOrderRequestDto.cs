@@ -16,6 +16,9 @@ namespace WebApplication1.DTOs.RequestDto
         [Required(ErrorMessage = "At least one electronic item must be added")]
         public List<CustomerOrderElectronicItemRequestDto> CustomerOrderElectronicItems { get; set; } = new List<CustomerOrderElectronicItemRequestDto>();
 
+        //Fk
+        public int? PhysicalShopSessionId { get; set; }
+
         //FK
         // CustomerID is nullable to support manager's direct orders
         // Used ONLY when OrderSource == PhysicalShop

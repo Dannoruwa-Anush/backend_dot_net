@@ -68,5 +68,13 @@ namespace WebApplication1.Repositories.RepositoryImpl
                 )
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<PhysicalShopSession?> GetLatestActiveSessionAsync()
+        {
+            return await _context.PhysicalShopSessions
+                .Where(s => s.IsActive && s.ClosedAt == null)
+                .OrderByDescending(s => s.OpenedAt)
+                .FirstOrDefaultAsync();
+        }
     }
 }

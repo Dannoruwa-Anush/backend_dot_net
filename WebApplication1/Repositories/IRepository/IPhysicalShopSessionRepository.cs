@@ -14,5 +14,6 @@ namespace WebApplication1.Repositories.IRepository
         Task<PhysicalShopSession?> GetActiveSessionAsync();
         Task<bool> HasActiveSessionAsync();
         Task<PhysicalShopSession?> GetActiveSessionForTodayAsync();
+        Task<PhysicalShopSession?> GetLatestActiveSessionAsync();
     }
 }

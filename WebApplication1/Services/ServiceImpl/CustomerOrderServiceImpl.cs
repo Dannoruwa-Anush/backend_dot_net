@@ -24,6 +24,7 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly ICurrentUserService _currentUserService;
         private readonly ICustomerService _customerService;
         private readonly IElectronicItemService _electronicItemService;
+        private readonly IPhysicalShopSessionService _physicalShopSessionService;
         private readonly IBNPL_InstallmentService _bNPL_InstallmentService;
         private readonly IBNPL_PlanSettlementSummaryService _bnpl_planSettlementSummaryService;
         private readonly IBNPL_PlanService _bNPL_PlanService;
@@ -43,6 +44,7 @@ namespace WebApplication1.Services.ServiceImpl
             ICurrentUserService currentUserService,
             ICustomerService customerService,
             IElectronicItemService electronicItemService,
+            IPhysicalShopSessionService physicalShopSessionService,
             IBNPL_InstallmentService bNPL_InstallmentService,
             IBNPL_PlanSettlementSummaryService bnpl_planSettlementSummaryService,
             IBNPL_PlanService bNPL_PlanService,
@@ -59,6 +61,7 @@ namespace WebApplication1.Services.ServiceImpl
             _currentUserService = currentUserService;
             _customerService = customerService;
             _electronicItemService = electronicItemService;
+            _physicalShopSessionService = physicalShopSessionService;
             _bNPL_InstallmentService = bNPL_InstallmentService;
             _bnpl_planSettlementSummaryService = bnpl_planSettlementSummaryService;
             _bNPL_PlanService = bNPL_PlanService;
@@ -152,6 +155,28 @@ namespace WebApplication1.Services.ServiceImpl
 
                 // Who created the order (audit)
                 customerOrder.CreatedByUserID = _currentUserService.UserID ?? throw new UnauthorizedAccessException("User not authenticated");
+
+                // =====================================================
+                // Physical Shop Session Validation
+                // =====================================================
+                if (createRequest.OrderSource == OrderSourceEnum.PhysicalShop)
+                {
+                    var activeSession = await _physicalShopSessionService
+                        .GetLatestActivePhysicalShopSessionAsync();
+
+                    if (activeSession == null)
+                        throw new InvalidOperationException(
+                            "No active physical shop session found. Please open a shop session first.");
+
+                    // Attach active session
+                    customerOrder.PhysicalShopSessionId =
+                        activeSession.PhysicalShopSessionID;
+                }
+                else
+                {
+                    // Online orders must not have a physical session
+                    customerOrder.PhysicalShopSessionId = null;
+                }
 
                 // =====================================================
                 // Build Items, Stock & Totals

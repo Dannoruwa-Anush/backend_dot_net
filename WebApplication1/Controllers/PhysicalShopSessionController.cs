@@ -56,7 +56,7 @@ namespace WebApplication1.Controllers
             return Ok(response);
         }
 
-        [HttpGet("active")]
+        [HttpGet("today-active")]
         [AllowAnonymous] // JWT is not required
         public async Task<IActionResult> GeActiveForToday()
         {
@@ -67,6 +67,20 @@ namespace WebApplication1.Controllers
             // Model -> ResponseDto
             var responseDto = _mapper.Map<PhysicalShopSessionResponseDto>(session);
             var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(200, "Physical shop session for today retrieved successfully", responseDto);
+            return Ok(response);
+        }
+
+        [HttpGet("latest-active")]
+        [AllowAnonymous] // JWT is not required
+        public async Task<IActionResult> GeLatestActive()
+        {
+            var session = await _service.GetLatestActivePhysicalShopSessionAsync();
+            if (session == null)
+                return NotFound(new ApiResponseDto<string>(404, "Latest physical shop session not found"));
+
+            // Model -> ResponseDto
+            var responseDto = _mapper.Map<PhysicalShopSessionResponseDto>(session);
+            var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(200, "Latest physical shop session retrieved successfully", responseDto);
             return Ok(response);
         }
 
