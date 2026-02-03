@@ -32,7 +32,7 @@ namespace WebApplication1.Controllers
         [Authorize(Roles = "Admin, Employee, Customer")] // JWT is required
         public async Task<IActionResult> GetById(int id)
         {
-            var invoice = await _service.GetInvoiceByIdAsync(id);
+            var invoice = await _service.GetInvoiceWithOrderAsync(id);
             if (invoice == null)
                 return NotFound(new ApiResponseDto<string>(404, "Invoice not found"));
 
