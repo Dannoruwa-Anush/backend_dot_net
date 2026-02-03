@@ -474,8 +474,7 @@ namespace WebApplication1.Services.ServiceImpl
                     OrderStatusEnum.Processing,
                     new HashSet<OrderStatusEnum>
                     {
-                        OrderStatusEnum.Shipped,
-                        OrderStatusEnum.Cancel_Pending
+                        OrderStatusEnum.Shipped
                     }
                 },
                 {
