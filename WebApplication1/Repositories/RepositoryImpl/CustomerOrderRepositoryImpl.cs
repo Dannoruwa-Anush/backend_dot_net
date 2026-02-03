@@ -149,16 +149,26 @@ namespace WebApplication1.Repositories.RepositoryImpl
         // Helper method: Search filter (email, phone, order date)
         private IQueryable<CustomerOrder> ApplySearch(IQueryable<CustomerOrder> query, string? searchKey)
         {
-            if (!string.IsNullOrWhiteSpace(searchKey))
-            {
-                searchKey = searchKey.Trim().ToLower();
-                query = query.Where(o =>
-                    (o.Customer!.User.Email != null && o.Customer.User.Email.ToLower().Contains(searchKey)) ||
-                    (o.Customer.PhoneNo != null && o.Customer.PhoneNo.ToLower().Contains(searchKey)) ||
-                    o.OrderDate.ToString("yyyy-MM-dd").Contains(searchKey)
-                );
-            }
-            return query;
+            if (string.IsNullOrWhiteSpace(searchKey))
+                return query;
+
+            searchKey = searchKey.Trim().ToLower();
+
+            // Try detect date search
+            bool isDateSearch = DateTime.TryParse(searchKey, out var parsedDate);
+
+            return query.Where(o =>
+                // Email search
+                (o.Customer!.User.Email != null &&
+                 o.Customer.User.Email.ToLower().Contains(searchKey))
+
+                // Phone search
+                || (o.Customer.PhoneNo != null &&
+                    o.Customer.PhoneNo.ToLower().Contains(searchKey))
+
+                // Date search (EF Core safe)
+                || (isDateSearch && o.OrderDate.Date == parsedDate.Date)
+            );
         }
 
         public async Task<bool> ExistsByCustomerAsync(int customerId)
