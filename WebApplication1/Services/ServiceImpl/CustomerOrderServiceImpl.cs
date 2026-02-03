@@ -454,38 +454,83 @@ namespace WebApplication1.Services.ServiceImpl
         //Helper Method : ValidateOrderStatusTransition
         private void ValidateOrderStatusTransition(CustomerOrder existingOrder, OrderStatusEnum newStatus, DateTime now)
         {
-            // Dictionary defining valid transitions
-            var validTransitions = new Dictionary<OrderStatusEnum, List<OrderStatusEnum>>
-            {
-                { OrderStatusEnum.Pending, new List<OrderStatusEnum> { OrderStatusEnum.Shipped, OrderStatusEnum.Delivered, OrderStatusEnum.Cancel_Pending } },
-                { OrderStatusEnum.Shipped, new List<OrderStatusEnum> { OrderStatusEnum.Delivered } },
-                { OrderStatusEnum.Cancel_Pending, new List<OrderStatusEnum> { OrderStatusEnum.Cancelled, OrderStatusEnum.DeliveredAfterCancellationRejected } }
-            };
+            if (existingOrder == null)
+                throw new ArgumentNullException(nameof(existingOrder));
 
-            // Add additional validations for special cases
-            if (existingOrder.OrderStatus == OrderStatusEnum.Delivered)
+            var currentStatus = existingOrder.OrderStatus;
+
+            // Dictionary defining valid transitions
+            var validTransitions = new Dictionary<OrderStatusEnum, HashSet<OrderStatusEnum>>
             {
-                if (newStatus == OrderStatusEnum.Cancel_Pending)
                 {
-                    var deliveredDate = existingOrder.DeliveredDate ?? now;
-                    if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
-                        throw new InvalidOperationException("Cannot request cancellation for delivered orders after free trial period.");
-                }
-                else if (!validTransitions[existingOrder.OrderStatus].Contains(newStatus))
+                    OrderStatusEnum.Pending,
+                    new HashSet<OrderStatusEnum>
+                    {
+                        OrderStatusEnum.Processing,
+                        OrderStatusEnum.Cancel_Pending
+                    }
+                },
                 {
-                    throw new InvalidOperationException("Delivered orders can only change to Cancel_Pending within the free trial period.");
+                    OrderStatusEnum.Processing,
+                    new HashSet<OrderStatusEnum>
+                    {
+                        OrderStatusEnum.Shipped,
+                        OrderStatusEnum.Cancel_Pending
+                    }
+                },
+                {
+                    OrderStatusEnum.Shipped,
+                    new HashSet<OrderStatusEnum>
+                    {
+                        OrderStatusEnum.Delivered
+                    }
+                },
+                {
+                    OrderStatusEnum.Delivered,
+                    new HashSet<OrderStatusEnum>
+                    {
+                        OrderStatusEnum.Cancel_Pending
+                    }
+                },
+                {
+                    OrderStatusEnum.Cancel_Pending,
+                    new HashSet<OrderStatusEnum>
+                    {
+                        OrderStatusEnum.Cancelled,
+                        OrderStatusEnum.DeliveredAfterCancellationRejected
+                    }
                 }
+            };
+            
+            // Final states: no transitions allowed
+            if (currentStatus == OrderStatusEnum.Cancelled || currentStatus == OrderStatusEnum.DeliveredAfterCancellationRejected)
+            {
+                throw new InvalidOperationException(
+                    $"{currentStatus} orders cannot change status."
+                );
             }
-            else if (existingOrder.OrderStatus == OrderStatusEnum.Cancelled || existingOrder.OrderStatus == OrderStatusEnum.DeliveredAfterCancellationRejected)
+
+            // Delivered → Cancel_Pending only within free trial period
+            if (currentStatus == OrderStatusEnum.Delivered && newStatus == OrderStatusEnum.Cancel_Pending)
             {
-                throw new InvalidOperationException($"{existingOrder.OrderStatus} orders cannot change status.");
-            }
-            else
-            {
-                if (!validTransitions.ContainsKey(existingOrder.OrderStatus) || !validTransitions[existingOrder.OrderStatus].Contains(newStatus))
+                var deliveredDate = existingOrder.DeliveredDate ?? now;
+
+                if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
                 {
-                    throw new InvalidOperationException($"{existingOrder.OrderStatus} orders cannot move to {newStatus}.");
+                    throw new InvalidOperationException(
+                        "Cannot request cancellation for delivered orders after the free trial period."
+                    );
                 }
+
+                return; // valid transition
+            }
+
+            // Generic transition validation
+            if (!validTransitions.TryGetValue(currentStatus, out var allowedNextStatuses) || !allowedNextStatuses.Contains(newStatus))
+            {
+                throw new InvalidOperationException(
+                    $"{currentStatus} orders cannot move to {newStatus}."
+                );
             }
         }
 
