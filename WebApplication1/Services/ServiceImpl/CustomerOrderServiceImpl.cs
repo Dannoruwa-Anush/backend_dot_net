@@ -496,13 +496,13 @@ namespace WebApplication1.Services.ServiceImpl
                     new HashSet<OrderStatusEnum>
                     {
                         OrderStatusEnum.Cancelled,
-                        OrderStatusEnum.DeliveredAfterCancellationRejected
+                        OrderStatusEnum.CancellationRejected
                     }
                 }
             };
 
             // Final states: no transitions allowed
-            if (currentStatus == OrderStatusEnum.Cancelled || currentStatus == OrderStatusEnum.DeliveredAfterCancellationRejected)
+            if (currentStatus == OrderStatusEnum.Cancelled || currentStatus == OrderStatusEnum.CancellationRejected)
             {
                 throw new InvalidOperationException(
                     $"{currentStatus} orders cannot change status."
@@ -562,8 +562,8 @@ namespace WebApplication1.Services.ServiceImpl
                     order.DeliveredDate = now;
                     break;
 
-                case OrderStatusEnum.DeliveredAfterCancellationRejected:
-                    order.OrderStatus = OrderStatusEnum.DeliveredAfterCancellationRejected;
+                case OrderStatusEnum.CancellationRejected:
+                    order.OrderStatus = OrderStatusEnum.CancellationRejected;
                     order.CancellationRejectionReason = request.CancellationRejectionReason;
                     order.DeliveredDate = now;
                     order.CancellationApproved = false;

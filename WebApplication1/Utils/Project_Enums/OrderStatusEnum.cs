@@ -8,6 +8,6 @@ namespace WebApplication1.Utils.Project_Enums
         Delivered = 4,
         Cancel_Pending = 5, // requested by customer/cashier
         Cancelled = 6,      // by manager (stock released)
-        DeliveredAfterCancellationRejected = 7, // by manager
+        CancellationRejected = 7, // DeliveredAfterCancellationRejected: by manager
     }
 }

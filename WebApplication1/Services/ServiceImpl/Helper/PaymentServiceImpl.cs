@@ -192,7 +192,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 case OrderStatusEnum.Processing:
                 case OrderStatusEnum.Shipped:
                 case OrderStatusEnum.Delivered:
-                case OrderStatusEnum.DeliveredAfterCancellationRejected:
+                case OrderStatusEnum.CancellationRejected:
                     break;
 
                 case OrderStatusEnum.Cancel_Pending:
