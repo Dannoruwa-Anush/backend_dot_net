@@ -184,7 +184,7 @@ namespace WebApplication1.Data
                       .WithMany(os => os.CustomerOrders)
                       .HasForeignKey(os => os.PhysicalShopSessionId)
                       .IsRequired(false)
-                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related BNPL_PlanType exist
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related PhysicalShopSession exist
             });
 
             // -------------------------------------------------------------
@@ -218,6 +218,8 @@ namespace WebApplication1.Data
                     .HasFilter("[IsActive] = 1");
 
                 // (0..1) — (M) CustomerOrder: handled in CustomerOrder entity
+
+                // (0..1) — (M) Cashflow: handled in Cashflow entity
             });
 
             // -------------------------------------------------------------
@@ -263,6 +265,13 @@ namespace WebApplication1.Data
                     .HasColumnType("BINARY(8)")
                     .IsRequired()
                     .IsConcurrencyToken();
+
+                // (M) — (0..1) PhysicalShopSession
+                entity.HasOne(c => c.PhysicalShopSession)
+                      .WithMany(cf => cf.Cashflows)
+                      .HasForeignKey(cf => cf.PhysicalShopSessionId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevents deleting if related PhysicalShopSession exist    
             });
 
             // -------------------------------------------------------------

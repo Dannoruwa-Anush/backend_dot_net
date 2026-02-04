@@ -61,6 +61,7 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                 ?? throw new Exception("Order not loaded");
 
             await ValidateBeforePaymentAsync(order);
+            await ValidateSessionForPaymentAsync(order, invoice);
 
             await _unitOfWork.BeginTransactionAsync();
             Cashflow newCashflow;
@@ -244,6 +245,46 @@ namespace WebApplication1.Services.ServiceImpl.Helper
             if (bnplPlan.Bnpl_RemainingInstallmentCount <= 0)
                 throw new InvalidOperationException(
                     "No remaining installments exist for this BNPL plan.");
+        }
+
+        //Helper : to valiadate physical shop session
+        private async Task ValidateSessionForPaymentAsync(CustomerOrder order, Invoice invoice)
+        {
+            if (order.OrderSource == OrderSourceEnum.PhysicalShop)
+            {
+                if (!order.PhysicalShopSessionId.HasValue)
+                    throw new InvalidOperationException(
+                        "Physical shop orders must be associated with a shop session.");
+
+                var activeSession = await _physicalShopSessionService.GetLatestActivePhysicalShopSessionAsync();
+
+                if (activeSession == null)
+                    throw new InvalidOperationException("No active physical shop session. Cannot process payment.");
+
+                switch (invoice.InvoiceType)
+                {
+                    case InvoiceTypeEnum.Full_Pay:
+                    case InvoiceTypeEnum.Bnpl_Initial_Pay:
+                        // Must match order session
+                        if (order.PhysicalShopSessionId != activeSession.PhysicalShopSessionID)
+                            throw new InvalidOperationException(
+                                "Payment session does not match order session.");
+                        break;
+
+                    case InvoiceTypeEnum.Bnpl_Installment_Pay:
+                        // Can be a different session, just ensure active session exists
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Unsupported invoice type for session validation.");
+                }
+            }
+            else
+            {
+                // Online orders must not have a session
+                if (order.PhysicalShopSessionId.HasValue)
+                    throw new InvalidOperationException("Online orders cannot have a physical shop session.");
+            }
         }
     }
 }

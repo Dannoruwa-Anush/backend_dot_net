@@ -15,19 +15,21 @@ namespace WebApplication1.Services.ServiceImpl
         private readonly IAppUnitOfWork _unitOfWork;
 
         private readonly IInvoiceRepository _invoiceRepository;
-        
+
+        private IPhysicalShopSessionService _physicalShopSessionService;
         private IDocumentGenerationService _documentGenerationService;
 
         //logger: for auditing
         private readonly ILogger<CashflowServiceImpl> _logger;
 
         // Constructor
-        public CashflowServiceImpl(ICashflowRepository repository, IAppUnitOfWork unitOfWork, IInvoiceRepository invoiceRepository, IDocumentGenerationService documentGenerationService, ILogger<CashflowServiceImpl> logger)
+        public CashflowServiceImpl(ICashflowRepository repository, IAppUnitOfWork unitOfWork, IInvoiceRepository invoiceRepository, IPhysicalShopSessionService physicalShopSessionService, IDocumentGenerationService documentGenerationService, ILogger<CashflowServiceImpl> logger)
         {
             // Dependency injection
             _repository = repository;
             _unitOfWork = unitOfWork;
             _invoiceRepository = invoiceRepository;
+            _physicalShopSessionService = physicalShopSessionService;
             _documentGenerationService = documentGenerationService;
             _logger = logger;
         }
@@ -54,9 +56,12 @@ namespace WebApplication1.Services.ServiceImpl
             if (paymentRequest == null)
                 throw new ArgumentNullException(nameof(paymentRequest));
 
-            var invoice = await _invoiceRepository.GetByIdAsync(paymentRequest.InvoiceId);
+            var invoice = await _invoiceRepository.GetInvoiceWithOrderAsync(paymentRequest.InvoiceId);
             if (invoice == null)
                 throw new Exception("Invoice not found");
+
+            var order = invoice.CustomerOrder
+                ?? throw new Exception("Order not loaded for this invoice");
 
             // Determine status (default: Paid)
             var status = CashflowPaymentNatureEnum.Payment;
@@ -66,13 +71,46 @@ namespace WebApplication1.Services.ServiceImpl
             // Build reference
             var cashflowRef = $"CF-{paymentRequest.InvoiceId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
 
+            // Determine session based on order type and invoice type
+            int? sessionId = null;
+            if (order.OrderSource == OrderSourceEnum.PhysicalShop)
+            {
+                var activeSession = await _physicalShopSessionService.GetLatestActivePhysicalShopSessionAsync();
+
+                switch (invoice.InvoiceType)
+                {
+                    case InvoiceTypeEnum.Full_Pay:
+                    case InvoiceTypeEnum.Bnpl_Initial_Pay:
+                        // Must match order session
+                        if (!order.PhysicalShopSessionId.HasValue)
+                            throw new InvalidOperationException("Physical shop order must have a session.");
+
+                        if (activeSession == null || activeSession.PhysicalShopSessionID != order.PhysicalShopSessionId)
+                            throw new InvalidOperationException("Active session does not match order session.");
+
+                        sessionId = order.PhysicalShopSessionId;
+                        break;
+
+                    case InvoiceTypeEnum.Bnpl_Installment_Pay:
+                        // Can be any active session
+                        if (activeSession == null)
+                            throw new InvalidOperationException("No active physical shop session for BNPL installment.");
+                        sessionId = activeSession.PhysicalShopSessionID;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Unsupported invoice type for session validation.");
+                }
+            }
+
             var newCashflow = new Cashflow
             {
                 InvoiceID = paymentRequest.InvoiceId,
                 AmountPaid = invoice.InvoiceAmount,
                 CashflowDate = now,
                 CashflowPaymentNature = status,
-                CashflowRef = cashflowRef
+                CashflowRef = cashflowRef,
+                PhysicalShopSessionId = sessionId,
             };
 
             var duplicate = await _repository.ExistsByCashflowRefAsync(newCashflow.CashflowRef);

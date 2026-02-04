@@ -20,5 +20,11 @@ namespace WebApplication1.Models
         [InverseProperty(nameof(CustomerOrder.PhysicalShopSession))]
         public ICollection<CustomerOrder> CustomerOrders { get; set; } = new List<CustomerOrder>();
         //******* [End: CustomerOrder (M) - PhysicalShopSession (0..1)] ******
+
+        //******* [Start: Cashflow (M) - PhysicalShopSession (0..1)] ******
+        // One Side: Navigation property
+        [InverseProperty(nameof(Cashflow.PhysicalShopSession))]
+        public ICollection<Cashflow> Cashflows { get; set; } = new List<Cashflow>();
+        //******* [End: Cashflow (M) - PhysicalShopSession (0..1)] ******
     }
 }

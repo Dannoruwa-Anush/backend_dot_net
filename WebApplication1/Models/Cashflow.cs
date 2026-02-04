@@ -45,5 +45,16 @@ namespace WebApplication1.Models
         [ForeignKey(nameof(InvoiceID))]
         public Invoice? Invoice { get; set; }
         //******* [Start: Invoice (1) — Cashflow (M)] ****
+
+        //******* [Start: PhysicalShopSession (0..1) - Cashflow (M)] ****
+        //FK
+        // PhysicalShopSessionId is nullable to online orders
+        public int? PhysicalShopSessionId { get; set; }
+
+        // Many Side: Navigation property
+        [ForeignKey(nameof(PhysicalShopSessionId))]
+        [InverseProperty(nameof(PhysicalShopSession.Cashflows))]
+        public PhysicalShopSession? PhysicalShopSession { get; set; } //Nullable navigation property to allow online cashfloe
+        //******* [End: PhysicalShopSession (0..1) - Cashflow (M)] ******
     }
 }
