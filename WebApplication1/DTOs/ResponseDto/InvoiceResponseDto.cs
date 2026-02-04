@@ -9,6 +9,8 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public decimal InvoiceAmount { get; set; }
 
+        public InvoicePaymentChannelEnum  InvoicePaymentChannel { get; set; } = InvoicePaymentChannelEnum.ByVisitingShop;
+
         public InvoiceTypeEnum InvoiceType { get; set; } = InvoiceTypeEnum.Bnpl_Initial_Pay;
 
         public InvoiceStatusEnum InvoiceStatus { get; set; } = InvoiceStatusEnum.Unpaid;
