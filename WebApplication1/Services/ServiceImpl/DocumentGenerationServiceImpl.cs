@@ -286,6 +286,11 @@ namespace WebApplication1.Services.ServiceImpl
                 AddReceiptHeader(doc, "PAYMENT RECEIPT");
                 AddCustomerSection(doc, order);
                 AddReceiptSummary(doc, order, cashflow, isRefund: false);
+                
+                doc.Add(new Paragraph("\n"));
+                AddOrderItemsTable(doc, order);
+                doc.Add(new Paragraph("\n"));
+                
                 AddPaymentDetails(doc, cashflow);
 
                 doc.Close();
@@ -356,6 +361,11 @@ namespace WebApplication1.Services.ServiceImpl
                 AddReceiptHeader(doc, "REFUND RECEIPT");
                 AddCustomerSection(doc, order);
                 AddReceiptSummary(doc, order, cashflow, isRefund: true);
+
+                doc.Add(new Paragraph("\n"));
+                AddOrderItemsTable(doc, order);
+                doc.Add(new Paragraph("\n"));
+
                 AddPaymentDetails(doc, cashflow);
 
                 doc.Close();
