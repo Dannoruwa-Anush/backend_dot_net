@@ -154,7 +154,7 @@ namespace WebApplication1.Services.ServiceImpl
         public async Task<bool> ExistsUnpaidInvoiceByCustomerAsync(int customerId) =>
             await _repository.ExistsUnpaidInvoiceByCustomerAsync(customerId);
 
-        public async Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingSimulationRequestDto request)
+        public async Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingInvoiceGenerationRequestDto request)
         {
             var order = await _customerOrderRepository.GetWithCustomerFinancialDetailsByIdAsync(request.OrderId)
                 ?? throw new Exception("Order not found");
@@ -166,7 +166,7 @@ namespace WebApplication1.Services.ServiceImpl
                 throw new InvalidOperationException("Existing unpaid installment invoice found");
 
             // 1. Run simulation
-            var simulation = await _bnpl_planSettlementSummaryService.SimulateBnplPlanSettlementAsync(request);
+            var simulation = await _bnpl_planSettlementSummaryService.SimulateBnplPlanSettlementAsync(new BnplSnapshotPayingSimulationRequestDto{ OrderId = request.OrderId, PaymentAmount = request.PaymentAmount});
 
             // 2. Convert simulation -> settlement snapshot (IMPORTANT)
             var frozenSnapshot = new BnplLatestSnapshotSettledResultDto

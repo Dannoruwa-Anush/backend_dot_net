@@ -24,6 +24,6 @@ namespace WebApplication1.Services.IService
         Task<Invoice> BuildInvoiceAddRequestAsync(CustomerOrder order, InvoiceTypeEnum invoiceType);
 
         //Create an invoice for installment pay
-        Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingSimulationRequestDto request);
+        Task<Invoice> GenerateInvoiceForSettlementSimulationAsync(BnplSnapshotPayingInvoiceGenerationRequestDto request);
     }
 }

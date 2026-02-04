@@ -121,7 +121,7 @@ namespace WebApplication1.Controllers
 
         [HttpPost("generate/settlement")]
         [Authorize(Roles = "Admin, Employee")]
-        public async Task<IActionResult> GenerateInvoiceForSettlementSimulation([FromBody] BnplSnapshotPayingSimulationRequestDto request)
+        public async Task<IActionResult> GenerateInvoiceForSettlementSimulation([FromBody] BnplSnapshotPayingInvoiceGenerationRequestDto request)
         {
             try
             {
