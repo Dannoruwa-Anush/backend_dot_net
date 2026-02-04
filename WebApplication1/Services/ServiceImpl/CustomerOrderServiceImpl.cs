@@ -500,7 +500,7 @@ namespace WebApplication1.Services.ServiceImpl
                     }
                 }
             };
-            
+
             // Final states: no transitions allowed
             if (currentStatus == OrderStatusEnum.Cancelled || currentStatus == OrderStatusEnum.DeliveredAfterCancellationRejected)
             {
@@ -509,7 +509,7 @@ namespace WebApplication1.Services.ServiceImpl
                 );
             }
 
-            // Delivered → Cancel_Pending only within free trial period
+            // Delivered -> Cancel_Pending only within free trial period
             if (currentStatus == OrderStatusEnum.Delivered && newStatus == OrderStatusEnum.Cancel_Pending)
             {
                 var deliveredDate = existingOrder.DeliveredDate ?? now;
@@ -578,8 +578,8 @@ namespace WebApplication1.Services.ServiceImpl
             switch (order.OrderPaymentStatus)
             {
                 case OrderPaymentStatusEnum.Awaiting_Payment:
-                    // No payments - just cancel order
-                    HandleRestock(order);
+                    // No payments - cancel order, Unpaid invoice -> Voided, Bnpl_plan -> Cancelled, installment -> Cancelled, snapshot -> Cancelled, 
+                    HandleAwaitingPaymentCancellationAsync(order);
                     break;
 
                 case OrderPaymentStatusEnum.Fully_Paid:
@@ -595,6 +595,43 @@ namespace WebApplication1.Services.ServiceImpl
                 default:
                     throw new InvalidOperationException(
                         $"Unsupported payment status for cancellation: {order.OrderPaymentStatus}");
+            }
+        }
+
+        //Helper Method : Awaiting Payment Cancellation
+        private void HandleAwaitingPaymentCancellationAsync(CustomerOrder order)
+        {
+            HandleRestock(order);
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // Void ALL unpaid invoices for this order
+            foreach (var invoice in order.Invoices
+                         .Where(i => i.InvoiceStatus == InvoiceStatusEnum.Unpaid))
+            {
+                invoice.InvoiceStatus = InvoiceStatusEnum.Voided;
+                invoice.VoidedAt = now;
+            }
+
+            // Cancel BNPL plan (if exists)
+            if (order.BNPL_PLAN != null)
+            {
+                order.BNPL_PLAN.Bnpl_Status = BnplStatusEnum.Cancelled;
+                order.BNPL_PLAN.CancelledAt = now;
+
+                // Cancel installments (not refunded)
+                foreach (var inst in order.BNPL_PLAN.BNPL_Installments)
+                {
+                    inst.Bnpl_Installment_Status = BNPL_Installment_StatusEnum.Cancelled;
+                    inst.CancelledAt = now;
+                }
+
+                // Cancel settlement snapshots
+                foreach (var summary in order.BNPL_PLAN.BNPL_PlanSettlementSummaries)
+                {
+                    summary.Bnpl_PlanSettlementSummary_Status = BNPL_PlanSettlementSummary_StatusEnum.Cancelled;
+                    summary.IsLatest = false;
+                }
             }
         }
 
