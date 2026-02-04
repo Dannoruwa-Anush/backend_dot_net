@@ -63,14 +63,6 @@ namespace WebApplication1.Services.ServiceImpl
             var order = invoice.CustomerOrder
                 ?? throw new Exception("Order not loaded for this invoice");
 
-            // Determine status (default: Paid)
-            var status = CashflowPaymentNatureEnum.Payment;
-
-            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
-
-            // Build reference
-            var cashflowRef = $"CF-{paymentRequest.InvoiceId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
-
             // Determine session based on order type and invoice type
             int? sessionId = null;
             if (order.OrderSource == OrderSourceEnum.PhysicalShop)
@@ -92,16 +84,28 @@ namespace WebApplication1.Services.ServiceImpl
                         break;
 
                     case InvoiceTypeEnum.Bnpl_Installment_Pay:
-                        // Can be any active session
-                        if (activeSession == null)
-                            throw new InvalidOperationException("No active physical shop session for BNPL installment.");
-                        sessionId = activeSession.PhysicalShopSessionID;
+                        // Only require any active session if invoice channel is physical shop
+                        if (invoice.InvoicePaymentChannel == InvoicePaymentChannelEnum.ByVisitingShop)
+                        {
+                            if (activeSession == null)
+                                throw new InvalidOperationException("No active physical shop session for BNPL installment.");
+
+                            sessionId = activeSession.PhysicalShopSessionID;
+                        }
                         break;
 
                     default:
                         throw new InvalidOperationException("Unsupported invoice type for session validation.");
                 }
             }
+
+            // Determine status (default: Paid)
+            var status = CashflowPaymentNatureEnum.Payment;
+
+            var now = TimeZoneHelper.ToSriLankaTime(DateTime.UtcNow);
+
+            // Build reference
+            var cashflowRef = $"CF-{paymentRequest.InvoiceId}-{status}-{cashflowType}-{now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}";
 
             var newCashflow = new Cashflow
             {

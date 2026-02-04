@@ -109,7 +109,10 @@ namespace WebApplication1.Services.ServiceImpl
                 OrderID = order.OrderID,
                 InvoiceAmount = order.TotalAmount,
                 InvoiceType = InvoiceTypeEnum.Full_Pay,
-                InvoiceStatus = InvoiceStatusEnum.Unpaid
+                InvoiceStatus = InvoiceStatusEnum.Unpaid,
+                InvoicePaymentChannel = order.OrderSource == OrderSourceEnum.PhysicalShop
+                    ? InvoicePaymentChannelEnum.ByVisitingShop
+                    : InvoicePaymentChannelEnum.ByOnline
             };
         }
 
@@ -125,6 +128,9 @@ namespace WebApplication1.Services.ServiceImpl
                 InvoiceAmount = plan.Bnpl_InitialPayment,
                 InvoiceType = InvoiceTypeEnum.Bnpl_Initial_Pay,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
+                InvoicePaymentChannel = order.OrderSource == OrderSourceEnum.PhysicalShop
+                    ? InvoicePaymentChannelEnum.ByVisitingShop
+                    : InvoicePaymentChannelEnum.ByOnline
             };
         }
 
@@ -182,6 +188,7 @@ namespace WebApplication1.Services.ServiceImpl
             {
                 OrderID = order.OrderID,
                 InvoiceType = InvoiceTypeEnum.Bnpl_Installment_Pay,
+                InvoicePaymentChannel = request.InvoicePaymentChannel,
                 InvoiceStatus = InvoiceStatusEnum.Unpaid,
                 InvoiceAmount = request.PaymentAmount,
                 InstallmentNo = simulation.InstallmentId,

@@ -272,7 +272,16 @@ namespace WebApplication1.Services.ServiceImpl.Helper
                         break;
 
                     case InvoiceTypeEnum.Bnpl_Installment_Pay:
-                        // Can be a different session, just ensure active session exists
+                        // Even though the BNPL order may have been created as a Physical Shop order,
+                        // installment payments can be made online as well.
+                        // If the invoice payment channel is Physical Shop (ByVisitingShop),
+                        // it requires any active session (Can be a different session). Online payments do not require a session.
+                        if (invoice.InvoicePaymentChannel == InvoicePaymentChannelEnum.ByVisitingShop)
+                        {
+                            if (activeSession == null)
+                                throw new InvalidOperationException(
+                                    "No active physical shop session for BNPL installment.");
+                        }
                         break;
 
                     default:
