@@ -46,6 +46,8 @@ namespace WebApplication1.Repositories.RepositoryImpl
             return await _context.CustomerOrders
                 .Include(o => o.CustomerOrderElectronicItems)
                     .ThenInclude(oi => oi.ElectronicItem)
+                .Include(o => o.Invoices)
+                    .ThenInclude(i => i.Cashflows)
                 .Include(o => o.BNPL_PLAN!)
                     .ThenInclude(p => p.BNPL_Installments)
                 .Include(o => o.BNPL_PLAN!)
