@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -97,7 +98,10 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var updatedOrder = await _service.ModifyCustomerOrderStatusWithTransactionAsync(id, request);
+                // Extract role from JWT claims
+                var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+
+                var updatedOrder = await _service.ModifyCustomerOrderStatusWithTransactionAsync(id, request, role!);
 
                 var responseDto = _mapper.Map<CustomerOrderResponseDto>(updatedOrder);
                 var response = new ApiResponseDto<CustomerOrderResponseDto>(

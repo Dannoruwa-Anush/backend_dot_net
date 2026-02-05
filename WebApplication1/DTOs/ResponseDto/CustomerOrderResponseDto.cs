@@ -22,6 +22,9 @@ namespace WebApplication1.DTOs.ResponseDto
 
         public OrderPaymentStatusEnum OrderPaymentStatus { get; set; } = OrderPaymentStatusEnum.Partially_Paid;
 
+        // Response only member (not in tbl)
+        public bool IsFreeTrialOver { get; set; }
+        
         // Include simplified info about FK: Customer 
         // CustomerID is nullable to support cashier's direct orders
         public CustomerResponseDto? CustomerResponseDto { get; set; }

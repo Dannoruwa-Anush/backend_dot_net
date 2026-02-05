@@ -402,7 +402,7 @@ namespace WebApplication1.Services.ServiceImpl
             await _repository.GetAllByCustomerWithPaginationAsync(customerId, pageNumber, pageSize, orderStatusId, searchKey);
 
         // Update : Order Status
-        public async Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto request)
+        public async Task<CustomerOrder?> ModifyCustomerOrderStatusWithTransactionAsync(int orderId, CustomerOrderStatusChangeRequestDto request, string role)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -421,7 +421,7 @@ namespace WebApplication1.Services.ServiceImpl
                     return order;
 
                 //validation
-                ValidateOrderStatusTransition(order, request.NewOrderStatus, now);
+                ValidateOrderStatusTransition(order, request.NewOrderStatus, now, role);
 
                 ApplyOrderStatusChangesAsync(order, request, now);
 
@@ -452,85 +452,73 @@ namespace WebApplication1.Services.ServiceImpl
         }
 
         //Helper Method : ValidateOrderStatusTransition
-        private void ValidateOrderStatusTransition(CustomerOrder existingOrder, OrderStatusEnum newStatus, DateTime now)
-        {
-            if (existingOrder == null)
-                throw new ArgumentNullException(nameof(existingOrder));
+        /*
+            Note:
+            Customer
+            Pending -> Cancel_Pending
+            Delivered -> Cancel_Pending (with in Free trial period)
 
+            Employee
+            Pending -> Cancel_Pending
+            Cancel_Pending -> Cancelled / CancellationRejected
+            Processing -> Shipped -> Delivered
+        */
+        private void ValidateOrderStatusTransition(CustomerOrder existingOrder, OrderStatusEnum newStatus, DateTime now, string role)
+        {
             var currentStatus = existingOrder.OrderStatus;
 
-            // Dictionary defining valid transitions
-            var validTransitions = new Dictionary<OrderStatusEnum, HashSet<OrderStatusEnum>>
-            {
-                {
-                    OrderStatusEnum.Pending,
-                    new HashSet<OrderStatusEnum>
-                    {
-                        OrderStatusEnum.Processing,
-                        OrderStatusEnum.Cancel_Pending
-                    }
-                },
-                {
-                    OrderStatusEnum.Processing,
-                    new HashSet<OrderStatusEnum>
-                    {
-                        OrderStatusEnum.Shipped
-                    }
-                },
-                {
-                    OrderStatusEnum.Shipped,
-                    new HashSet<OrderStatusEnum>
-                    {
-                        OrderStatusEnum.Delivered
-                    }
-                },
-                {
-                    OrderStatusEnum.Delivered,
-                    new HashSet<OrderStatusEnum>
-                    {
-                        OrderStatusEnum.Cancel_Pending
-                    }
-                },
-                {
-                    OrderStatusEnum.Cancel_Pending,
-                    new HashSet<OrderStatusEnum>
-                    {
-                        OrderStatusEnum.Cancelled,
-                        OrderStatusEnum.CancellationRejected
-                    }
-                }
-            };
+            // ---------------- FINAL STATES ----------------
+            if (currentStatus is OrderStatusEnum.Cancelled or OrderStatusEnum.CancellationRejected)
+                throw new InvalidOperationException($"{currentStatus} orders cannot change status.");
 
-            // Final states: no transitions allowed
-            if (currentStatus == OrderStatusEnum.Cancelled || currentStatus == OrderStatusEnum.CancellationRejected)
+            // ---------------- CUSTOMER RULES ----------------
+            if (role.Equals("Customer", StringComparison.OrdinalIgnoreCase))
             {
+                // Pending -> Cancel_Pending
+                if (currentStatus == OrderStatusEnum.Pending && newStatus == OrderStatusEnum.Cancel_Pending)
+                    return;
+
+                // Delivered -> Cancel_Pending (within free trial period)
+                if (currentStatus == OrderStatusEnum.Delivered && newStatus == OrderStatusEnum.Cancel_Pending)
+                {
+                    if (!existingOrder.DeliveredDate.HasValue)
+                        throw new InvalidOperationException("Delivered date not found. Cannot request cancellation.");
+
+                    var deliveredDate = existingOrder.DeliveredDate.Value;
+                    if ((now - deliveredDate).TotalDays <= BnplSystemConstants.FreeTrialPeriodDays)
+                        return;
+
+                    throw new InvalidOperationException("Free trial period expired. Cannot request cancellation.");
+                }
+
                 throw new InvalidOperationException(
-                    $"{currentStatus} orders cannot change status."
+                    $"Customers cannot change order status from {currentStatus} to {newStatus}."
                 );
             }
 
-            // Delivered -> Cancel_Pending only within free trial period
-            if (currentStatus == OrderStatusEnum.Delivered && newStatus == OrderStatusEnum.Cancel_Pending)
+            // ---------------- EMPLOYEE RULES ----------------
+            if (role.Equals("Employee", StringComparison.OrdinalIgnoreCase))
             {
-                var deliveredDate = existingOrder.DeliveredDate ?? now;
+                var validTransitions = new Dictionary<OrderStatusEnum, HashSet<OrderStatusEnum>>
+                {
+                    { OrderStatusEnum.Pending, new() { OrderStatusEnum.Cancel_Pending } },
+                    { OrderStatusEnum.Processing, new() { OrderStatusEnum.Shipped } },
+                    { OrderStatusEnum.Shipped, new() { OrderStatusEnum.Delivered } },
+                    { OrderStatusEnum.Cancel_Pending, new() { OrderStatusEnum.Cancelled, OrderStatusEnum.CancellationRejected } }
+                };
 
-                if ((now - deliveredDate).TotalDays > BnplSystemConstants.FreeTrialPeriodDays)
+                if (!validTransitions.TryGetValue(currentStatus, out var allowed) || !allowed.Contains(newStatus))
                 {
                     throw new InvalidOperationException(
-                        "Cannot request cancellation for delivered orders after the free trial period."
+                        $"Employees cannot change order status from {currentStatus} to {newStatus}."
                     );
                 }
 
-                return; // valid transition
+                return;
             }
 
-            // Generic transition validation
-            if (!validTransitions.TryGetValue(currentStatus, out var allowedNextStatuses) || !allowedNextStatuses.Contains(newStatus))
-            {
-                throw new InvalidOperationException(
-                    $"{currentStatus} orders cannot move to {newStatus}."
-                );
-            }
+            // ---------------- INVALID ROLE ----------------
+            throw new InvalidOperationException("Invalid role.");
         }
 
         // Helper Method: Applies status changes to the order
