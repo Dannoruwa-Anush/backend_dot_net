@@ -20,7 +20,7 @@ namespace WebApplication1.Controllers
         {
             // Dependency injection
             _service = service;
-            _mapper  = mapper;
+            _mapper = mapper;
         }
 
         //CRUD operations
@@ -31,7 +31,7 @@ namespace WebApplication1.Controllers
             var sessions = await _service.GetAllPhysicalShopSessionsAsync();
             if (sessions == null || !sessions.Any())
                 return NotFound(new ApiResponseDto<string>(404, "Physical Shop Sessions not found"));
-            
+
             // Model -> ResponseDto
             var responseDtos = _mapper.Map<IEnumerable<PhysicalShopSessionResponseDto>>(sessions);
             var response = new ApiResponseDto<IEnumerable<PhysicalShopSessionResponseDto>>(
@@ -89,11 +89,25 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> Create()
         {
             try
-            { 
+            {
+                // Create the session
                 var created = await _service.AddPhysicalShopSessionWithSaveAsync();
 
-                var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(201, "Physical shop session created successfully");
-                return CreatedAtAction(nameof(GetById), response);
+                // Map to response DTO
+                var responseDto = _mapper.Map<PhysicalShopSessionResponseDto>(created);
+
+                var response = new ApiResponseDto<PhysicalShopSessionResponseDto>(
+                    201,
+                    "Physical shop session created successfully",
+                    responseDto
+                );
+
+                // Pass the ID to CreatedAtAction
+                return CreatedAtAction(
+                    nameof(GetById),        // Action to generate URL for
+                    new { id = created.PhysicalShopSessionID }, // Route values for {id}
+                    response                 // Response body
+                );
             }
             catch (Exception ex)
             {
@@ -102,7 +116,6 @@ namespace WebApplication1.Controllers
                 if (message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
                     return NotFound(new ApiResponseDto<string>(404, "Physical shop session with the given name already exists"));
 
-                // Generic error
                 return StatusCode(500, new ApiResponseDto<string>(500, "An internal server error occurred. Please try again later."));
             }
         }
