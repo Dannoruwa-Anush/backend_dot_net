@@ -29,10 +29,16 @@ namespace WebApplication1.Repositories.RepositoryImpl
         public async Task<Cashflow?> GetCashflowWithInvoiceAsync(int id)
         {
             return await _context.Cashflows
-                    .Include(c => c.Invoice)
-                        .ThenInclude(i => i!.CustomerOrder)
-                            .ThenInclude(o => o!.Customer)
-                    .FirstOrDefaultAsync(c => c.CashflowID == id);
+                .Include(c => c.Invoice)
+                    .ThenInclude(i => i!.CustomerOrder)
+                        .ThenInclude(o => o!.Customer)
+
+                .Include(c => c.Invoice)
+                    .ThenInclude(i => i!.CustomerOrder)
+                        .ThenInclude(o => o!.CustomerOrderElectronicItems)
+                            .ThenInclude(oi => oi.ElectronicItem)
+
+                .FirstOrDefaultAsync(c => c.CashflowID == id);
         }
 
         //Custom Query Operations
